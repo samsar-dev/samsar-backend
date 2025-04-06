@@ -12,12 +12,12 @@ const envSchema = z.object({
   REFRESH_TOKEN_EXPIRY: z.string().default("2592000"), // 30 days in seconds
   BCRYPT_SALT_ROUNDS: z.string().default("12"),
   CORS_ORIGIN: z.string().default("*"),
-  // Cloudflare R2 config
-  CLOUDFLARE_ACCOUNT_ID: z.string().min(1, "Cloudflare Account ID is required"),
-  CLOUDFLARE_ACCESS_KEY_ID: z.string().min(1, "Cloudflare Access Key ID is required"),
-  CLOUDFLARE_SECRET_ACCESS_KEY: z.string().min(1, "Cloudflare Secret Access Key is required"),
-  CLOUDFLARE_BUCKET_NAME: z.string().min(1, "Cloudflare Bucket Name is required"),
-  CLOUDFLARE_ENDPOINT: z.string().url("Cloudflare Endpoint must be a valid URL"),
+  // Cloudflare R2 config (optional)
+  CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
+  CLOUDFLARE_ACCESS_KEY_ID: z.string().optional(),
+  CLOUDFLARE_SECRET_ACCESS_KEY: z.string().optional(),
+  CLOUDFLARE_BUCKET_NAME: z.string().optional(),
+  CLOUDFLARE_ENDPOINT: z.string().url().optional(),
 });
 
 const envParse = envSchema.safeParse(process.env);

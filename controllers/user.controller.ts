@@ -130,7 +130,8 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (req.file) {
       try {
         const uploadResult = await uploadToR2(req.file, "profilePictures");
-        updates.profilePicture = uploadResult;
+        const avatarUrl = uploadResult.url;
+        updates.profilePicture = avatarUrl;
       } catch (error) {
         return res.status(500).json({
           success: false,

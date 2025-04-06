@@ -16,6 +16,7 @@ declare global {
         url: string;
         order: number;
       }>;
+      uploadedFiles?: string[];
     }
   }
 }
@@ -80,11 +81,11 @@ export const processImagesMiddleware = async (
       file.buffer = processedBuffer;
       
       // Upload to Cloudflare R2
-      const imageUrl = await uploadToCloudflare(file, "listings");
+      const { url } = await uploadToCloudflare(file, "listings");
       
       // Store the processed image URL and order
       processedImages.push({
-        url: imageUrl,
+        url,
         order: i,
       });
     }
@@ -94,5 +95,31 @@ export const processImagesMiddleware = async (
     next();
   } catch (error) {
     next(error);
+  }
+};
+
+export const uploadMiddleware = upload.array("images", 10);
+
+export const processUpload = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return next();
+    }
+
+    const uploadedFiles = req.files as Express.Multer.File[];
+    const uploadPromises = uploadedFiles.map((file) =>
+      uploadToCloudflare(file, "listing")
+    );
+
+    const results = await Promise.all(uploadPromises);
+    req.uploadedFiles = results.map(result => result.url);
+    next();
+  } catch (error) {
+    console.error("Error in upload middleware:", error);
+    res.status(500).json({ error: "Failed to process upload" });
   }
 };
