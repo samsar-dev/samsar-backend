@@ -1,13 +1,13 @@
 import express, { Request, Response } from "express";
-import { authenticate } from "../middleware/auth";
-import prisma from "../src/lib/prismaClient";
+import { authenticate } from "../middleware/auth.js";
+import prisma from "../src/lib/prismaClient.js";
 import { Prisma } from "@prisma/client";
-import { VehicleType, FuelType, TransmissionType, Condition } from "../types/enums";
+import { VehicleType, FuelType, TransmissionType, Condition } from "../types/enums.js";
 import {
   upload,
   processImagesMiddleware,
   processImage,
-} from "../middleware/upload.middleware";
+} from "../middleware/upload.middleware.js";
 
 // Extend Request type for authenticated requests
 interface AuthRequest extends Request {
@@ -65,7 +65,7 @@ import {
   ListingWithRelations,
   ListingBase,
   ListingDetails,
-} from "../types/shared";
+} from "../types/shared.js";
 
 const router = express.Router();
 

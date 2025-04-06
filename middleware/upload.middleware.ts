@@ -2,12 +2,11 @@ import multer from "multer";
 import sharp from "sharp";
 import crypto from "crypto";
 import { Request, Response, NextFunction } from "express";
-import { uploadToR2 as uploadToCloudflare } from "../config/cloudflareR2";
-import s3 from "../config/cloudflareR2";
+import { uploadToR2 as uploadToCloudflare } from "../config/cloudflareR2.js";
 
 // Re-export uploadToR2 and s3
-export { uploadToR2 } from "../config/cloudflareR2";
-export { default as s3 } from "../config/cloudflareR2";
+export { uploadToR2 } from "../config/cloudflareR2.js";
+export { default as s3 } from "../config/cloudflareR2.js";
 
 // Extend Express Request
 declare global {

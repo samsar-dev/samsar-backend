@@ -2,7 +2,7 @@ import { Request } from "express";
 import { Prisma } from "@prisma/client";
 
 // Re-export all shared types
-export * from "./shared";
+export * from "./shared.js";
 
 // Prisma-specific types
 export type InputJsonValue = Prisma.InputJsonValue;
