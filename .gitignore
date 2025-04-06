@@ -51,7 +51,7 @@ coverage
 test-results
 
 # Environment files
-.env
+ 
 .env.local
 .env.production
 .env.development

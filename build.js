@@ -5,6 +5,28 @@ import { join, extname } from 'path';
 
 const execAsync = promisify(exec);
 
+async function copyDirectory(source, destination) {
+  // Create the destination directory
+  await mkdir(destination, { recursive: true });
+
+  // Read all files/folders in the source directory
+  const entries = await readdir(source, { withFileTypes: true });
+
+  // Process each entry
+  for (const entry of entries) {
+    const sourcePath = join(source, entry.name);
+    const destPath = join(destination, entry.name);
+
+    if (entry.isDirectory()) {
+      // Recursively copy directories
+      await copyDirectory(sourcePath, destPath);
+    } else {
+      // Copy files
+      await copyFile(sourcePath, destPath);
+    }
+  }
+}
+
 async function build() {
   try {
     // Clean dist directory
@@ -86,10 +108,8 @@ export default prisma;
     const prismaClientDir = join(process.cwd(), 'node_modules', '@prisma', 'client');
     const distPrismaClientDir = join(process.cwd(), 'dist', 'node_modules', '@prisma', 'client');
     
-    await mkdir(join(process.cwd(), 'dist', 'node_modules', '@prisma'), { recursive: true });
-    
-    // Copy entire @prisma/client directory
-    await execAsync(`cp -r "${prismaClientDir}" "${distPrismaClientDir}"`);
+    // Use cross-platform directory copy
+    await copyDirectory(prismaClientDir, distPrismaClientDir);
 
     console.log('✅ Build completed successfully!');
   } catch (error) {
