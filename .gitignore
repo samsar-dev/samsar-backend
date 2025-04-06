@@ -34,6 +34,48 @@ cypress/screenshots/
 # ========================================
 # 🔒 Environment Variables (Never commit!)
 # ========================================
+# Node modules
+node_modules
+
+# Logs
+*.log
+
+# Build output
+dist
+build
+.next
+out
+
+# Test coverage
+coverage
+test-results
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Prisma migrations and local dbs (optional if not needed)
+prisma/dev.db
+prisma/migrations
+
+# IDE/Editor files
+.vscode
+.idea
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker-related
+Dockerfile
+.dockerignore
+docker-compose.yml
 
 
 # ========================================

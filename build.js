@@ -22,82 +22,74 @@ async function build() {
     console.log('🔄 Generating Prisma Client...');
     await execAsync('prisma generate --schema src/prisma/schema.prisma');
 
-    // Create necessary directories for Prisma client
-    const distPrismaPath = join(process.cwd(), 'dist', 'src');
-    const prismaClientPath = join(distPrismaPath, 'lib');
-    await mkdir(prismaClientPath, { recursive: true });
+    // Copy schema.prisma to dist
+    console.log('📄 Copying Prisma schema...');
+    await copyFile(
+      join(process.cwd(), 'src', 'prisma', 'schema.prisma'),
+      join(process.cwd(), 'dist', 'src', 'prisma', 'schema.prisma')
+    );
 
-    // Create prismaClient.js file
-    try {
-      const clientFile = join(prismaClientPath, 'prismaClient.js');
-      await writeFile(clientFile, `
-        import { PrismaClient } from '@prisma/client';
-        
-        const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
-        
-        export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-        
-        if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-      `);
-    } catch (err) {
-      console.error(`❌ Failed to create prismaClient.js: ${err.message}`);
-      throw err;
-    }
+    // Create prismaClient.js in dist
+    console.log('📝 Creating Prisma client...');
+    const prismaClientContent = `
+import { PrismaClient } from '@prisma/client';
 
-     // Copy the generated Prisma client files
-     try {
-       const srcPrismaPath = join(process.cwd(), 'node_modules', '@prisma', 'client');
-       const files = await readdir(srcPrismaPath);
-       
-       // Only copy essential files
-       const essentialFiles = ['index.js', 'package.json'];
-       
-       for (const file of essentialFiles) {
-         const srcPath = join(srcPrismaPath, file);
-         const destPath = join(prismaClientPath, file);
-         try {
-           await copyFile(srcPath, destPath);
-         } catch (err) {
-           console.warn(`⚠️  Could not copy ${file}: ${err.message}`);
-         }
-       }
-       
-       // Copy runtime files
-       const runtimePath = join(srcPrismaPath, 'runtime');
-       const destRuntimePath = join(prismaClientPath, 'runtime');
-       await mkdir(destRuntimePath, { recursive: true });
-       
-       const runtimeFiles = await readdir(runtimePath);
-       for (const file of runtimeFiles) {
-         if (file.endsWith('.js') || file.endsWith('.d.ts')) {
-           const srcPath = join(runtimePath, file);
-           const destPath = join(destRuntimePath, file);
-           try {
-             await copyFile(srcPath, destPath);
-           } catch (err) {
-             console.warn(`⚠️  Could not copy runtime file ${file}: ${err.message}`);
-           }
-         }
-       }
-     } catch (err) {
-       console.error(`❌ Failed to copy Prisma client files: ${err.message}`);
-       throw err;
-     }
+let prisma;
+
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient({
+    log: ['error', 'warn'],
+    errorFormat: 'pretty',
+  });
+} else {
+  // Prevent multiple instances in development
+  const globalWithPrisma = global;
+  
+  if (!globalWithPrisma.prisma) {
+    globalWithPrisma.prisma = new PrismaClient({
+      log: ['error', 'warn'],
+      errorFormat: 'pretty',
+    });
+  }
+  
+  prisma = globalWithPrisma.prisma;
+}
+
+// Add connection validation
+async function validateConnection() {
+  try {
+    await prisma.$connect();
+    console.log('✅ Database connection successful');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    process.exit(1);
+  }
+}
+
+// Call validateConnection but don't await it here
+validateConnection().catch(console.error);
+
+export default prisma;
+`;
+
+    await writeFile(
+      join(process.cwd(), 'dist', 'src', 'lib', 'prismaClient.js'),
+      prismaClientContent
+    );
 
     // Compile TypeScript
     console.log('🔨 Compiling TypeScript...');
     await execAsync('tsc');
 
-    // Rename .ts files to .js in dist directory
-    console.log('🔄 Renaming .ts files to .js...');
-    const distFiles = await readdir('dist', { recursive: true });
-    for (const file of distFiles) {
-      const filePath = join('dist', file);
-      if (extname(filePath) === '.ts') {
-        const newFilePath = filePath.replace(/\.ts$/, '.js');
-        await rename(filePath, newFilePath);
-      }
-    }
+    // Copy node_modules/@prisma/client to dist/node_modules/@prisma/client
+    console.log('📦 Copying Prisma client files...');
+    const prismaClientDir = join(process.cwd(), 'node_modules', '@prisma', 'client');
+    const distPrismaClientDir = join(process.cwd(), 'dist', 'node_modules', '@prisma', 'client');
+    
+    await mkdir(join(process.cwd(), 'dist', 'node_modules', '@prisma'), { recursive: true });
+    
+    // Copy entire @prisma/client directory
+    await execAsync(`cp -r "${prismaClientDir}" "${distPrismaClientDir}"`);
 
     console.log('✅ Build completed successfully!');
   } catch (error) {

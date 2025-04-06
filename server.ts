@@ -6,11 +6,11 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { createServer } from "node:http";
 import { Server, Socket } from "socket.io";
-import prisma from "./src/lib/prismaClient";
+import prisma from "./src/lib/prismaClient.js";
 import dotenv from "dotenv";
 import morgan from "morgan";
-import errorHandler from "./middleware/errorHandler";
-import { getDirname } from "./utils/path.utils";
+import errorHandler from "./middleware/errorHandler.js";
+import { getDirname } from "./utils/path.utils.js";
 const __dirname = getDirname(import.meta.url);
 
 // Load environment variables
@@ -122,12 +122,12 @@ app.get("/api/health", (req: Request, res: Response) => {
 });
 
 // Import Routes
-import authRoutes from "./routes/auth.routes";
-import listingRoutes from "./routes/listing.routes";
-import userRoutes from "./routes/user.routes";
-import messageRoutes from "./routes/message.routes";
-import uploadRoutes from "./routes/uploads";
-import notificationRoutes from "./routes/notification.routes";
+import authRoutes from "./routes/auth.routes.js";
+import listingRoutes from "./routes/listing.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import messageRoutes from "./routes/message.routes.js";
+import uploadRoutes from "./routes/uploads.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 // API routes
 app.use("/api/auth", authRoutes);
