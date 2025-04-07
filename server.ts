@@ -15,6 +15,8 @@ const __dirname = getDirname(import.meta.url);
 
 // Load environment variables
 dotenv.config();
+console.log("✅ JWT_SECRET from process.env:", process.env.JWT_SECRET);
+
 
 // Initialize app and HTTP server
 const app = express();
