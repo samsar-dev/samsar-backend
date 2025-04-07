@@ -33,6 +33,8 @@ cypress/screenshots/
 
 # ========================================
 # 🔒 Environment Variables (Never commit!)
+
+.env
 # ========================================
 # Node modules
 node_modules
