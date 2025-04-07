@@ -7,7 +7,7 @@ if (!jwtSecret) {
 }
 
 export const config = {
-  jwtSecret: jwtSecret || "fallback-secret",
+  jwtSecret: jwtSecret || "fallback-secret", // local fallback only
   cloudflare: {
     accountId: env.CLOUDFLARE_ACCOUNT_ID,
     accessKeyId: env.CLOUDFLARE_ACCESS_KEY_ID,
@@ -16,9 +16,9 @@ export const config = {
     endpoint: env.CLOUDFLARE_ENDPOINT,
   },
   database: {
-    url: env.DATABASE_URL,
+    url: env.DATABASE_URL || "fallback-db-url", // optional
   },
   server: {
-    port: env.PORT,
+    port: env.PORT || "5000", // optional
   },
 };
