@@ -58,7 +58,8 @@ const corsOptions = {
     'http://localhost:3001',  // Alternative port
     'http://127.0.0.1:3000',  // Alternative localhost
     'http://127.0.0.1:5173',  // Alternative localhost
-    'http://127.0.0.1:3001'   // Alternative localhost
+    'http://127.0.0.1:3001',   // Alternative localhost
+    "https://tijara-frontend.vercel.app", // ✅ Add your frontend URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
