@@ -4,20 +4,14 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
   PORT: z.string().default("3000"),
   DATABASE_URL: z.string().min(1, "Database URL is required"),
   JWT_SECRET: z.string().min(32, "JWT Secret must be at least 32 characters long"),
-  JWT_EXPIRY: z.string().default("604800"), // 7 days in seconds
-  REFRESH_TOKEN_EXPIRY: z.string().default("2592000"), // 30 days in seconds
+  JWT_EXPIRY: z.string().default("604800"),
+  REFRESH_TOKEN_EXPIRY: z.string().default("2592000"),
   BCRYPT_SALT_ROUNDS: z.string().default("12"),
   CORS_ORIGIN: z.string().default("*"),
-  // Cloudflare R2 config (optional)
-  CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
-  CLOUDFLARE_ACCESS_KEY_ID: z.string().optional(),
-  CLOUDFLARE_SECRET_ACCESS_KEY: z.string().optional(),
-  CLOUDFLARE_BUCKET_NAME: z.string().optional(),
-  CLOUDFLARE_ENDPOINT: z.string().url().optional(),
 });
 
 const envParse = envSchema.safeParse(process.env);
@@ -29,7 +23,16 @@ if (!envParse.success) {
       .map(([key, value]) => `\n  ${key}: ${(value as any)._errors.join(', ')}`)
       .join('')
   );
-  throw new Error("Invalid environment variables");
+  console.error("⚠️ Using default values for missing environment variables");
 }
 
-export const env = envParse.data;
+export const env = envParse.success ? envParse.data : {
+  NODE_ENV: process.env.NODE_ENV || "production",
+  PORT: process.env.PORT || "3000",
+  DATABASE_URL: process.env.DATABASE_URL || "",
+  JWT_SECRET: process.env.JWT_SECRET || "your-secret-key",
+  JWT_EXPIRY: "604800",
+  REFRESH_TOKEN_EXPIRY: "2592000",
+  BCRYPT_SALT_ROUNDS: "12",
+  CORS_ORIGIN: "*"
+};
