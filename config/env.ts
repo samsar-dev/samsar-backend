@@ -4,6 +4,11 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
+  CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
+  CLOUDFLARE_ACCESS_KEY_ID: z.string().optional(),
+  CLOUDFLARE_SECRET_ACCESS_KEY: z.string().optional(),
+  CLOUDFLARE_BUCKET_NAME: z.string().optional(),
+  CLOUDFLARE_ENDPOINT: z.string().url().optional(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
   PORT: z.string().default("3000"),
   DATABASE_URL: z.string().min(1, "Database URL is required"),
@@ -34,5 +39,10 @@ export const env = envParse.success ? envParse.data : {
   JWT_EXPIRY: "604800",
   REFRESH_TOKEN_EXPIRY: "2592000",
   BCRYPT_SALT_ROUNDS: "12",
-  CORS_ORIGIN: "*"
+  CORS_ORIGIN: "*",
+  CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
+  CLOUDFLARE_ACCESS_KEY_ID: process.env.CLOUDFLARE_ACCESS_KEY_ID,
+  CLOUDFLARE_SECRET_ACCESS_KEY: process.env.CLOUDFLARE_SECRET_ACCESS_KEY,
+  CLOUDFLARE_BUCKET_NAME: process.env.CLOUDFLARE_BUCKET_NAME,
+  CLOUDFLARE_ENDPOINT: process.env.CLOUDFLARE_ENDPOINT,
 };
