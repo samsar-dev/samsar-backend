@@ -44,6 +44,12 @@ interface ListingResponse {
     color?: string;
     condition?: string;
     listingId: string;
+    interiorColor?: string;
+    engine?: string;
+    warranty?: string;
+    serviceHistory?: string;
+    previousOwners?: string;
+    registrationStatus?: string;
   } | null;
   realEstateDetails?: {
     id: string;
@@ -96,14 +102,10 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
 }>;
 
 const formatListingResponse = (listing: ListingWithRelations): ListingResponse => {
-  if (!listing) {
-    throw new Error('Cannot format null listing');
-  }
-
   return {
     id: listing.id,
     title: listing.title,
-    description: listing.description || "",
+    description: listing.description,
     price: listing.price,
     mainCategory: listing.mainCategory,
     subCategory: listing.subCategory,
@@ -119,31 +121,58 @@ const formatListingResponse = (listing: ListingWithRelations): ListingResponse =
       username: listing.user.username,
       profilePicture: listing.user.profilePicture || undefined,
     },
-    images: listing.images.map(img => ({
+    images: listing.images.map((img) => ({
       id: img.id,
       url: img.url,
       order: img.order,
       listingId: img.listingId,
     })),
     vehicleDetails: listing.vehicleDetails ? {
-      ...listing.vehicleDetails,
-      mileage: listing.vehicleDetails.mileage || undefined,
+      id: listing.vehicleDetails.id,
+      vehicleType: listing.vehicleDetails.vehicleType,
+      make: listing.vehicleDetails.make,
+      model: listing.vehicleDetails.model,
+      year: String(listing.vehicleDetails.year),
+      mileage: listing.vehicleDetails.mileage ? String(listing.vehicleDetails.mileage) : undefined,
       fuelType: listing.vehicleDetails.fuelType || undefined,
       transmissionType: listing.vehicleDetails.transmissionType || undefined,
       color: listing.vehicleDetails.color || undefined,
       condition: listing.vehicleDetails.condition || undefined,
+      listingId: listing.vehicleDetails.listingId,
+      interiorColor: listing.vehicleDetails.interiorColor || undefined,
+      engine: listing.vehicleDetails.engine || undefined,
+      warranty: listing.vehicleDetails.warranty ? String(listing.vehicleDetails.warranty) : undefined,
+      serviceHistory: listing.vehicleDetails.serviceHistory || undefined,
+      previousOwners: listing.vehicleDetails.previousOwners ? String(listing.vehicleDetails.previousOwners) : undefined,
+      registrationStatus: listing.vehicleDetails.registrationStatus || undefined,
     } : null,
     realEstateDetails: listing.realEstateDetails ? {
-      ...listing.realEstateDetails,
+      id: listing.realEstateDetails.id,
+      propertyType: listing.realEstateDetails.propertyType,
       size: listing.realEstateDetails.size || undefined,
-      yearBuilt: listing.realEstateDetails.yearBuilt || undefined,
-      bedrooms: listing.realEstateDetails.bedrooms || undefined,
-      bathrooms: listing.realEstateDetails.bathrooms || undefined,
+      yearBuilt: listing.realEstateDetails.yearBuilt ? String(listing.realEstateDetails.yearBuilt) : undefined,
+      bedrooms: listing.realEstateDetails.bedrooms ? String(listing.realEstateDetails.bedrooms) : undefined,
+      bathrooms: listing.realEstateDetails.bathrooms ? String(listing.realEstateDetails.bathrooms) : undefined,
       condition: listing.realEstateDetails.condition || undefined,
+      listingId: listing.realEstateDetails.listingId,
     } : null,
-    favorites: listing.favorites,
-    attributes: listing.attributes,
-    features: listing.features,
+    favorites: listing.favorites.map((fav) => ({
+      id: fav.id,
+      createdAt: fav.createdAt,
+      userId: fav.userId,
+      listingId: fav.listingId,
+    })),
+    attributes: listing.attributes.map((attr) => ({
+      id: attr.id,
+      name: attr.name,
+      value: attr.value,
+      listingId: attr.listingId,
+    })),
+    features: listing.features.map((feature) => ({
+      id: feature.id,
+      name: feature.name,
+      listingId: feature.listingId,
+    })),
   };
 };
 
