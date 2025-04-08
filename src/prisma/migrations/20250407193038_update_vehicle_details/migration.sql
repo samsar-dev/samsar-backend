@@ -8,10 +8,10 @@ CREATE TYPE "ListingStatus" AS ENUM ('DRAFT', 'ACTIVE', 'SOLD', 'RENTED', 'EXPIR
 CREATE TYPE "ListingAction" AS ENUM ('SELL', 'RENT');
 
 -- CreateEnum
-CREATE TYPE "NotificationType" AS ENUM ('NEW_MESSAGE', 'LISTING_INTEREST', 'PRICE_UPDATE', 'LISTING_SOLD', 'SYSTEM_NOTICE');
+CREATE TYPE "NotificationType" AS ENUM ('NEW_MESSAGE', 'LISTING_INTEREST', 'PRICE_UPDATE', 'LISTING_SOLD', 'SYSTEM_NOTICE', 'LISTING_CREATED');
 
 -- CreateEnum
-CREATE TYPE "VehicleType" AS ENUM ('CAR', 'TRUCK', 'MOTORCYCLE', 'RV', 'CONSTRUCTION', 'TRACTOR', 'BUS', 'VAN', 'OTHER');
+CREATE TYPE "VehicleType" AS ENUM ('CAR', 'TRUCK', 'MOTORCYCLE', 'RV', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "FuelType" AS ENUM ('gasoline', 'diesel', 'electric', 'hybrid', 'pluginHybrid', 'lpg', 'cng', 'other');
@@ -142,12 +142,19 @@ CREATE TABLE "VehicleDetails" (
     "vehicleType" "VehicleType" NOT NULL,
     "make" TEXT NOT NULL,
     "model" TEXT NOT NULL,
-    "year" TEXT NOT NULL,
-    "mileage" TEXT,
+    "year" INTEGER NOT NULL,
+    "mileage" INTEGER,
     "fuelType" "FuelType",
     "transmissionType" "TransmissionType",
     "color" TEXT,
     "condition" "Condition",
+    "features" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "interiorColor" TEXT,
+    "engine" TEXT,
+    "warranty" INTEGER,
+    "serviceHistory" TEXT,
+    "previousOwners" INTEGER,
+    "registrationStatus" TEXT,
     "listingId" TEXT NOT NULL,
 
     CONSTRAINT "VehicleDetails_pkey" PRIMARY KEY ("id")

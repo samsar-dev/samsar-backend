@@ -222,12 +222,19 @@ model VehicleDetails {
   vehicleType     VehicleType
   make            String
   model           String
-  year            String
-  mileage         String?
+  year            Int
+  mileage         Int?
   fuelType        FuelType?
   transmissionType TransmissionType?
   color           String?
   condition       Condition?
+  features        String[]        @default([])
+  interiorColor   String?
+  engine          String?
+  warranty        Int?
+  serviceHistory  String?
+  previousOwners  Int?
+  registrationStatus String?
   
   // Relation to Listing
   listingId       String   @unique

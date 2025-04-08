@@ -85,6 +85,14 @@ export interface VehicleDetails {
   color?: string;
   condition?: string;
   features?: string[];
+  interiorColor?: string;
+  engine?: string;
+  warranty?: string | number;
+  serviceHistory?: string;
+  previousOwners?: number;
+  registrationStatus?: string;
+  horsepower?: number;
+  torque?: number;
 }
 
 export interface RealEstateDetails {

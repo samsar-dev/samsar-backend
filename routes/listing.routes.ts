@@ -78,13 +78,28 @@ const formatListingResponse = (listing: any): ListingBase | null => {
       make: listing.vehicleDetails.make,
       model: listing.vehicleDetails.model,
       year: listing.vehicleDetails.year,
-      // Add other vehicle-specific fields
+      mileage: listing.vehicleDetails.mileage,
+      fuelType: listing.vehicleDetails.fuelType,
+      transmissionType: listing.vehicleDetails.transmissionType,
+      color: listing.vehicleDetails.color,
+      condition: listing.vehicleDetails.condition,
+      features: listing.vehicleDetails.features || [],
+      interiorColor: listing.vehicleDetails.interiorColor,
+      engine: listing.vehicleDetails.engine,
+      warranty: listing.vehicleDetails.warranty,
+      serviceHistory: listing.vehicleDetails.serviceHistory,
+      previousOwners: listing.vehicleDetails.previousOwners,
+      registrationStatus: listing.vehicleDetails.registrationStatus,
+      horsepower: listing.vehicleDetails.horsepower,
+      torque: listing.vehicleDetails.torque
     } : undefined,
     realEstate: listing.realEstateDetails ? {
       propertyType: listing.realEstateDetails.propertyType,
       size: listing.realEstateDetails.size,
       bedrooms: listing.realEstateDetails.bedrooms,
-      // Add other real estate-specific fields
+      bathrooms: listing.realEstateDetails.bathrooms,
+      condition: listing.realEstateDetails.condition,
+      features: listing.realEstateDetails.features || []
     } : undefined,
   };
 
@@ -351,6 +366,10 @@ router.post(
   handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const userId = validateUser(req);
+      
+      // Log request body for debugging
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+      
       const { title, description, price, mainCategory, subCategory, location = "", listingAction, details } = req.body;
 
       // Validate required fields
@@ -366,11 +385,26 @@ router.post(
 
       // Get processed image URLs
       const imageUrls = req.processedImages?.map(img => img.url) || [];
+      console.log('Processed image URLs:', imageUrls);
 
       // Parse details
-      const parsedDetails = JSON.parse(typeof details === 'string' ? details : JSON.stringify(details));
+      let parsedDetails;
+      try {
+        parsedDetails = JSON.parse(typeof details === 'string' ? details : JSON.stringify(details));
+        console.log('Parsed details:', JSON.stringify(parsedDetails, null, 2));
+      } catch (error) {
+        console.error('Error parsing details:', error);
+        res.status(400).json({
+          success: false,
+          error: "Invalid details format",
+          status: 400,
+          data: null,
+        });
+        return;
+      }
 
       // Create listing with images
+      console.log("Details sent to DB:", JSON.stringify(parsedDetails, null, 2));
       const listing = await prisma.listing.create({
         data: {
           title,
@@ -393,12 +427,19 @@ router.post(
               vehicleType: parsedDetails.vehicles.vehicleType,
               make: parsedDetails.vehicles.make,
               model: parsedDetails.vehicles.model,
-              year: parsedDetails.vehicles.year,
-              mileage: parsedDetails.vehicles.mileage,
+              year: Number(parsedDetails.vehicles.year) || new Date().getFullYear(),
+              mileage: parsedDetails.vehicles.mileage ? Number(parsedDetails.vehicles.mileage) : 0,
               fuelType: parsedDetails.vehicles.fuelType,
               transmissionType: parsedDetails.vehicles.transmissionType,
-              color: parsedDetails.vehicles.color,
+              color: typeof parsedDetails.vehicles.color === 'string' ? parsedDetails.vehicles.color : '#000000',
               condition: parsedDetails.vehicles.condition,
+              interiorColor: typeof parsedDetails.vehicles.interiorColor === 'string' ? parsedDetails.vehicles.interiorColor : '#000000',
+              engine: parsedDetails.vehicles.engine || '',
+              warranty: parsedDetails.vehicles.warranty ? Number(parsedDetails.vehicles.warranty) : 0,
+              serviceHistory: parsedDetails.vehicles.serviceHistory || 'none',
+              previousOwners: parsedDetails.vehicles.previousOwners ? Number(parsedDetails.vehicles.previousOwners) : 0,
+              registrationStatus: parsedDetails.vehicles.registrationStatus || 'unregistered',
+              features: Array.isArray(parsedDetails.vehicles.features) ? parsedDetails.vehicles.features : [],
             }
           } : undefined,
           realEstateDetails: parsedDetails.realEstate ? {
@@ -434,6 +475,23 @@ router.post(
       });
     } catch (error) {
       console.error("Error creating listing:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+        
+        // Log request body for debugging
+        console.error("Request body:", JSON.stringify(req.body, null, 2));
+        
+        // Log parsed details if available
+        try {
+          const details = req.body.details;
+          console.error("Details:", typeof details === 'string' ? details : JSON.stringify(details, null, 2));
+        } catch (e) {
+          console.error("Error logging details:", e);
+        }
+      }
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : "Failed to create listing",
@@ -538,6 +596,8 @@ router.get("/favorites", handleAuthRoute(async (req: AuthRequest, res: Response)
 
 router.get("/:id", async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log(`Fetching listing with ID: ${req.params.id}`);
+    
     const listing = await prisma.listing.findUnique({
       where: { id: req.params.id },
       include: {
@@ -550,12 +610,13 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
           },
         },
         favorites: true,
-        vehicleDetails: true,
-        realEstateDetails: true,
+        vehicleDetails: true,  // This includes all vehicle details
+        realEstateDetails: true, // This includes all real estate details
       },
     });
 
     if (!listing) {
+      console.log(`Listing not found with ID: ${req.params.id}`);
       res.status(404).json({
         success: false,
         error: "Listing not found",
@@ -564,8 +625,24 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
+    
+    // Detailed logging
+    console.log('Raw listing data:', JSON.stringify(listing, null, 2));
+    if (listing.vehicleDetails) {
+      console.log('Vehicle details found:', JSON.stringify(listing.vehicleDetails, null, 2));
+      // Log all fields to check if advanced fields exist
+      console.log('Vehicle detail fields:', Object.keys(listing.vehicleDetails));
+    } else {
+      console.log('No vehicle details found for this listing');
+    }
 
     const formattedListing = formatListingResponse(listing);
+    
+    if (formattedListing && formattedListing.details && formattedListing.details.vehicles) {
+      console.log('Formatted listing:', JSON.stringify(formattedListing, null, 2));
+      console.log('Formatted vehicle details:', JSON.stringify(formattedListing.details.vehicles, null, 2));
+    }
+    
     res.json({
       success: true,
       data: formattedListing,
