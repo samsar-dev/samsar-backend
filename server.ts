@@ -50,7 +50,8 @@ app.use("/api/auth/register", limiter);
 // CORS Configuration
 const corsOptions = {
   origin: function (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
-    const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : ['http://localhost:3000'];
+    const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : [];
+    allowedOrigins.push('http://localhost:3000', 'http://localhost:5173');
     
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) {
@@ -58,10 +59,10 @@ const corsOptions = {
       return;
     }
 
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
-      console.warn(`Origin ${origin} not allowed by CORS`);
+      console.warn(`Origin ${origin} not allowed by CORS. Allowed origins:`, allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
