@@ -373,10 +373,18 @@ router.post(
       const { title, description, price, mainCategory, subCategory, location = "", listingAction, details } = req.body;
 
       // Validate required fields
-      if (!title || !description || !price || !location || !mainCategory || !subCategory) {
+      const missingFields: string[] = [];
+      if (!title) missingFields.push('title');
+      if (!description) missingFields.push('description');
+      if (!price) missingFields.push('price');
+      if (!location) missingFields.push('location');
+      if (!mainCategory) missingFields.push('mainCategory');
+      if (!subCategory) missingFields.push('subCategory');
+
+      if (missingFields.length > 0) {
         res.status(400).json({
           success: false,
-          error: "Missing required fields",
+          error: `Missing required fields: ${missingFields.join(', ')}`,
           status: 400,
           data: null,
         });
@@ -392,11 +400,27 @@ router.post(
       try {
         parsedDetails = JSON.parse(typeof details === 'string' ? details : JSON.stringify(details));
         console.log('Parsed details:', JSON.stringify(parsedDetails, null, 2));
+
+        // Validate real estate details if present
+        if (mainCategory === 'REAL_ESTATE' && parsedDetails.realEstate) {
+          const realEstate = parsedDetails.realEstate;
+          
+          // Ensure propertyType is valid
+          if (!realEstate.propertyType || !['HOUSE', 'APARTMENT', 'CONDO', 'LAND', 'COMMERCIAL', 'OTHER'].includes(realEstate.propertyType)) {
+            throw new Error('Invalid property type');
+          }
+
+          // Convert numeric values to strings
+          realEstate.size = realEstate.size?.toString();
+          realEstate.yearBuilt = realEstate.yearBuilt?.toString();
+          realEstate.bedrooms = realEstate.bedrooms?.toString();
+          realEstate.bathrooms = realEstate.bathrooms?.toString();
+        }
       } catch (error) {
-        console.error('Error parsing details:', error);
+        console.error('Error parsing/validating details:', error);
         res.status(400).json({
           success: false,
-          error: "Invalid details format",
+          error: error instanceof Error ? error.message : "Invalid details format",
           status: 400,
           data: null,
         });
@@ -405,6 +429,7 @@ router.post(
 
       // Create listing with images
       console.log("Details sent to DB:", JSON.stringify(parsedDetails, null, 2));
+      
       const listing = await prisma.listing.create({
         data: {
           title,
@@ -444,12 +469,12 @@ router.post(
           } : undefined,
           realEstateDetails: parsedDetails.realEstate ? {
             create: {
-              propertyType: parsedDetails.realEstate.propertyType,
-              size: parsedDetails.realEstate.size,
-              yearBuilt: parsedDetails.realEstate.yearBuilt,
-              bedrooms: parsedDetails.realEstate.bedrooms,
-              bathrooms: parsedDetails.realEstate.bathrooms,
-              condition: parsedDetails.realEstate.condition,
+              propertyType: parsedDetails.realEstate.propertyType || 'HOUSE',
+              size: parsedDetails.realEstate.size?.toString() || null,
+              yearBuilt: parsedDetails.realEstate.yearBuilt?.toString() || null,
+              bedrooms: parsedDetails.realEstate.bedrooms?.toString() || null,
+              bathrooms: parsedDetails.realEstate.bathrooms?.toString() || null,
+              condition: parsedDetails.realEstate.condition?.toString() || null,
             }
           } : undefined,
         },
@@ -718,26 +743,26 @@ router.put(
           vehicleDetails: vehicleDetails ? {
             upsert: {
               create: {
-                make: vehicleDetails.make,
-                model: vehicleDetails.model,
-                year: vehicleDetails.year,
-                mileage: vehicleDetails.mileage,
-                vehicleType: (vehicleDetails.vehicleType as VehicleType) || VehicleType.OTHER,
-                fuelType: vehicleDetails.fuelType ? (vehicleDetails.fuelType as FuelType) : null,
-                transmissionType: vehicleDetails.transmissionType ? (vehicleDetails.transmissionType as TransmissionType) : null,
-                color: vehicleDetails.color,
-                condition: vehicleDetails.condition ? (vehicleDetails.condition as Condition) : null
+                make: vehicleDetails.make || '',
+                model: vehicleDetails.model || '',
+                year: parseInt(vehicleDetails.year) || new Date().getFullYear(),
+                mileage: parseInt(vehicleDetails.mileage) || 0,
+                vehicleType: vehicleDetails.vehicleType || VehicleType.OTHER,
+                fuelType: vehicleDetails.fuelType || null,
+                transmissionType: vehicleDetails.transmissionType || null,
+                color: vehicleDetails.color || '',
+                condition: vehicleDetails.condition || null
               },
               update: {
-                make: vehicleDetails.make,
-                model: vehicleDetails.model,
-                year: vehicleDetails.year,
-                mileage: vehicleDetails.mileage,
-                vehicleType: (vehicleDetails.vehicleType as VehicleType) || VehicleType.OTHER,
-                fuelType: vehicleDetails.fuelType ? (vehicleDetails.fuelType as FuelType) : null,
-                transmissionType: vehicleDetails.transmissionType ? (vehicleDetails.transmissionType as TransmissionType) : null,
-                color: vehicleDetails.color,
-                condition: vehicleDetails.condition ? (vehicleDetails.condition as Condition) : null
+                make: { set: vehicleDetails.make || '' },
+                model: { set: vehicleDetails.model || '' },
+                year: { set: parseInt(vehicleDetails.year) || new Date().getFullYear() },
+                mileage: { set: parseInt(vehicleDetails.mileage) || 0 },
+                vehicleType: vehicleDetails.vehicleType || VehicleType.OTHER,
+                fuelType: vehicleDetails.fuelType || null,
+                transmissionType: vehicleDetails.transmissionType || null,
+                color: { set: vehicleDetails.color || '' },
+                condition: vehicleDetails.condition || null
               }
             }
           } : undefined,
@@ -775,20 +800,25 @@ router.put(
         },
       });
 
+      if (!listing) {
+        throw new Error('Failed to create listing');
+      }
+
       res.json({
         success: true,
         data: formatListingResponse(listing),
         status: 200,
       });
     } catch (error) {
+      console.error('Database error:', error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Failed to create listing in database',
         status: 500,
-        data: null,
+        data: null
       });
     }
-  }),
+  })
 );
 
 router.delete("/:id", handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
