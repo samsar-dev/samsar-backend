@@ -57,7 +57,7 @@ import {
 
 const router = express.Router();
 
-const formatListingResponse = (listing: any): ListingBase | null => {
+const formatListingResponse = (listing: any): ListingWithRelations | null => {
   if (!listing) return null;
 
   const details: ListingDetails = {
@@ -108,6 +108,15 @@ const formatListingResponse = (listing: any): ListingBase | null => {
     details,
     listingAction: listing.listingAction,
     status: listing.status,
+    seller: listing.user ? {
+      id: listing.user.id,
+      username: listing.user.username,
+      profilePicture: listing.user.profilePicture
+    } : undefined,
+    savedBy: listing.favorites?.map((fav: any) => ({
+      id: fav.id,
+      userId: fav.userId
+    })) || []
   };
 };
 
@@ -772,7 +781,7 @@ router.put(
 
       res.json({
         success: true,
-        data: formatListingResponse(listing as ListingWithRelations),
+        data: formatListingResponse(listing as unknown as ListingWithRelations),
         status: 200,
       });
     } catch (error) {
