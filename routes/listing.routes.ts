@@ -8,20 +8,8 @@ import {
   processImagesMiddleware,
   processImage,
 } from "../middleware/upload.middleware.js";
-
-// Extend Request type for authenticated requests
-interface AuthRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    role: string;
-  };
-  processedImages?: Array<{
-    url: string;
-    order: number;
-  }>;
-}
+import { isListingOwner } from "../middleware/auth.js";
+import { AuthRequest } from "../types/auth.js";
 
 // Type for sorting options
 type SortOrder = 'asc' | 'desc';
@@ -688,6 +676,7 @@ router.put(
   "/:id",
   upload.array("images"),
   processImagesMiddleware,
+  isListingOwner,
   handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const {
@@ -701,18 +690,17 @@ router.put(
         vehicleDetails,
         realEstateDetails,
         listingAction,
-        sellDescription,
-        rentDescription
+        existingImages = []
       } = req.body;
 
       const newImages = req.processedImages || [];
-      const existingImages = req.body.existingImages || [];
+      const parsedExistingImages = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
 
       // First, delete removed images
       await prisma.image.deleteMany({
         where: {
           listingId: req.params.id,
-          url: { notIn: existingImages },
+          url: { notIn: parsedExistingImages },
         },
       });
 
@@ -727,19 +715,19 @@ router.put(
           subCategory,
           location,
           listingAction,
-          images: {
+          images: newImages.length > 0 ? {
             create: newImages.map((image: any, index: number) => ({
               url: image.url,
-              order: existingImages.length + index,
+              order: parsedExistingImages.length + index,
             })),
-          },
-          features: {
+          } : undefined,
+          features: features ? {
             deleteMany: {},
             create: features.map((feature: string) => ({
               name: feature,
               value: true
             })),
-          },
+          } : undefined,
           vehicleDetails: vehicleDetails ? {
             upsert: {
               create: {
@@ -758,37 +746,16 @@ router.put(
                 model: { set: vehicleDetails.model || '' },
                 year: { set: parseInt(vehicleDetails.year) || new Date().getFullYear() },
                 mileage: { set: parseInt(vehicleDetails.mileage) || 0 },
-                vehicleType: vehicleDetails.vehicleType || VehicleType.OTHER,
-                fuelType: vehicleDetails.fuelType || null,
-                transmissionType: vehicleDetails.transmissionType || null,
+                vehicleType: { set: vehicleDetails.vehicleType || VehicleType.OTHER },
+                fuelType: { set: vehicleDetails.fuelType || null },
+                transmissionType: { set: vehicleDetails.transmissionType || null },
                 color: { set: vehicleDetails.color || '' },
-                condition: vehicleDetails.condition || null
-              }
-            }
-          } : undefined,
-          realEstateDetails: realEstateDetails ? {
-            upsert: {
-              create: {
-                propertyType: realEstateDetails.propertyType || 'OTHER',
-                size: realEstateDetails.size,
-                yearBuilt: realEstateDetails.yearBuilt,
-                bedrooms: realEstateDetails.bedrooms,
-                bathrooms: realEstateDetails.bathrooms,
-                condition: realEstateDetails.condition ? (realEstateDetails.condition as Condition) : null
-              },
-              update: {
-                propertyType: realEstateDetails.propertyType || 'OTHER',
-                size: realEstateDetails.size,
-                yearBuilt: realEstateDetails.yearBuilt,
-                bedrooms: realEstateDetails.bedrooms,
-                bathrooms: realEstateDetails.bathrooms,
-                condition: realEstateDetails.condition ? (realEstateDetails.condition as Condition) : null
+                condition: { set: vehicleDetails.condition || null }
               }
             }
           } : undefined,
         },
         include: {
-          images: true,
           user: {
             select: {
               id: true,
@@ -796,24 +763,23 @@ router.put(
               profilePicture: true,
             },
           },
+          images: true,
           favorites: true,
+          vehicleDetails: true,
+          realEstateDetails: true,
         },
       });
 
-      if (!listing) {
-        throw new Error('Failed to create listing');
-      }
-
       res.json({
         success: true,
-        data: formatListingResponse(listing),
+        data: formatListingResponse(listing as ListingWithRelations),
         status: 200,
       });
     } catch (error) {
       console.error('Database error:', error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create listing in database',
+        error: error instanceof Error ? error.message : 'Failed to update listing',
         status: 500,
         data: null
       });
