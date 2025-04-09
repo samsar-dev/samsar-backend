@@ -17,7 +17,6 @@ const __dirname = getDirname(import.meta.url);
 dotenv.config();
 console.log("✅ JWT_SECRET from process.env:", process.env.JWT_SECRET);
 
-
 // Initialize app and HTTP server
 const app = express();
 const httpServer = createServer(app);
@@ -50,17 +49,23 @@ app.use("/api/auth/register", limiter);
 
 // CORS Configuration
 const corsOptions = {
-  origin: [
-    'https://tijara-frontend-ashk4pprf-darians-projects-e6352288.vercel.app',
-    'https://tijara-frontend-production.up.railway.app',
-    'http://localhost:3000',  // For local development
-    'http://localhost:5173',  // For Vite's default port
-    'http://localhost:3001',  // Alternative port
-    'http://127.0.0.1:3000',  // Alternative localhost
-    'http://127.0.0.1:5173',  // Alternative localhost
-    'http://127.0.0.1:3001',   // Alternative localhost
-    "https://tijara-frontend.vercel.app", // ✅ Add your frontend URL
-  ],
+  origin: function (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
+    const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : [];
+    allowedOrigins.push('http://localhost:3000', 'http://localhost:5173');
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      console.warn(`Origin ${origin} not allowed by CORS. Allowed origins:`, allowedOrigins);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
@@ -71,10 +76,11 @@ const corsOptions = {
     'Origin',
     'Access-Control-Allow-Headers',
     'Access-Control-Allow-Origin',
-    'Access-Control-Allow-Credentials'
+    'Access-Control-Allow-Credentials',
+    'Access-Control-Allow-Methods'
   ],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 600 // Cache preflight request results for 10 minutes
+  exposedHeaders: ['Content-Range', 'X-Content-Range', 'Authorization'],
+  maxAge: 86400 // Cache preflight request results for 24 hours
 };
 
 // Apply CORS middleware

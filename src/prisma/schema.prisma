@@ -181,8 +181,12 @@ model Feature {
 enum VehicleType {
   CAR
   TRUCK
+  VAN
+  BUS
   MOTORCYCLE
   RV
+  BOAT
+  CONSTRUCTION
   OTHER
 }
 

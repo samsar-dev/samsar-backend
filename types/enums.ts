@@ -6,8 +6,12 @@ export enum ListingCategory {
 export enum VehicleType {
   CAR = 'CAR',
   TRUCK = 'TRUCK',
+  VAN = 'VAN',
+  BUS = 'BUS',
   MOTORCYCLE = 'MOTORCYCLE',
   RV = 'RV',
+  BOAT = 'BOAT',
+  CONSTRUCTION = 'CONSTRUCTION',
   OTHER = 'OTHER',
 }
 
