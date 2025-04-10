@@ -153,28 +153,31 @@ model VehicleDetails {
   features           String[]          @default([])
   interiorColor      String?
   engine             String?
-  engineSize         String?
-  brakeType          String?
   warranty           Int?
   serviceHistory     String?
   previousOwners     Int?
   registrationStatus String?
   listingId          String            @unique
+  brakeType          String?
+  engineSize         String?
   listing            Listing           @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
 }
 
 model RealEstateDetails {
-  id           String  @id @default(cuid())
-  propertyType String
-  size         String?
-  yearBuilt    String?
-  bedrooms     String?
-  bathrooms    String?
-  condition    String?
-  listingId    String  @unique
-  listing      Listing @relation(fields: [listingId], references: [id])
+  id               String   @id @default(cuid())
+  propertyType     String
+  size             String?
+  yearBuilt        String?
+  bedrooms         String?
+  listingId        String   @unique
+  bathrooms        String?
+  condition        String?
+  features         String[] @default([])
+  constructionType String?
+  parking          String?
+  listing          Listing  @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
 }
