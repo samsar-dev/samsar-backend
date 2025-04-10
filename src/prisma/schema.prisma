@@ -1,84 +1,59 @@
-// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-// Main Models
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  name           String?
-  username       String   @unique
-  password       String
-  profilePicture String?
-  bio            String?
-  location       String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  role           UserRole @default(USER)
-  preferences    Json?
-
-  // Relations
-  listings         Listing[]      @relation("UserListings")
-  sentMessages     Message[]      @relation("SentMessages")
-  receivedMessages Message[]      @relation("ReceivedMessages")
-  conversations    Conversation[] @relation("UserConversations")
-  notifications    Notification[]
+  id               String         @id @default(cuid())
+  email            String         @unique
+  name             String?
+  username         String         @unique
+  password         String
+  profilePicture   String?
+  bio              String?
+  location         String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  role             UserRole       @default(USER)
+  preferences      Json?
   favorites        Favorite[]
-}
-
-enum UserRole {
-  USER
-  ADMIN
+  listings         Listing[]      @relation("UserListings")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  sentMessages     Message[]      @relation("SentMessages")
+  notifications    Notification[]
+  conversations    Conversation[] @relation("UserConversations")
 }
 
 model Listing {
-  id            String    @id @default(cuid())
-  title         String
-  description   String?
-  price         Float
-  category      String    // Deprecated
-  mainCategory  String    // Main category (e.g. VEHICLES, REAL_ESTATE)
-  subCategory   String    // Sub category (e.g. CAR, HOUSE)
-  location      String
-  condition     String?
-  listingAction String?
-  status        String    @default("ACTIVE")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
-  userId        String
-  user          User           @relation("UserListings", fields: [userId], references: [id])
-  images        Image[]
-  favorites     Favorite[]
-  attributes    Attribute[]
-  features      Feature[]
-  conversations Conversation[] @relation("ListingConversations")
-  vehicleDetails VehicleDetails?
+  id                String             @id @default(cuid())
+  title             String
+  description       String?
+  price             Float
+  category          String
+  mainCategory      String
+  subCategory       String
+  location          String
+  condition         String?
+  listingAction     String?
+  status            String             @default("ACTIVE")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userId            String
+  attributes        Attribute[]
+  conversations     Conversation[]     @relation("ListingConversations")
+  favorites         Favorite[]
+  features          Feature[]
+  images            Image[]
+  user              User               @relation("UserListings", fields: [userId], references: [id])
   realEstateDetails RealEstateDetails?
+  vehicleDetails    VehicleDetails?
 
   @@index([userId])
   @@index([mainCategory])
-}
-
-enum ListingStatus {
-  DRAFT
-  ACTIVE
-  SOLD
-  RENTED
-  EXPIRED
-  ARCHIVED
-}
-
-enum ListingAction {
-  SELL
-  RENT
 }
 
 model Image {
@@ -94,70 +69,56 @@ model Image {
 model Favorite {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   listingId String
-  listing   Listing  @relation(fields: [listingId], references: [id])
   createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, listingId])
   @@index([userId])
   @@index([listingId])
 }
 
-// Messaging System
 model Conversation {
   id            String    @id @default(cuid())
-  participants  User[]    @relation("UserConversations")
   listingId     String
-  listing       Listing   @relation("ListingConversations", fields: [listingId], references: [id])
-  messages      Message[]
   lastMessage   String?
   lastMessageAt DateTime  @default(now())
+  listing       Listing   @relation("ListingConversations", fields: [listingId], references: [id])
+  messages      Message[]
+  participants  User[]    @relation("UserConversations")
 }
 
 model Message {
   id             String       @id @default(cuid())
   content        String
   senderId       String
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
   recipientId    String
-  recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
   createdAt      DateTime     @default(now())
   read           Boolean      @default(false)
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
 
   @@index([senderId])
   @@index([recipientId])
   @@index([conversationId])
 }
 
-// Notification System
 model Notification {
   id        String           @id @default(cuid())
   type      NotificationType
   content   String
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
-
-  // Relations
   userId    String
-  user      User    @relation(fields: [userId], references: [id])
-  relatedId String? // Could be listingId, messageId, etc.
+  relatedId String?
+  user      User             @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
 
-enum NotificationType {
-  NEW_MESSAGE
-  LISTING_INTEREST
-  PRICE_UPDATE
-  LISTING_SOLD
-  SYSTEM_NOTICE
-  LISTING_CREATED
-}
-
-// Flexible Attributes System
 model Attribute {
   id        String  @id @default(cuid())
   name      String
@@ -178,16 +139,84 @@ model Feature {
   @@index([listingId])
 }
 
+model VehicleDetails {
+  id                 String            @id @default(cuid())
+  vehicleType        VehicleType
+  make               String
+  model              String
+  year               Int
+  mileage            Int?
+  fuelType           FuelType?
+  transmissionType   TransmissionType?
+  color              String?
+  condition          Condition?
+  features           String[]          @default([])
+  interiorColor      String?
+  engine             String?
+  engineSize         String?
+  brakeType          String?
+  warranty           Int?
+  serviceHistory     String?
+  previousOwners     Int?
+  registrationStatus String?
+  listingId          String            @unique
+  listing            Listing           @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+}
+
+model RealEstateDetails {
+  id           String  @id @default(cuid())
+  propertyType String
+  size         String?
+  yearBuilt    String?
+  bedrooms     String?
+  bathrooms    String?
+  condition    String?
+  listingId    String  @unique
+  listing      Listing @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  RENTED
+  EXPIRED
+  ARCHIVED
+}
+
+enum ListingAction {
+  SELL
+  RENT
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  LISTING_INTEREST
+  PRICE_UPDATE
+  LISTING_SOLD
+  SYSTEM_NOTICE
+  LISTING_CREATED
+}
+
 enum VehicleType {
   CAR
   TRUCK
-  VAN
-  BUS
   MOTORCYCLE
   RV
+  OTHER
+  VAN
+  BUS
   BOAT
   CONSTRUCTION
-  OTHER
 }
 
 enum FuelType {
@@ -218,48 +247,4 @@ enum Condition {
   fair
   poor
   salvage
-}
-
-// Vehicle Details
-model VehicleDetails {
-  id              String           @id @default(cuid())
-  vehicleType     VehicleType
-  make            String
-  model           String
-  year            Int
-  mileage         Int?
-  fuelType        FuelType?
-  transmissionType TransmissionType?
-  color           String?
-  condition       Condition?
-  features        String[]        @default([])
-  interiorColor   String?
-  engine          String?
-  warranty        Int?
-  serviceHistory  String?
-  previousOwners  Int?
-  registrationStatus String?
-  
-  // Relation to Listing
-  listingId       String   @unique
-  listing         Listing  @relation(fields: [listingId], references: [id])
-
-  @@index([listingId])
-}
-
-// Real Estate Details
-model RealEstateDetails {
-  id            String   @id @default(cuid())
-  propertyType  String
-  size          String?
-  yearBuilt     String?
-  bedrooms      String?
-  bathrooms     String?
-  condition     String?
-  
-  // Relation to Listing
-  listingId     String   @unique
-  listing       Listing  @relation(fields: [listingId], references: [id])
-
-  @@index([listingId])
 }
