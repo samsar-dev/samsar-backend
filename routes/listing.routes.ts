@@ -2,7 +2,12 @@ import express, { Request, Response } from "express";
 import { authenticate } from "../middleware/auth.js";
 import prisma from "../src/lib/prismaClient.js";
 import { Prisma } from "@prisma/client";
-import { VehicleType, FuelType, TransmissionType, Condition } from "../types/enums.js";
+import {
+  VehicleType,
+  FuelType,
+  TransmissionType,
+  Condition,
+} from "../types/enums.js";
 import {
   upload,
   processImagesMiddleware,
@@ -12,37 +17,40 @@ import { isListingOwner } from "../middleware/auth.js";
 import { AuthRequest } from "../types/auth.js";
 
 // Type for sorting options
-type SortOrder = 'asc' | 'desc';
+type SortOrder = "asc" | "desc";
 
 // Define valid sort fields
-const validSortFields = ['price', 'createdAt', 'favorites'] as const;
-type SortField = typeof validSortFields[number];
+const validSortFields = ["price", "createdAt", "favorites"] as const;
+type SortField = (typeof validSortFields)[number];
 
 // Helper function to build orderBy object
-const buildOrderBy = (sortBy?: string, sortOrder?: string): Prisma.ListingOrderByWithRelationInput => {
-  const order: SortOrder = (sortOrder?.toLowerCase() === 'desc') ? 'desc' : 'asc';
-  
-  if (sortBy === 'favorites') {
+const buildOrderBy = (
+  sortBy?: string,
+  sortOrder?: string
+): Prisma.ListingOrderByWithRelationInput => {
+  const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
+
+  if (sortBy === "favorites") {
     return {
       favorites: {
-        _count: order
-      }
+        _count: order,
+      },
     };
   }
-  
-  if (sortBy === 'price') {
+
+  if (sortBy === "price") {
     return { price: order };
   }
-  
+
   // Default sort by createdAt
-  return { createdAt: 'desc' };
+  return { createdAt: "desc" };
 };
 
 // Helper function to validate request user
 const validateUser = (req: AuthRequest): string => {
   const userId = req.user?.id;
   if (!userId) {
-    throw new Error('Unauthorized: User not found');
+    throw new Error("Unauthorized: User not found");
   }
   return userId;
 };
@@ -61,34 +69,38 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
   if (!listing) return null;
 
   const details: ListingDetails = {
-    vehicles: listing.vehicleDetails ? {
-      vehicleType: listing.vehicleDetails.vehicleType,
-      make: listing.vehicleDetails.make,
-      model: listing.vehicleDetails.model,
-      year: listing.vehicleDetails.year,
-      mileage: listing.vehicleDetails.mileage,
-      fuelType: listing.vehicleDetails.fuelType,
-      transmissionType: listing.vehicleDetails.transmissionType,
-      color: listing.vehicleDetails.color,
-      condition: listing.vehicleDetails.condition,
-      features: listing.vehicleDetails.features || [],
-      interiorColor: listing.vehicleDetails.interiorColor,
-      engine: listing.vehicleDetails.engine,
-      warranty: listing.vehicleDetails.warranty,
-      serviceHistory: listing.vehicleDetails.serviceHistory,
-      previousOwners: listing.vehicleDetails.previousOwners,
-      registrationStatus: listing.vehicleDetails.registrationStatus,
-      horsepower: listing.vehicleDetails.horsepower,
-      torque: listing.vehicleDetails.torque
-    } : undefined,
-    realEstate: listing.realEstateDetails ? {
-      propertyType: listing.realEstateDetails.propertyType,
-      size: listing.realEstateDetails.size,
-      bedrooms: listing.realEstateDetails.bedrooms,
-      bathrooms: listing.realEstateDetails.bathrooms,
-      condition: listing.realEstateDetails.condition,
-      features: listing.realEstateDetails.features || []
-    } : undefined,
+    vehicles: listing.vehicleDetails
+      ? {
+          vehicleType: listing.vehicleDetails.vehicleType,
+          make: listing.vehicleDetails.make,
+          model: listing.vehicleDetails.model,
+          year: listing.vehicleDetails.year,
+          mileage: listing.vehicleDetails.mileage,
+          fuelType: listing.vehicleDetails.fuelType,
+          transmissionType: listing.vehicleDetails.transmissionType,
+          color: listing.vehicleDetails.color,
+          condition: listing.vehicleDetails.condition,
+          features: listing.vehicleDetails.features || [],
+          interiorColor: listing.vehicleDetails.interiorColor,
+          engine: listing.vehicleDetails.engine,
+          warranty: listing.vehicleDetails.warranty,
+          serviceHistory: listing.vehicleDetails.serviceHistory,
+          previousOwners: listing.vehicleDetails.previousOwners,
+          registrationStatus: listing.vehicleDetails.registrationStatus,
+          horsepower: listing.vehicleDetails.horsepower,
+          torque: listing.vehicleDetails.torque,
+        }
+      : undefined,
+    realEstate: listing.realEstateDetails
+      ? {
+          propertyType: listing.realEstateDetails.propertyType,
+          size: listing.realEstateDetails.size,
+          bedrooms: listing.realEstateDetails.bedrooms,
+          bathrooms: listing.realEstateDetails.bathrooms,
+          condition: listing.realEstateDetails.condition,
+          features: listing.realEstateDetails.features || [],
+        }
+      : undefined,
   };
 
   return {
@@ -108,22 +120,32 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
     details,
     listingAction: listing.listingAction,
     status: listing.status,
-    seller: listing.user ? {
-      id: listing.user.id,
-      username: listing.user.username,
-      profilePicture: listing.user.profilePicture
-    } : undefined,
-    savedBy: listing.favorites?.map((fav: any) => ({
-      id: fav.id,
-      userId: fav.userId
-    })) || []
+    seller: listing.user
+      ? {
+          id: listing.user.id,
+          username: listing.user.username,
+          profilePicture: listing.user.profilePicture,
+        }
+      : undefined,
+    savedBy:
+      listing.favorites?.map((fav: any) => ({
+        id: fav.id,
+        userId: fav.userId,
+      })) || [],
   };
 };
 
 // Public Routes
 router.get("/", async (req: Request, res: Response): Promise<void> => {
   try {
-    const { mainCategory, subCategory, sortBy, sortOrder, page = 1, limit = 10 } = req.query;
+    const {
+      mainCategory,
+      subCategory,
+      sortBy,
+      sortOrder,
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     // Build where clause for filtering
     const where: Prisma.ListingWhereInput = {};
@@ -163,7 +185,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 
     // Format listings for response
     const formattedListings = listings.map((listing) =>
-      formatListingResponse(listing),
+      formatListingResponse(listing)
     );
 
     res.json({
@@ -173,7 +195,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
         total,
         page: Number(page),
         limit: Number(limit),
-        hasMore: total > (Number(page) * Number(limit)),
+        hasMore: total > Number(page) * Number(limit),
       },
       status: 200,
     });
@@ -181,7 +203,8 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
     console.error("Error fetching listings:", error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : "Failed to fetch listings",
+      error:
+        error instanceof Error ? error.message : "Failed to fetch listings",
       status: 500,
       data: null,
     });
@@ -262,8 +285,8 @@ router.get("/trending", async (_req: Request, res: Response): Promise<void> => {
       include: {
         images: true,
         _count: {
-          select: { favorites: true }
-        }
+          select: { favorites: true },
+        },
       },
       orderBy: {
         favorites: {
@@ -294,7 +317,9 @@ router.get("/trending", async (_req: Request, res: Response): Promise<void> => {
 router.use(authenticate);
 
 // Helper function to handle authenticated routes
-const handleAuthRoute = (handler: (req: AuthRequest, res: Response) => Promise<void>) => {
+const handleAuthRoute = (
+  handler: (req: AuthRequest, res: Response) => Promise<void>
+) => {
   return async (req: Request, res: Response): Promise<void> => {
     try {
       // Cast request to AuthRequest since it's been authenticated
@@ -304,7 +329,8 @@ const handleAuthRoute = (handler: (req: AuthRequest, res: Response) => Promise<v
       console.error("Auth route error:", error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
         status: 500,
         data: null,
       });
@@ -312,49 +338,52 @@ const handleAuthRoute = (handler: (req: AuthRequest, res: Response) => Promise<v
   };
 };
 
-router.get("/saved", handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const userId = validateUser(req);
-    const savedListings = await prisma.favorite.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        listing: {
-          include: {
-            images: true,
-            user: {
-              select: {
-                id: true,
-                username: true,
-                profilePicture: true,
+router.get(
+  "/saved",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
+      const savedListings = await prisma.favorite.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          listing: {
+            include: {
+              images: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
               },
+              favorites: true,
             },
-            favorites: true,
           },
         },
-      },
-    });
+      });
 
-    const formattedListings = savedListings.map((favorite) =>
-      formatListingResponse(favorite.listing),
-    );
+      const formattedListings = savedListings.map((favorite) =>
+        formatListingResponse(favorite.listing)
+      );
 
-    res.json({
-      success: true,
-      data: { items: formattedListings },
-      status: 200,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error:
-        error instanceof Error ? error.message : "An unknown error occurred",
-      status: 500,
-      data: null,
-    });
-  }
-}));
+      res.json({
+        success: true,
+        data: { items: formattedListings },
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  })
+);
 
 router.post(
   "/",
@@ -363,25 +392,34 @@ router.post(
   handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const userId = validateUser(req);
-      
+
       // Log request body for debugging
-      console.log('Request body:', JSON.stringify(req.body, null, 2));
-      
-      const { title, description, price, mainCategory, subCategory, location = "", listingAction, details } = req.body;
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+
+      const {
+        title,
+        description,
+        price,
+        mainCategory,
+        subCategory,
+        location = "",
+        listingAction,
+        details,
+      } = req.body;
 
       // Validate required fields
       const missingFields: string[] = [];
-      if (!title) missingFields.push('title');
-      if (!description) missingFields.push('description');
-      if (!price) missingFields.push('price');
-      if (!location) missingFields.push('location');
-      if (!mainCategory) missingFields.push('mainCategory');
-      if (!subCategory) missingFields.push('subCategory');
+      if (!title) missingFields.push("title");
+      if (!description) missingFields.push("description");
+      if (!price) missingFields.push("price");
+      if (!location) missingFields.push("location");
+      if (!mainCategory) missingFields.push("mainCategory");
+      if (!subCategory) missingFields.push("subCategory");
 
       if (missingFields.length > 0) {
         res.status(400).json({
           success: false,
-          error: `Missing required fields: ${missingFields.join(', ')}`,
+          error: `Missing required fields: ${missingFields.join(", ")}`,
           status: 400,
           data: null,
         });
@@ -389,22 +427,34 @@ router.post(
       }
 
       // Get processed image URLs
-      const imageUrls = req.processedImages?.map(img => img.url) || [];
-      console.log('Processed image URLs:', imageUrls);
+      const imageUrls = req.processedImages?.map((img) => img.url) || [];
+      console.log("Processed image URLs:", imageUrls);
 
       // Parse details
       let parsedDetails;
       try {
-        parsedDetails = JSON.parse(typeof details === 'string' ? details : JSON.stringify(details));
-        console.log('Parsed details:', JSON.stringify(parsedDetails, null, 2));
+        parsedDetails = JSON.parse(
+          typeof details === "string" ? details : JSON.stringify(details)
+        );
+        console.log("Parsed details:", JSON.stringify(parsedDetails, null, 2));
 
         // Validate real estate details if present
-        if (mainCategory === 'REAL_ESTATE' && parsedDetails.realEstate) {
+        if (mainCategory === "REAL_ESTATE" && parsedDetails.realEstate) {
           const realEstate = parsedDetails.realEstate;
-          
+
           // Ensure propertyType is valid
-          if (!realEstate.propertyType || !['HOUSE', 'APARTMENT', 'CONDO', 'LAND', 'COMMERCIAL', 'OTHER'].includes(realEstate.propertyType)) {
-            throw new Error('Invalid property type');
+          if (
+            !realEstate.propertyType ||
+            ![
+              "HOUSE",
+              "APARTMENT",
+              "CONDO",
+              "LAND",
+              "COMMERCIAL",
+              "OTHER",
+            ].includes(realEstate.propertyType)
+          ) {
+            throw new Error("Invalid property type");
           }
 
           // Convert numeric values to strings
@@ -414,10 +464,11 @@ router.post(
           realEstate.bathrooms = realEstate.bathrooms?.toString();
         }
       } catch (error) {
-        console.error('Error parsing/validating details:', error);
+        console.error("Error parsing/validating details:", error);
         res.status(400).json({
           success: false,
-          error: error instanceof Error ? error.message : "Invalid details format",
+          error:
+            error instanceof Error ? error.message : "Invalid details format",
           status: 400,
           data: null,
         });
@@ -425,8 +476,11 @@ router.post(
       }
 
       // Create listing with images
-      console.log("Details sent to DB:", JSON.stringify(parsedDetails, null, 2));
-      
+      console.log(
+        "Details sent to DB:",
+        JSON.stringify(parsedDetails, null, 2)
+      );
+
       const listing = await prisma.listing.create({
         data: {
           title,
@@ -444,36 +498,63 @@ router.post(
           },
           userId,
           listingAction,
-          vehicleDetails: parsedDetails.vehicles ? {
-            create: {
-              vehicleType: parsedDetails.vehicles.vehicleType,
-              make: parsedDetails.vehicles.make,
-              model: parsedDetails.vehicles.model,
-              year: Number(parsedDetails.vehicles.year) || new Date().getFullYear(),
-              mileage: parsedDetails.vehicles.mileage ? Number(parsedDetails.vehicles.mileage) : 0,
-              fuelType: parsedDetails.vehicles.fuelType,
-              transmissionType: parsedDetails.vehicles.transmissionType,
-              color: typeof parsedDetails.vehicles.color === 'string' ? parsedDetails.vehicles.color : '#000000',
-              condition: parsedDetails.vehicles.condition,
-              interiorColor: typeof parsedDetails.vehicles.interiorColor === 'string' ? parsedDetails.vehicles.interiorColor : '#000000',
-              engine: parsedDetails.vehicles.engine || '',
-              warranty: parsedDetails.vehicles.warranty ? Number(parsedDetails.vehicles.warranty) : 0,
-              serviceHistory: parsedDetails.vehicles.serviceHistory || 'none',
-              previousOwners: parsedDetails.vehicles.previousOwners ? Number(parsedDetails.vehicles.previousOwners) : 0,
-              registrationStatus: parsedDetails.vehicles.registrationStatus || 'unregistered',
-              features: Array.isArray(parsedDetails.vehicles.features) ? parsedDetails.vehicles.features : [],
-            }
-          } : undefined,
-          realEstateDetails: parsedDetails.realEstate ? {
-            create: {
-              propertyType: parsedDetails.realEstate.propertyType || 'HOUSE',
-              size: parsedDetails.realEstate.size?.toString() || null,
-              yearBuilt: parsedDetails.realEstate.yearBuilt?.toString() || null,
-              bedrooms: parsedDetails.realEstate.bedrooms?.toString() || null,
-              bathrooms: parsedDetails.realEstate.bathrooms?.toString() || null,
-              condition: parsedDetails.realEstate.condition?.toString() || null,
-            }
-          } : undefined,
+          vehicleDetails: parsedDetails.vehicles
+            ? {
+                create: {
+                  vehicleType: parsedDetails.vehicles.vehicleType,
+                  make: parsedDetails.vehicles.make,
+                  model: parsedDetails.vehicles.model,
+                  year:
+                    Number(parsedDetails.vehicles.year) ||
+                    new Date().getFullYear(),
+                  mileage: parsedDetails.vehicles.mileage
+                    ? Number(parsedDetails.vehicles.mileage)
+                    : 0,
+                  fuelType: parsedDetails.vehicles.fuelType,
+                  transmissionType: parsedDetails.vehicles.transmissionType,
+                  color:
+                    typeof parsedDetails.vehicles.color === "string"
+                      ? parsedDetails.vehicles.color
+                      : "#000000",
+                  condition: parsedDetails.vehicles.condition,
+                  interiorColor:
+                    typeof parsedDetails.vehicles.interiorColor === "string"
+                      ? parsedDetails.vehicles.interiorColor
+                      : "#000000",
+                  engine: parsedDetails.vehicles.engine || "",
+                  warranty: parsedDetails.vehicles.warranty
+                    ? Number(parsedDetails.vehicles.warranty)
+                    : 0,
+                  serviceHistory:
+                    parsedDetails.vehicles.serviceHistory || "none",
+                  previousOwners: parsedDetails.vehicles.previousOwners
+                    ? Number(parsedDetails.vehicles.previousOwners)
+                    : 0,
+                  registrationStatus:
+                    parsedDetails.vehicles.registrationStatus || "unregistered",
+                  features: Array.isArray(parsedDetails.vehicles.features)
+                    ? parsedDetails.vehicles.features
+                    : [],
+                },
+              }
+            : undefined,
+          realEstateDetails: parsedDetails.realEstate
+            ? {
+                create: {
+                  propertyType:
+                    parsedDetails.realEstate.propertyType || "HOUSE",
+                  size: parsedDetails.realEstate.size?.toString() || null,
+                  yearBuilt:
+                    parsedDetails.realEstate.yearBuilt?.toString() || null,
+                  bedrooms:
+                    parsedDetails.realEstate.bedrooms?.toString() || null,
+                  bathrooms:
+                    parsedDetails.realEstate.bathrooms?.toString() || null,
+                  condition:
+                    parsedDetails.realEstate.condition?.toString() || null,
+                },
+              }
+            : undefined,
         },
         include: {
           images: true,
@@ -502,21 +583,27 @@ router.post(
         console.error("Error name:", error.name);
         console.error("Error message:", error.message);
         console.error("Error stack:", error.stack);
-        
+
         // Log request body for debugging
         console.error("Request body:", JSON.stringify(req.body, null, 2));
-        
+
         // Log parsed details if available
         try {
           const details = req.body.details;
-          console.error("Details:", typeof details === 'string' ? details : JSON.stringify(details, null, 2));
+          console.error(
+            "Details:",
+            typeof details === "string"
+              ? details
+              : JSON.stringify(details, null, 2)
+          );
         } catch (e) {
           console.error("Error logging details:", e);
         }
       }
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to create listing",
+        error:
+          error instanceof Error ? error.message : "Failed to create listing",
         status: 500,
         data: null,
       });
@@ -524,102 +611,108 @@ router.post(
   })
 );
 
-router.get("/user", handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const { page = 1, limit = 12 } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+router.get(
+  "/user",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { page = 1, limit = 12 } = req.query;
+      const skip = (Number(page) - 1) * Number(limit);
 
-    const userId = validateUser(req);
+      const userId = validateUser(req);
 
-    const listings = await prisma.listing.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        user: true,
-        images: true,
-        favorites: true,
-      },
-      skip,
-      take: Number(limit),
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+      const listings = await prisma.listing.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          user: true,
+          images: true,
+          favorites: true,
+        },
+        skip,
+        take: Number(limit),
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-    const total = await prisma.listing.count({
-      where: {
-        userId,
-      },
-    });
+      const total = await prisma.listing.count({
+        where: {
+          userId,
+        },
+      });
 
-    res.json({
-      success: true,
-      data: {
-        listings: listings.map((listing) => formatListingResponse(listing)),
-        total,
-        page: Number(page),
-        limit: Number(limit),
-        hasMore: total > (Number(page) * Number(limit)),
-      },
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error fetching user listings:", error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: "SERVER_ERROR",
-        message: "An error occurred while fetching user listings",
-      },
-    });
-  }
-}));
+      res.json({
+        success: true,
+        data: {
+          listings: listings.map((listing) => formatListingResponse(listing)),
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          hasMore: total > Number(page) * Number(limit),
+        },
+        status: 200,
+      });
+    } catch (error) {
+      console.error("Error fetching user listings:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "SERVER_ERROR",
+          message: "An error occurred while fetching user listings",
+        },
+      });
+    }
+  })
+);
 
-router.get("/favorites", handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const userId = validateUser(req);
-    const favorites = await prisma.favorite.findMany({
-      where: {
-        userId,
-      },
-      include: {
-        listing: {
-          include: {
-            images: true,
-            user: true,
-            favorites: true,
+router.get(
+  "/favorites",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
+      const favorites = await prisma.favorite.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          listing: {
+            include: {
+              images: true,
+              user: true,
+              favorites: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    res.json({
-      success: true,
-      data: {
-        favorites: favorites.map((fav) => ({
-          ...formatListingResponse(fav.listing),
-          favorite: true,
-        })),
-      },
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error fetching favorite listings:", error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: "SERVER_ERROR",
-        message: "An error occurred while fetching favorite listings",
-      },
-    });
-  }
-}));
+      res.json({
+        success: true,
+        data: {
+          favorites: favorites.map((fav) => ({
+            ...formatListingResponse(fav.listing),
+            favorite: true,
+          })),
+        },
+        status: 200,
+      });
+    } catch (error) {
+      console.error("Error fetching favorite listings:", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: "SERVER_ERROR",
+          message: "An error occurred while fetching favorite listings",
+        },
+      });
+    }
+  })
+);
 
 router.get("/:id", async (req: Request, res: Response): Promise<void> => {
   try {
     console.log(`Fetching listing with ID: ${req.params.id}`);
-    
+
     const listing = await prisma.listing.findUnique({
       where: { id: req.params.id },
       include: {
@@ -632,7 +725,7 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
           },
         },
         favorites: true,
-        vehicleDetails: true,  // This includes all vehicle details
+        vehicleDetails: true, // This includes all vehicle details
         realEstateDetails: true, // This includes all real estate details
       },
     });
@@ -647,24 +740,40 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
-    
+
     // Detailed logging
-    console.log('Raw listing data:', JSON.stringify(listing, null, 2));
+    console.log("Raw listing data:", JSON.stringify(listing, null, 2));
     if (listing.vehicleDetails) {
-      console.log('Vehicle details found:', JSON.stringify(listing.vehicleDetails, null, 2));
+      console.log(
+        "Vehicle details found:",
+        JSON.stringify(listing.vehicleDetails, null, 2)
+      );
       // Log all fields to check if advanced fields exist
-      console.log('Vehicle detail fields:', Object.keys(listing.vehicleDetails));
+      console.log(
+        "Vehicle detail fields:",
+        Object.keys(listing.vehicleDetails)
+      );
     } else {
-      console.log('No vehicle details found for this listing');
+      console.log("No vehicle details found for this listing");
     }
 
     const formattedListing = formatListingResponse(listing);
-    
-    if (formattedListing && formattedListing.details && formattedListing.details.vehicles) {
-      console.log('Formatted listing:', JSON.stringify(formattedListing, null, 2));
-      console.log('Formatted vehicle details:', JSON.stringify(formattedListing.details.vehicles, null, 2));
+
+    if (
+      formattedListing &&
+      formattedListing.details &&
+      formattedListing.details.vehicles
+    ) {
+      console.log(
+        "Formatted listing:",
+        JSON.stringify(formattedListing, null, 2)
+      );
+      console.log(
+        "Formatted vehicle details:",
+        JSON.stringify(formattedListing.details.vehicles, null, 2)
+      );
     }
-    
+
     res.json({
       success: true,
       data: formattedListing,
@@ -696,14 +805,26 @@ router.put(
         subCategory,
         location = "",
         features = [],
-        vehicleDetails,
-        realEstateDetails,
+        details,
         listingAction,
-        existingImages = []
+        existingImages = [],
       } = req.body;
 
+      const objDetails = JSON.parse(details);
+      console.log("objDetails:>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n", objDetails);
+
+      const vehicleDetails = objDetails.vehicles
+        ? objDetails.vehicles
+        : undefined;
+      const realEstateDetails = objDetails.realEstate
+        ? objDetails.realEstate
+        : undefined;
+
       const newImages = req.processedImages || [];
-      const parsedExistingImages = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
+      const parsedExistingImages =
+        typeof existingImages === "string"
+          ? JSON.parse(existingImages)
+          : existingImages;
 
       // First, delete removed images
       await prisma.image.deleteMany({
@@ -724,45 +845,34 @@ router.put(
           subCategory,
           location,
           listingAction,
-          images: newImages.length > 0 ? {
-            create: newImages.map((image: any, index: number) => ({
-              url: image.url,
-              order: parsedExistingImages.length + index,
-            })),
-          } : undefined,
-          features: features ? {
-            deleteMany: {},
-            create: features.map((feature: string) => ({
-              name: feature,
-              value: true
-            })),
-          } : undefined,
-          vehicleDetails: vehicleDetails ? {
-            upsert: {
-              create: {
-                make: vehicleDetails.make || '',
-                model: vehicleDetails.model || '',
-                year: parseInt(vehicleDetails.year) || new Date().getFullYear(),
-                mileage: parseInt(vehicleDetails.mileage) || 0,
-                vehicleType: vehicleDetails.vehicleType || VehicleType.OTHER,
-                fuelType: vehicleDetails.fuelType || null,
-                transmissionType: vehicleDetails.transmissionType || null,
-                color: vehicleDetails.color || '',
-                condition: vehicleDetails.condition || null
-              },
-              update: {
-                make: { set: vehicleDetails.make || '' },
-                model: { set: vehicleDetails.model || '' },
-                year: { set: parseInt(vehicleDetails.year) || new Date().getFullYear() },
-                mileage: { set: parseInt(vehicleDetails.mileage) || 0 },
-                vehicleType: { set: vehicleDetails.vehicleType || VehicleType.OTHER },
-                fuelType: { set: vehicleDetails.fuelType || null },
-                transmissionType: { set: vehicleDetails.transmissionType || null },
-                color: { set: vehicleDetails.color || '' },
-                condition: { set: vehicleDetails.condition || null }
+          images:
+            newImages.length > 0
+              ? {
+                  create: newImages.map((image: any, index: number) => ({
+                    url: image.url,
+                    order: parsedExistingImages.length + index,
+                  })),
+                }
+              : undefined,
+          features: features
+            ? {
+                deleteMany: {},
+                create: features.map((feature: string) => ({
+                  name: feature,
+                  value: true,
+                })),
               }
-            }
-          } : undefined,
+            : undefined,
+          vehicleDetails: vehicleDetails
+            ? {
+                update: vehicleDetails,
+              }
+            : undefined,
+          realEstateDetails: realEstateDetails
+            ? {
+                update: realEstateDetails,
+              }
+            : undefined,
         },
         include: {
           user: {
@@ -785,99 +895,104 @@ router.put(
         status: 200,
       });
     } catch (error) {
-      console.error('Database error:', error);
+      console.error("Database error:", error);
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update listing',
+        error:
+          error instanceof Error ? error.message : "Failed to update listing",
         status: 500,
-        data: null
+        data: null,
       });
     }
   })
 );
 
-router.delete("/:id", handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const userId = validateUser(req);
-    
-    // Find listing
-    const listing = await prisma.listing.findUnique({
-      where: { id: req.params.id },
-      include: {
-        images: true,
-        favorites: true,
-        vehicleDetails: true,
-        realEstateDetails: true,
-      },
-    });
+router.delete(
+  "/:id",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
 
-    // Check if listing exists and belongs to user
-    if (!listing) {
-      res.status(404).json({
-        success: false,
-        error: "Listing not found",
-        status: 404,
-        data: null,
+      // Find listing
+      const listing = await prisma.listing.findUnique({
+        where: { id: req.params.id },
+        include: {
+          images: true,
+          favorites: true,
+          vehicleDetails: true,
+          realEstateDetails: true,
+        },
       });
-      return;
-    }
 
-    if (listing.userId !== userId) {
-      res.status(403).json({
-        success: false,
-        error: "Not authorized to delete this listing",
-        status: 403,
-        data: null,
-      });
-      return;
-    }
-
-    // Delete in a transaction to ensure atomicity
-    await prisma.$transaction(async (tx) => {
-      // Delete vehicle details if they exist
-      if (listing.vehicleDetails) {
-        await tx.vehicleDetails.delete({
-          where: { listingId: listing.id },
+      // Check if listing exists and belongs to user
+      if (!listing) {
+        res.status(404).json({
+          success: false,
+          error: "Listing not found",
+          status: 404,
+          data: null,
         });
+        return;
       }
 
-      // Delete real estate details if they exist
-      if (listing.realEstateDetails) {
-        await tx.realEstateDetails.delete({
-          where: { listingId: listing.id },
+      if (listing.userId !== userId) {
+        res.status(403).json({
+          success: false,
+          error: "Not authorized to delete this listing",
+          status: 403,
+          data: null,
         });
+        return;
       }
 
-      // Delete favorites
-      await tx.favorite.deleteMany({
-        where: { listingId: listing.id },
+      // Delete in a transaction to ensure atomicity
+      await prisma.$transaction(async (tx) => {
+        // Delete vehicle details if they exist
+        if (listing.vehicleDetails) {
+          await tx.vehicleDetails.delete({
+            where: { listingId: listing.id },
+          });
+        }
+
+        // Delete real estate details if they exist
+        if (listing.realEstateDetails) {
+          await tx.realEstateDetails.delete({
+            where: { listingId: listing.id },
+          });
+        }
+
+        // Delete favorites
+        await tx.favorite.deleteMany({
+          where: { listingId: listing.id },
+        });
+
+        // Delete images
+        await tx.image.deleteMany({
+          where: { listingId: listing.id },
+        });
+
+        // Delete the listing itself
+        await tx.listing.delete({
+          where: { id: listing.id },
+        });
       });
 
-      // Delete images
-      await tx.image.deleteMany({
-        where: { listingId: listing.id },
+      res.json({
+        success: true,
+        data: null,
+        status: 200,
       });
-
-      // Delete the listing itself
-      await tx.listing.delete({
-        where: { id: listing.id },
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      res.status(500).json({
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to delete listing",
+        status: 500,
+        data: null,
       });
-    });
-
-    res.json({
-      success: true,
-      data: null,
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error deleting listing:", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to delete listing",
-      status: 500,
-      data: null,
-    });
-  }
-}));
+    }
+  })
+);
 
 export default router;
