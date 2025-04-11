@@ -25,6 +25,7 @@ model User {
   receivedMessages Message[]      @relation("ReceivedMessages")
   sentMessages     Message[]      @relation("SentMessages")
   notifications    Notification[]
+  relatedNotifications Notification[] @relation("RelatedNotifications")
   conversations    Conversation[] @relation("UserConversations")
 }
 
@@ -48,6 +49,8 @@ model Listing {
   favorites         Favorite[]
   features          Feature[]
   images            Image[]
+  messages          Message[]
+  notifications     Notification[]     @relation("ListingNotifications")
   user              User               @relation("UserListings", fields: [userId], references: [id])
   realEstateDetails RealEstateDetails?
   vehicleDetails    VehicleDetails?
@@ -81,12 +84,14 @@ model Favorite {
 
 model Conversation {
   id            String    @id @default(cuid())
-  listingId     String
+  listingId     String?
   lastMessage   String?
   lastMessageAt DateTime  @default(now())
-  listing       Listing   @relation("ListingConversations", fields: [listingId], references: [id])
+  listing       Listing?  @relation("ListingConversations", fields: [listingId], references: [id])
   messages      Message[]
   participants  User[]    @relation("UserConversations")
+
+  @@index([listingId])
 }
 
 model Message {
@@ -95,28 +100,37 @@ model Message {
   senderId       String
   recipientId    String
   conversationId String
+  listingId      String?
   createdAt      DateTime     @default(now())
   read           Boolean      @default(false)
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
   sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  listing        Listing?     @relation(fields: [listingId], references: [id])
 
   @@index([senderId])
   @@index([recipientId])
   @@index([conversationId])
+  @@index([listingId])
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  type      NotificationType
-  content   String
-  read      Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  userId    String
-  relatedId String?
-  user      User             @relation(fields: [userId], references: [id])
+  id              String           @id @default(cuid())
+  type            NotificationType
+  content         String
+  read            Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  userId          String
+  relatedId       String?
+  relatedListingId String?
+  relatedUserId   String?
+  user            User             @relation(fields: [userId], references: [id])
+  relatedListing  Listing?        @relation("ListingNotifications", fields: [relatedListingId], references: [id])
+  relatedUser     User?           @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
 
   @@index([userId])
+  @@index([relatedListingId])
+  @@index([relatedUserId])
 }
 
 model Attribute {
