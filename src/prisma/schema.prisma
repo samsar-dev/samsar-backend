@@ -8,25 +8,25 @@ datasource db {
 }
 
 model User {
-  id               String         @id @default(cuid())
-  email            String         @unique
-  name             String?
-  username         String         @unique
-  password         String
-  profilePicture   String?
-  bio              String?
-  location         String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  role             UserRole       @default(USER)
-  preferences      Json?
-  favorites        Favorite[]
-  listings         Listing[]      @relation("UserListings")
-  receivedMessages Message[]      @relation("ReceivedMessages")
-  sentMessages     Message[]      @relation("SentMessages")
-  notifications    Notification[]
+  id                   String         @id @default(cuid())
+  email                String         @unique
+  name                 String?
+  username             String         @unique
+  password             String
+  profilePicture       String?
+  bio                  String?
+  location             String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  role                 UserRole       @default(USER)
+  preferences          Json?
+  favorites            Favorite[]
+  listings             Listing[]      @relation("UserListings")
+  receivedMessages     Message[]      @relation("ReceivedMessages")
+  sentMessages         Message[]      @relation("SentMessages")
   relatedNotifications Notification[] @relation("RelatedNotifications")
-  conversations    Conversation[] @relation("UserConversations")
+  notifications        Notification[]
+  conversations        Conversation[] @relation("UserConversations")
 }
 
 model Listing {
@@ -49,9 +49,9 @@ model Listing {
   favorites         Favorite[]
   features          Feature[]
   images            Image[]
-  messages          Message[]
-  notifications     Notification[]     @relation("ListingNotifications")
   user              User               @relation("UserListings", fields: [userId], references: [id])
+  Message           Message[]
+  notifications     Notification[]     @relation("ListingNotifications")
   realEstateDetails RealEstateDetails?
   vehicleDetails    VehicleDetails?
 
@@ -100,13 +100,13 @@ model Message {
   senderId       String
   recipientId    String
   conversationId String
-  listingId      String?
   createdAt      DateTime     @default(now())
   read           Boolean      @default(false)
+  listingId      String?
   conversation   Conversation @relation(fields: [conversationId], references: [id])
+  listing        Listing?     @relation(fields: [listingId], references: [id])
   recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
   sender         User         @relation("SentMessages", fields: [senderId], references: [id])
-  listing        Listing?     @relation(fields: [listingId], references: [id])
 
   @@index([senderId])
   @@index([recipientId])
@@ -115,18 +115,18 @@ model Message {
 }
 
 model Notification {
-  id              String           @id @default(cuid())
-  type            NotificationType
-  content         String
-  read            Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  userId          String
-  relatedId       String?
+  id               String           @id @default(cuid())
+  type             NotificationType
+  content          String
+  read             Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  userId           String
+  relatedId        String?
   relatedListingId String?
-  relatedUserId   String?
-  user            User             @relation(fields: [userId], references: [id])
-  relatedListing  Listing?        @relation("ListingNotifications", fields: [relatedListingId], references: [id])
-  relatedUser     User?           @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
+  relatedUserId    String?
+  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id])
+  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([relatedListingId])
@@ -185,11 +185,11 @@ model RealEstateDetails {
   size             String?
   yearBuilt        String?
   bedrooms         String?
-  listingId        String   @unique
   bathrooms        String?
   condition        String?
-  features         String[] @default([])
+  listingId        String   @unique
   constructionType String?
+  features         String[] @default([])
   parking          String?
   listing          Listing  @relation(fields: [listingId], references: [id])
 
