@@ -69,6 +69,48 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+/**
+ * ✅ Get the user's profile
+ */
+export const getUserPublicDetails = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.params.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        listings: {
+          include: {
+            images: true,
+            favorites: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+        status: 404,
+        data: null,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+      status: 200,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({
+      success: false,
+      error: "Error fetching user profile",
+      status: 500,
+      data: null,
+    });
+  }
+};
 
 /**
  * ✅ Update user profile
