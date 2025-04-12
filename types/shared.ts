@@ -48,6 +48,7 @@ export enum VehicleType {
   MOTORCYCLE = 'MOTORCYCLE',
   RV = 'RV',
   OTHER = 'OTHER',
+  TRACTOR = 'TRACTOR',
 }
 
 export enum PropertyType {
@@ -93,6 +94,21 @@ export interface VehicleDetails {
   registrationStatus?: string;
   horsepower?: number;
   torque?: number;
+  // Tractor-specific fields
+  attachments?: string[];
+  fuelTankCapacity?: number;
+  tires?: string;
+  implementType?: string;
+  width?: number;
+  weight?: number;
+  maxLoadCapacity?: number;
+  wheelbase?: number;
+  turningRadius?: number;
+  powerTakeOff?: boolean;
+  frontLoader?: boolean;
+  rearLoader?: boolean;
+  hydraulicSystem?: string;
+  fuelEfficiency?: string;
 }
 
 export interface RealEstateDetails {

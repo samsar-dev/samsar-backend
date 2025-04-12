@@ -8,25 +8,25 @@ datasource db {
 }
 
 model User {
-  id                                            String         @id @default(cuid())
-  email                                         String         @unique
-  name                                          String?
-  username                                      String         @unique
-  password                                      String
-  profilePicture                                String?
-  bio                                           String?
-  location                                      String?
-  createdAt                                     DateTime       @default(now())
-  updatedAt                                     DateTime       @updatedAt
-  role                                          UserRole       @default(USER)
-  preferences                                   Json?
-  favorites                                     Favorite[]
-  listings                                      Listing[]      @relation("UserListings")
-  receivedMessages                              Message[]      @relation("ReceivedMessages")
-  sentMessages                                  Message[]      @relation("SentMessages")
-  Notification_Notification_relatedUserIdToUser Notification[] @relation("Notification_relatedUserIdToUser")
-  notifications                                 Notification[]
-  conversations                                 Conversation[] @relation("UserConversations")
+  id                   String         @id @default(cuid())
+  email                String         @unique
+  name                 String?
+  username             String         @unique
+  password             String
+  profilePicture       String?
+  bio                  String?
+  location             String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  role                 UserRole       @default(USER)
+  preferences          Json?
+  favorites            Favorite[]
+  listings             Listing[]      @relation("UserListings")
+  receivedMessages     Message[]      @relation("ReceivedMessages")
+  sentMessages         Message[]      @relation("SentMessages")
+  relatedNotifications Notification[] @relation("RelatedNotifications")
+  notifications        Notification[]
+  conversations        Conversation[] @relation("UserConversations")
 }
 
 model Listing {
@@ -51,7 +51,7 @@ model Listing {
   images            Image[]
   user              User               @relation("UserListings", fields: [userId], references: [id])
   Message           Message[]
-  Notification      Notification[]
+  notifications     Notification[]     @relation("ListingNotifications")
   realEstateDetails RealEstateDetails?
   vehicleDetails    VehicleDetails?
 
@@ -104,7 +104,7 @@ model Message {
   read           Boolean      @default(false)
   listingId      String?
   conversation   Conversation @relation(fields: [conversationId], references: [id])
-  Listing        Listing?     @relation(fields: [listingId], references: [id])
+  listing        Listing?     @relation(fields: [listingId], references: [id])
   recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
   sender         User         @relation("SentMessages", fields: [senderId], references: [id])
 
@@ -115,18 +115,18 @@ model Message {
 }
 
 model Notification {
-  id                                    String           @id @default(cuid())
-  type                                  NotificationType
-  content                               String
-  read                                  Boolean          @default(false)
-  createdAt                             DateTime         @default(now())
-  userId                                String
-  relatedId                             String?
-  relatedListingId                      String?
-  relatedUserId                         String?
-  Listing                               Listing?         @relation(fields: [relatedListingId], references: [id])
-  User_Notification_relatedUserIdToUser User?            @relation("Notification_relatedUserIdToUser", fields: [relatedUserId], references: [id])
-  user                                  User             @relation(fields: [userId], references: [id])
+  id               String           @id @default(cuid())
+  type             NotificationType
+  content          String
+  read             Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  userId           String
+  relatedId        String?
+  relatedListingId String?
+  relatedUserId    String?
+  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id])
+  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([relatedListingId])
