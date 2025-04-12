@@ -6,6 +6,7 @@ import {
   getUserListings,
   getUserSettings,
   updateUserSettings,
+  getUserPublicDetails,
 } from "../controllers/user.controller.js";
 import {
   upload,
@@ -28,7 +29,11 @@ const router = express.Router();
 
 // Type-safe request handler wrapper
 const asyncHandler = <T>(
-  fn: (req: AuthRequest, res: express.Response, next: express.NextFunction) => Promise<T>
+  fn: (
+    req: AuthRequest,
+    res: express.Response,
+    next: express.NextFunction
+  ) => Promise<T>
 ) => {
   return async (
     req: express.Request,
@@ -45,7 +50,11 @@ const asyncHandler = <T>(
 
 // Middleware to process profile picture
 const processProfilePicture = asyncHandler(
-  async (req: AuthRequest, res: express.Response, next: express.NextFunction): Promise<void> => {
+  async (
+    req: AuthRequest,
+    res: express.Response,
+    next: express.NextFunction
+  ): Promise<void> => {
     if (req.file) {
       // Upload processed image to R2
       req.body.profilePicture = await uploadToR2(req.file, "avatar");
@@ -53,6 +62,9 @@ const processProfilePicture = asyncHandler(
     next();
   }
 );
+
+// ✅ Get user public details
+router.get("/public-profile/:id", asyncHandler(getUserPublicDetails));
 
 // ✅ Ensure all routes require authentication
 router.use(authenticate);
@@ -65,7 +77,7 @@ router.put(
   "/profile",
   upload.single("profilePicture"),
   processProfilePicture,
-  asyncHandler(updateProfile),
+  asyncHandler(updateProfile)
 );
 
 // ✅ Get user settings
