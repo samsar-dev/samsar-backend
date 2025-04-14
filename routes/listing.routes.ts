@@ -338,8 +338,9 @@ const handleAuthRoute = (
   };
 };
 
+// ✅ Get saved listings
 router.get(
-  "/saved",
+  "/save",
   handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const userId = validateUser(req);
@@ -378,6 +379,86 @@ router.get(
         success: false,
         error:
           error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  })
+);
+
+// ✅ Add save listing
+router.post(
+  "/save",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      console.log(req.body);
+      const userId = req.body.userId;
+      const listingId = req.body.listingId;
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+      });
+      if (!listing) {
+        res.status(404).json({
+          success: false,
+          error: "Listing not found",
+          status: 404,
+          data: null,
+        });
+        return;
+      }
+      const oldFavorite = await prisma.favorite.findFirst({
+        where: {
+          userId,
+          listingId: listing.id,
+        },
+      });
+
+      if (oldFavorite !== null) {
+        res.status(400).json({
+          success: false,
+          error: "Listing already saved",
+          status: 400,
+          data: null,
+        });
+      }
+      await prisma.favorite.create({
+        data: {
+          userId,
+          listingId: listing.id,
+        },
+      });
+      res.json({
+        success: true,
+        status: 200,
+      });
+    } catch (error) {
+      console.error("Error creating listing:", error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+
+        // Log request body for debugging
+        console.error("Request body:", JSON.stringify(req.body, null, 2));
+
+        // Log parsed details if available
+        try {
+          const details = req.body.details;
+          console.error(
+            "Details:",
+            typeof details === "string"
+              ? details
+              : JSON.stringify(details, null, 2)
+          );
+        } catch (e) {
+          console.error("Error logging details:", e);
+        }
+      }
+      res.status(500).json({
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to create listing",
         status: 500,
         data: null,
       });
@@ -811,7 +892,6 @@ router.put(
       } = req.body;
 
       const objDetails = JSON.parse(details);
-      console.log("objDetails:>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n", objDetails);
 
       const vehicleDetails = objDetails.vehicles
         ? objDetails.vehicles
