@@ -385,6 +385,142 @@ router.get(
   })
 );
 
+// Save a listing to favorites
+router.post(
+  "/saved/:listingId",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
+      const { listingId } = req.params;
+
+      // Check if listing exists
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+      });
+
+      if (!listing) {
+        res.status(404).json({
+          success: false,
+          error: "Listing not found",
+          status: 404,
+          data: null,
+        });
+        return;
+      }
+
+      // Check if already favorited
+      const existingFavorite = await prisma.favorite.findUnique({
+        where: {
+          userId_listingId: {
+            userId,
+            listingId,
+          },
+        },
+      });
+
+      if (existingFavorite) {
+        res.status(400).json({
+          success: false,
+          error: "Listing already saved",
+          status: 400,
+          data: null,
+        });
+        return;
+      }
+
+      // Create favorite
+      const favorite = await prisma.favorite.create({
+        data: {
+          userId,
+          listingId,
+        },
+        include: {
+          listing: {
+            include: {
+              images: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
+              },
+              favorites: true,
+            },
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: formatListingResponse(favorite.listing),
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  })
+);
+
+// Delete a saved listing
+router.delete(
+  "/saved/:listingId",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
+      const { listingId } = req.params;
+
+      // Check if favorite exists
+      const favorite = await prisma.favorite.findUnique({
+        where: {
+          userId_listingId: {
+            userId,
+            listingId,
+          },
+        },
+      });
+
+      if (!favorite) {
+        res.status(404).json({
+          success: false,
+          error: "Saved listing not found",
+          status: 404,
+          data: null,
+        });
+        return;
+      }
+
+      // Delete favorite
+      await prisma.favorite.delete({
+        where: {
+          userId_listingId: {
+            userId,
+            listingId,
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: null,
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  })
+);
+
 router.post(
   "/",
   upload.array("images", 10),
