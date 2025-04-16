@@ -34,7 +34,9 @@ export const uploadToR2 = async (
   category: string,
 ) => {
   if (!isR2Configured || !s3) {
-    console.warn("⚠️ Cloudflare R2 is not configured. File upload will be skipped.");
+    console.warn(
+      "⚠️ Cloudflare R2 is not configured. File upload will be skipped.",
+    );
     return {
       url: "placeholder-url",
       key: "placeholder-key",
@@ -51,7 +53,7 @@ export const uploadToR2 = async (
         Key: fileKey,
         Body: file.buffer,
         ContentType: file.mimetype,
-      })
+      }),
     );
 
     return {
@@ -67,7 +69,9 @@ export const uploadToR2 = async (
 // Delete File from Cloudflare R2
 export const deleteFromR2 = async (key: string) => {
   if (!isR2Configured || !s3) {
-    console.warn("⚠️ Cloudflare R2 is not configured. File deletion will be skipped.");
+    console.warn(
+      "⚠️ Cloudflare R2 is not configured. File deletion will be skipped.",
+    );
     return;
   }
 
@@ -76,7 +80,7 @@ export const deleteFromR2 = async (key: string) => {
       new DeleteObjectCommand({
         Bucket: process.env.CLOUDFLARE_R2_BUCKET,
         Key: key,
-      })
+      }),
     );
   } catch (error) {
     console.error("❌ Failed to delete from R2:", error);

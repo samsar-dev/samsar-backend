@@ -133,7 +133,16 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 
     const updates: UpdateData = {};
 
-    const { email, username, password, bio, dateOfBirth, street, city, postalCode } = req.body;
+    const {
+      email,
+      username,
+      password,
+      bio,
+      dateOfBirth,
+      street,
+      city,
+      postalCode,
+    } = req.body;
 
     if (email && !validator.isEmail(email)) {
       return res.status(400).json({
@@ -259,13 +268,11 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 
     await prisma.user.delete({ where: { id: user.id } });
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        data: { message: "Account and listings deleted successfully" },
-        status: 200,
-      });
+    res.status(200).json({
+      success: true,
+      data: { message: "Account and listings deleted successfully" },
+      status: 200,
+    });
   } catch (error) {
     console.error("Delete error:", error);
     res
@@ -340,7 +347,7 @@ export const updateUserSettings = async (req: AuthRequest, res: Response) => {
     const { preferences } = req.body;
 
     // Validate preferences structure
-    if (!preferences || typeof preferences !== 'object') {
+    if (!preferences || typeof preferences !== "object") {
       return res.status(400).json({
         success: false,
         error: "Invalid preferences format",
@@ -361,12 +368,12 @@ export const updateUserSettings = async (req: AuthRequest, res: Response) => {
         emailNotifications: {
           newMessage: true,
           listingUpdates: true,
-          promotions: true
-        }
+          promotions: true,
+        },
       },
       currency: "USD",
       timezone: "UTC",
-      dateFormat: "MM/DD/YYYY"
+      dateFormat: "MM/DD/YYYY",
     };
 
     // Merge with defaults to ensure all required fields are present
@@ -378,16 +385,16 @@ export const updateUserSettings = async (req: AuthRequest, res: Response) => {
         ...(preferences.notifications || {}),
         emailNotifications: {
           ...defaultPreferences.notifications.emailNotifications,
-          ...(preferences.notifications?.emailNotifications || {})
-        }
-      }
+          ...(preferences.notifications?.emailNotifications || {}),
+        },
+      },
     } as UserPreferences;
 
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
       data: {
-        preferences: updatedPreferences
-      }
+        preferences: updatedPreferences,
+      },
     });
 
     res.status(200).json({

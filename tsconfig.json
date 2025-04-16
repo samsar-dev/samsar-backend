@@ -21,17 +21,8 @@
     "types": ["node", "express", "multer"],
     "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": [
-    "src/**/*",
-    "server.ts",
-    "build.js"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
+  "include": ["src/**/*", "server.ts", "build.js"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
   "ts-node": {
     "esm": true,
     "experimentalSpecifierResolution": "node"

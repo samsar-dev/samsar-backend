@@ -31,33 +31,34 @@ export interface ListingCreateInput {
   location: string;
   images: string[];
   details: ListingDetails;
-  listingAction?: 'sell' | 'rent';
+  listingAction?: "sell" | "rent";
 }
 
-export interface ListingUpdateInput extends Partial<Omit<ListingCreateInput, 'id'>> {}
+export interface ListingUpdateInput
+  extends Partial<Omit<ListingCreateInput, "id">> {}
 
 // Enums
 export enum ListingCategory {
-  VEHICLES = 'VEHICLES',
-  REAL_ESTATE = 'REAL_ESTATE',
+  VEHICLES = "VEHICLES",
+  REAL_ESTATE = "REAL_ESTATE",
 }
 
 export enum VehicleType {
-  CAR = 'CAR',
-  TRUCK = 'TRUCK',
-  MOTORCYCLE = 'MOTORCYCLE',
-  RV = 'RV',
-  OTHER = 'OTHER',
-  TRACTOR = 'TRACTOR',
+  CAR = "CAR",
+  TRUCK = "TRUCK",
+  MOTORCYCLE = "MOTORCYCLE",
+  RV = "RV",
+  OTHER = "OTHER",
+  TRACTOR = "TRACTOR",
 }
 
 export enum PropertyType {
-  HOUSE = 'HOUSE',
-  APARTMENT = 'APARTMENT',
-  CONDO = 'CONDO',
-  LAND = 'LAND',
-  COMMERCIAL = 'COMMERCIAL',
-  OTHER = 'OTHER',
+  HOUSE = "HOUSE",
+  APARTMENT = "APARTMENT",
+  CONDO = "CONDO",
+  LAND = "LAND",
+  COMMERCIAL = "COMMERCIAL",
+  OTHER = "OTHER",
 }
 
 // Location type
@@ -137,7 +138,7 @@ export interface ListingBase {
   updatedAt: Date;
   userId: string;
   details: ListingDetails;
-  listingAction?: 'sell' | 'rent';
+  listingAction?: "sell" | "rent";
   status: ListingStatus;
 }
 

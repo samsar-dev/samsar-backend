@@ -1,10 +1,10 @@
-import prismaClient from '../lib/prismaClient.js';
-import { NotificationType } from '@prisma/client';
+import prismaClient from "../lib/prismaClient.js";
+import { NotificationType } from "@prisma/client";
 
 export const handleListingPriceUpdate = async (
   listingId: string,
   oldPrice: number,
-  newPrice: number
+  newPrice: number,
 ) => {
   try {
     // Get all users who have favorited this listing
@@ -29,8 +29,10 @@ export const handleListingPriceUpdate = async (
     if (priceDifference >= 5) {
       // Send notifications to users who have favorited this listing and have price drop notifications enabled
       const notificationPromises = favorites.map(async (favorite) => {
-        const preferences = favorite.user.preferences as { notifications?: { priceDrops?: boolean } } | null;
-        
+        const preferences = favorite.user.preferences as {
+          notifications?: { priceDrops?: boolean };
+        } | null;
+
         // Only send notification if user has enabled price drop notifications
         if (preferences?.notifications?.priceDrops !== false) {
           await prismaClient.notification.create({
@@ -38,8 +40,8 @@ export const handleListingPriceUpdate = async (
               type: NotificationType.PRICE_UPDATE,
               content: `Price dropped by ${priceDifference.toFixed(1)}% on a listing you saved!`,
               userId: favorite.userId,
-              relatedListingId: listingId
-            }
+              relatedListingId: listingId,
+            },
           });
         }
       });
@@ -47,6 +49,6 @@ export const handleListingPriceUpdate = async (
       await Promise.all(notificationPromises);
     }
   } catch (error) {
-    console.error('Error handling listing price update:', error);
+    console.error("Error handling listing price update:", error);
   }
 };

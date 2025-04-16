@@ -6,29 +6,29 @@ import { NotificationType } from "../types/enums.js";
 export const sendMessage = async (req: AuthRequest, res: Response) => {
   try {
     const { recipientId, content, listingId } = req.body;
-    
+
     // Validate required fields
     if (!recipientId) {
       return res.status(400).json({
         success: false,
-        error: { message: 'recipientId is required' }
+        error: { message: "recipientId is required" },
       });
     }
-    
+
     if (!content?.trim()) {
       return res.status(400).json({
         success: false,
-        error: { message: 'message content cannot be empty' }
+        error: { message: "message content cannot be empty" },
       });
     }
-    
+
     if (!listingId) {
       return res.status(400).json({
         success: false,
-        error: { message: 'listingId is required' }
+        error: { message: "listingId is required" },
       });
     }
-    
+
     const senderId = req.user.id;
 
     // Check if this is a listing message
@@ -94,7 +94,9 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
           user: { connect: { id: recipientId } },
           type: NotificationType.NEW_MESSAGE,
           content: `${req.user.username} sent you a message about your listing`,
-          relatedListing: listingId ? { connect: { id: listingId } } : undefined,
+          relatedListing: listingId
+            ? { connect: { id: listingId } }
+            : undefined,
           relatedUser: { connect: { id: senderId } },
         },
       });
@@ -176,8 +178,8 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         type: NotificationType.NEW_MESSAGE,
         content: `${req.user.username} sent you a message about your listing`,
         relatedUser: { connect: { id: senderId } },
-        relatedListing: listingId ? { connect: { id: listingId } } : undefined
-      }
+        relatedListing: listingId ? { connect: { id: listingId } } : undefined,
+      },
     });
 
     // Update conversation's last message
@@ -198,35 +200,35 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error("Message error:", error);
-    
+
     // Handle Prisma errors
-    if (error.code === 'P2025') {
+    if (error.code === "P2025") {
       return res.status(404).json({
         success: false,
         error: {
-          message: 'Recipient, listing, or conversation not found',
-          details: error.message
-        }
+          message: "Recipient, listing, or conversation not found",
+          details: error.message,
+        },
       });
     }
-    
+
     // Handle other database constraint errors
-    if (error.code?.startsWith('P2')) {
+    if (error.code?.startsWith("P2")) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid data provided',
-          details: error.message
-        }
+          message: "Invalid data provided",
+          details: error.message,
+        },
       });
     }
-    
+
     res.status(500).json({
       success: false,
       error: {
-        message: 'Failed to send message',
-        details: error.message
-      }
+        message: "Failed to send message",
+        details: error.message,
+      },
     });
   }
 };
