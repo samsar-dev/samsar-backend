@@ -357,6 +357,9 @@ export const getListings = async (req: AuthRequest, res: Response) => {
     const sortOrder =
       (req.query.sortOrder as string)?.toLowerCase() === "asc" ? "asc" : "desc";
 
+    // Year filter
+    const year = req.query.year !== undefined && req.query.year !== null && req.query.year !== '' ? Number(req.query.year) : undefined;
+
     const where: Prisma.ListingWhereInput = {
       OR: search
         ? [
@@ -370,6 +373,14 @@ export const getListings = async (req: AuthRequest, res: Response) => {
         lte: maxPrice,
       },
       status: ListingStatus.ACTIVE,
+      // Vehicle year filter (only for vehicle listings)
+      ...(year
+        ? {
+            vehicleDetails: {
+              year: year,
+            },
+          }
+        : {}),
     };
 
     const [listings, total] = await Promise.all([

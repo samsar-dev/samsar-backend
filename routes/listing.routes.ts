@@ -145,6 +145,8 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
       sortOrder,
       page = 1,
       limit = 10,
+      location,
+      builtYear,
     } = req.query;
 
     // Build where clause for filtering
@@ -154,6 +156,15 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
     }
     if (subCategory) {
       where.subCategory = subCategory as string;
+    }
+    if (location) {
+      where.location = location as string;
+    }
+    // Real estate built year filter (nested)
+    if (builtYear) {
+      where.realEstateDetails = {
+        yearBuilt: builtYear.toString()
+      };
     }
 
     // Calculate pagination
