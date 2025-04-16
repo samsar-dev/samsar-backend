@@ -26,14 +26,19 @@ declare global {
 export const loginLimiter = rateLimit({
   windowMs: env.NODE_ENV === 'development' ? 1000 : 15 * 60 * 1000,
   max: env.NODE_ENV === 'development' ? 100 : 5,
-  message: {
-    success: false,
-    error: {
-      code: "RATE_LIMIT",
-      message: env.NODE_ENV === 'development' 
-        ? "Rate limit hit (development mode)"
-        : "Too many login attempts, please try again after 15 minutes"
-    }
+  message: (req, res, next, options) => {
+    // Calculate seconds until rate limit resets
+    const retryAfterSeconds = Math.ceil(options.windowMs / 1000);
+    res.set('Retry-After', retryAfterSeconds.toString());
+    return {
+      success: false,
+      error: {
+        code: "RATE_LIMIT",
+        message: env.NODE_ENV === 'development'
+          ? `Rate limit hit (development mode)`
+          : `Too many login attempts, please try again after ${Math.floor(options.windowMs / 60000)} minutes`,
+      },
+    };
   },
   standardHeaders: true,
   legacyHeaders: false,

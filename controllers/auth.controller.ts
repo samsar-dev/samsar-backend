@@ -302,7 +302,8 @@ export const getMe = async (req: Request, res: Response) => {
         name: true,
         role: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        profilePicture: true
       }
     });
 

@@ -17,6 +17,10 @@ interface UpdateData {
   bio?: string;
   profilePicture?: string;
   preferences?: Prisma.InputJsonValue;
+  dateOfBirth?: string;
+  street?: string;
+  city?: string;
+  postalCode?: string;
 }
 
 interface UploadResult {
@@ -129,7 +133,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 
     const updates: UpdateData = {};
 
-    const { email, username, password, bio } = req.body;
+    const { email, username, password, bio, dateOfBirth, street, city, postalCode } = req.body;
 
     if (email && !validator.isEmail(email)) {
       return res.status(400).json({
@@ -155,6 +159,10 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 
     if (username) updates.username = username.trim();
     if (bio) updates.bio = bio.trim();
+    if (dateOfBirth) updates.dateOfBirth = dateOfBirth.trim();
+    if (street) updates.street = street.trim();
+    if (city) updates.city = city.trim();
+    if (postalCode) updates.postalCode = postalCode.trim();
 
     if (password) {
       if (password.length < 6) {

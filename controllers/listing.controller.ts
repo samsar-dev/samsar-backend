@@ -1,11 +1,10 @@
 import { Request, Response } from "express";
-import { ListingStatus, ListingAction, Prisma } from "@prisma/client";
+import { ListingStatus, ListingAction, Prisma, NotificationType } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import fs from "fs";
 import { AuthRequest } from "../middleware/auth.middleware";
-import { createNotification } from '../utils/notification.utils';
-import { NotificationType } from '../types/enums';
+import { handleListingPriceUpdate } from "../src/services/notification.service.js";
 
 interface ListingResponse {
   id: string;
@@ -310,11 +309,13 @@ export const createListing = async (req: AuthRequest, res: Response) => {
       });
 
       // Create notification
-      await createNotification({
-        userId: listing.userId,
-        type: NotificationType.LISTING_CREATED,
-        message: `Your listing "${listing.title}" has been created successfully.`,
-        relatedListingId: listing.id
+      await prisma.notification.create({
+        data: {
+          userId: listing.userId,
+          type: NotificationType.LISTING_CREATED,
+          content: `Your listing "${listing.title}" has been created.`,
+          relatedListingId: listing.id
+        }
       });
 
       return listing;
@@ -447,11 +448,13 @@ export const getListing = async (req: AuthRequest, res: Response) => {
 
     // Create view notification if viewer is not the seller
     if (req.user && req.user.id !== listing.userId) {
-      await createNotification({
-        userId: listing.userId,
-        type: NotificationType.LISTING_INTEREST,
-        message: `${req.user.username} viewed your listing "${listing.title}"`,
-        relatedListingId: listing.id
+      await prisma.notification.create({
+        data: {
+          userId: listing.userId,
+          type: NotificationType.LISTING_INTEREST,
+          content: `${req.user.username} viewed your listing "${listing.title}"`,
+          relatedListingId: listing.id
+        }
       });
     }
 
@@ -485,7 +488,7 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
 
     const oldListing = await prisma.listing.findUnique({
       where: { id },
-      select: { price: true, title: true }
+      select: { price: true, title: true, userId: true }
     });
 
     if (!oldListing) {
@@ -495,6 +498,11 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
         status: 404,
         data: null,
       });
+    }
+
+    // Check if price has changed
+    if (price && price !== oldListing.price) {
+      await handleListingPriceUpdate(id, oldListing.price, price);
     }
 
     const listing = await prisma.listing.update({
@@ -544,14 +552,20 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Create notification for price update
-    if (oldListing.price !== parseFloat(price)) {
-      await createNotification({
-        userId: listing.userId,
-        type: NotificationType.PRICE_UPDATE,
-        message: `The price of your listing "${oldListing.title}" has been updated from ${oldListing.price} to ${price}.`,
-        relatedListingId: listing.id
+    // Handle price update notifications
+    if (price && oldListing.price !== parseFloat(price)) {
+      // Notify the listing owner
+      await prisma.notification.create({
+        data: {
+          userId: listing.userId,
+          type: NotificationType.PRICE_UPDATE,
+          content: `The price of your listing "${oldListing.title}" has been updated from ${oldListing.price} to ${price}.`,
+          relatedListingId: listing.id
+        }
       });
+
+      // Notify users who have favorited the listing
+      await handleListingPriceUpdate(listing.id, oldListing.price, parseFloat(price));
     }
 
     res.json({
@@ -668,11 +682,13 @@ export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
 
       // Create save notification
       if (req.user.id !== listing.userId) {
-        await createNotification({
-          userId: listing.userId,
-          type: NotificationType.LISTING_INTEREST,
-          message: `${req.user.username} saved your listing "${listing.title}"`,
-          relatedListingId: listing.id,
+        await prisma.notification.create({
+          data: {
+            userId: listing.userId,
+            type: NotificationType.LISTING_INTEREST,
+            content: `${req.user.username} saved your listing "${listing.title}"`,
+            relatedListingId: listing.id
+          }
         });
       }
     }
