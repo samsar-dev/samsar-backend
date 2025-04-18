@@ -48,11 +48,36 @@ model Listing {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   userId            String
-  attributes        Attribute[]
+  
+  // Vehicle-specific fields
+  color             String?
+  interiorColor     String?
+  mileage          Float?
+  transmission     String?
+  fuelType         String?
+  engineSize       Float?
+  engineNumber     String?
+  vin              String?
+  year             Int?
+  make             String?
+  model            String?
+  
+  // Property-specific fields
+  size             Float?
+  bedrooms         Int?
+  bathrooms        Float?
+  floors           Int?
+  yearBuilt        Int?
+  parkingSpaces    Int?
+  furnished        Boolean?
+  utilities        Boolean?
+  
+  // Common fields
+  features         Feature[]
+  images           Image[]
+  attributes       Attribute[]
   conversations     Conversation[]     @relation("ListingConversations")
   favorites         Favorite[]
-  features          Feature[]
-  images            Image[]
   user              User               @relation("UserListings", fields: [userId], references: [id])
   Message           Message[]
   notifications     Notification[]     @relation("ListingNotifications")
@@ -172,12 +197,22 @@ model VehicleDetails {
   interiorColor      String?
   engine             String?
   warranty           Int?
-  serviceHistory     String?
+  serviceHistory     Boolean?
   previousOwners     Int?
   registrationStatus String?
   listingId          String            @unique
   brakeType          String?
   engineSize         String?
+  // Additional fields
+  vin                String?
+  engineNumber       String?
+  numberOfOwners     Int?
+  accidentFree       Boolean?
+  importStatus       String?
+  registrationExpiry String?
+  insuranceType      String?
+  upholsteryMaterial String?
+  tireCondition      String?
   listing            Listing           @relation(fields: [listingId], references: [id])
 
   @@index([listingId])

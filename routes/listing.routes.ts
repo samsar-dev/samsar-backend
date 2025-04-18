@@ -26,7 +26,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string,
+  sortOrder?: string
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -64,20 +64,6 @@ import {
 } from "../types/shared.js";
 
 const router = express.Router();
-
-// Helper function to handle authenticated routes
-const handleAuthRoute = (
-  handler: (req: AuthRequest, res: Response) => Promise<void>,
-) => {
-  return async (req: Request, res: Response) => {
-    try {
-      await handler(req as AuthRequest, res);
-    } catch (error) {
-      console.error("Error in auth route:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  };
-};
 
 const formatListingResponse = (listing: any): ListingWithRelations | null => {
   if (!listing) return null;
@@ -149,112 +135,6 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
   };
 };
 
-// Protected Routes - Saved Listings
-router.get(
-  "/saved",
-  authenticate,
-  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const savedListings = await prisma.favorite.findMany({
-        where: { userId },
-        include: {
-          listing: {
-            include: {
-              images: true,
-              favorites: true,
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      const formattedListings = savedListings.map((saved) =>
-        formatListingResponse(saved.listing),
-      );
-      res.json(formattedListings);
-    } catch (error) {
-      console.error("Error fetching saved listings:", error);
-      res.status(500).json({ message: "Server error" });
-    }
-  }),
-);
-
-// Protected Routes - User Listings
-router.get(
-  "/user",
-  authenticate,
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      // Validate user ID from authenticated request
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({
-          success: false,
-          message: "Unauthorized: User ID not found",
-          status: 401,
-        });
-        return;
-      }
-
-      console.log(`Fetching listings for user: ${userId}`);
-
-      const listings = await prisma.listing.findMany({
-        where: { userId },
-        include: {
-          images: true,
-          favorites: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
-
-      const formattedListings = listings.map((listing) =>
-        formatListingResponse(listing),
-      );
-
-      res.json({
-        success: true,
-        data: formattedListings,
-        status: 200,
-        total: formattedListings.length,
-      });
-    } catch (error) {
-      console.error("Error fetching user listings:", error);
-
-      // Detailed error logging
-      if (error instanceof Error) {
-        console.error("Error name:", error.name);
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-      }
-
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch user listings",
-        error: error instanceof Error ? error.message : "Unknown error",
-        status: 500,
-      });
-    }
-  },
-);
-
 // Public Routes
 router.get("/", async (req: Request, res: Response): Promise<void> => {
   try {
@@ -283,7 +163,10 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
     // Real estate built year filter (nested)
     if (builtYear) {
       where.realEstateDetails = {
-        yearBuilt: builtYear.toString(),
+        is: {
+          ...(where.realEstateDetails?.is || {}),
+          yearBuilt: builtYear.toString()
+        }
       };
     }
 
@@ -316,7 +199,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 
     // Format listings for response
     const formattedListings = listings.map((listing) =>
-      formatListingResponse(listing),
+      formatListingResponse(listing)
     );
 
     res.json({
@@ -444,90 +327,213 @@ router.get("/trending", async (_req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Public route for getting a single listing by ID
-router.get("/:id", async (req: Request, res: Response): Promise<void> => {
-  try {
-    console.log(`Fetching listing with ID: ${req.params.id}`);
-
-    const listing = await prisma.listing.findUnique({
-      where: { id: req.params.id },
-      include: {
-        images: true,
-        user: {
-          select: {
-            id: true,
-            username: true,
-            profilePicture: true,
-          },
-        },
-        favorites: true,
-        vehicleDetails: true, // This includes all vehicle details
-        realEstateDetails: true, // This includes all real estate details
-      },
-    });
-
-    if (!listing) {
-      console.log(`Listing not found with ID: ${req.params.id}`);
-      res.status(404).json({
-        success: false,
-        error: "Listing not found",
-        status: 404,
-        data: null,
-      });
-      return;
-    }
-
-    // Detailed logging
-    console.log("Raw listing data:", JSON.stringify(listing, null, 2));
-    if (listing.vehicleDetails) {
-      console.log(
-        "Vehicle details found:",
-        JSON.stringify(listing.vehicleDetails, null, 2),
-      );
-      // Log all fields to check if advanced fields exist
-      console.log(
-        "Vehicle detail fields:",
-        Object.keys(listing.vehicleDetails),
-      );
-    } else {
-      console.log("No vehicle details found for this listing");
-    }
-
-    const formattedListing = formatListingResponse(listing);
-
-    if (
-      formattedListing &&
-      formattedListing.details &&
-      formattedListing.details.vehicles
-    ) {
-      console.log(
-        "Formatted listing:",
-        JSON.stringify(formattedListing, null, 2),
-      );
-      console.log(
-        "Formatted vehicle details:",
-        JSON.stringify(formattedListing.details.vehicles, null, 2),
-      );
-    }
-
-    res.json({
-      success: true,
-      data: formattedListing,
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error fetching listing:", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to fetch listing",
-      status: 500,
-      data: null,
-    });
-  }
-});
-
 // Protected Routes
 router.use(authenticate);
+
+// Helper function to handle authenticated routes
+const handleAuthRoute = (
+  handler: (req: AuthRequest, res: Response) => Promise<void>
+) => {
+  return async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Cast request to AuthRequest since it's been authenticated
+      const authReq = req as AuthRequest;
+      await handler(authReq, res);
+    } catch (error) {
+      console.error("Auth route error:", error);
+      res.status(500).json({
+        success: false,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  };
+};
+
+router.get(
+  "/saved",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
+      const savedListings = await prisma.favorite.findMany({
+        where: {
+          userId,
+        },
+        include: {
+          listing: {
+            include: {
+              images: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
+              },
+              favorites: true,
+            },
+          },
+        },
+      });
+
+      const formattedListings = savedListings.map((favorite) =>
+        formatListingResponse(favorite.listing)
+      );
+
+      res.json({
+        success: true,
+        data: { items: formattedListings },
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  })
+);
+
+// Save a listing to favorites
+router.post(
+  "/saved/:listingId",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
+      const { listingId } = req.params;
+
+      // Check if listing exists
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+      });
+
+      if (!listing) {
+        res.status(404).json({
+          success: false,
+          error: "Listing not found",
+          status: 404,
+          data: null,
+        });
+        return;
+      }
+
+      // Check if already favorited
+      const existingFavorite = await prisma.favorite.findUnique({
+        where: {
+          userId_listingId: {
+            userId,
+            listingId,
+          },
+        },
+      });
+
+      if (existingFavorite) {
+        res.status(400).json({
+          success: false,
+          error: "Listing already saved",
+          status: 400,
+          data: null,
+        });
+        return;
+      }
+
+      // Create favorite
+      const favorite = await prisma.favorite.create({
+        data: {
+          userId,
+          listingId,
+        },
+        include: {
+          listing: {
+            include: {
+              images: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
+              },
+              favorites: true,
+            },
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: formatListingResponse(favorite.listing),
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  })
+);
+
+// Delete a saved listing
+router.delete(
+  "/saved/:listingId",
+  handleAuthRoute(async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = validateUser(req);
+      const { listingId } = req.params;
+
+      // Check if favorite exists
+      const favorite = await prisma.favorite.findUnique({
+        where: {
+          userId_listingId: {
+            userId,
+            listingId,
+          },
+        },
+      });
+
+      if (!favorite) {
+        res.status(404).json({
+          success: false,
+          error: "Saved listing not found",
+          status: 404,
+          data: null,
+        });
+        return;
+      }
+
+      // Delete favorite
+      await prisma.favorite.delete({
+        where: {
+          userId_listingId: {
+            userId,
+            listingId,
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: null,
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+        status: 500,
+        data: null,
+      });
+    }
+  })
+);
 
 router.post(
   "/",
@@ -578,7 +584,7 @@ router.post(
       let parsedDetails;
       try {
         parsedDetails = JSON.parse(
-          typeof details === "string" ? details : JSON.stringify(details),
+          typeof details === "string" ? details : JSON.stringify(details)
         );
         console.log("Parsed details:", JSON.stringify(parsedDetails, null, 2));
 
@@ -622,7 +628,7 @@ router.post(
       // Create listing with images
       console.log(
         "Details sent to DB:",
-        JSON.stringify(parsedDetails, null, 2),
+        JSON.stringify(parsedDetails, null, 2)
       );
 
       const listing = await prisma.listing.create({
@@ -738,7 +744,7 @@ router.post(
             "Details:",
             typeof details === "string"
               ? details
-              : JSON.stringify(details, null, 2),
+              : JSON.stringify(details, null, 2)
           );
         } catch (e) {
           console.error("Error logging details:", e);
@@ -752,7 +758,7 @@ router.post(
         data: null,
       });
     }
-  }),
+  })
 );
 
 router.get(
@@ -807,7 +813,7 @@ router.get(
         },
       });
     }
-  }),
+  })
 );
 
 router.get(
@@ -850,8 +856,89 @@ router.get(
         },
       });
     }
-  }),
+  })
 );
+
+router.get("/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    console.log(`Fetching listing with ID: ${req.params.id}`);
+
+    const listing = await prisma.listing.findUnique({
+      where: { id: req.params.id },
+      include: {
+        images: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true,
+          },
+        },
+        favorites: true,
+        vehicleDetails: true, // This includes all vehicle details
+        realEstateDetails: true, // This includes all real estate details
+      },
+    });
+
+    if (!listing) {
+      console.log(`Listing not found with ID: ${req.params.id}`);
+      res.status(404).json({
+        success: false,
+        error: "Listing not found",
+        status: 404,
+        data: null,
+      });
+      return;
+    }
+
+    // Detailed logging
+    console.log("Raw listing data:", JSON.stringify(listing, null, 2));
+    if (listing.vehicleDetails) {
+      console.log(
+        "Vehicle details found:",
+        JSON.stringify(listing.vehicleDetails, null, 2)
+      );
+      // Log all fields to check if advanced fields exist
+      console.log(
+        "Vehicle detail fields:",
+        Object.keys(listing.vehicleDetails)
+      );
+    } else {
+      console.log("No vehicle details found for this listing");
+    }
+
+    const formattedListing = formatListingResponse(listing);
+
+    if (
+      formattedListing &&
+      formattedListing.details &&
+      formattedListing.details.vehicles
+    ) {
+      console.log(
+        "Formatted listing:",
+        JSON.stringify(formattedListing, null, 2)
+      );
+      console.log(
+        "Formatted vehicle details:",
+        JSON.stringify(formattedListing.details.vehicles, null, 2)
+      );
+    }
+
+    res.json({
+      success: true,
+      data: formattedListing,
+      status: 200,
+    });
+  } catch (error) {
+    console.error("Error fetching listing:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to fetch listing",
+      status: 500,
+      data: null,
+    });
+  }
+});
 
 router.put(
   "/:id",
@@ -967,7 +1054,7 @@ router.put(
         data: null,
       });
     }
-  }),
+  })
 );
 
 router.delete(
@@ -1055,7 +1142,7 @@ router.delete(
         data: null,
       });
     }
-  }),
+  })
 );
 
 export default router;
