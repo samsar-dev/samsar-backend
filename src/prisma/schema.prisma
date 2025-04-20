@@ -198,7 +198,8 @@ model VehicleDetails {
   engine             String?
   warranty           String?
   serviceHistory     Boolean?
-  numberOfOwners     Int?
+  previousOwners     Int?
+  registrationStatus String?
   registrationExpiry String?
   listingId          String            @unique
   brakeType          String?

@@ -111,7 +111,7 @@ const formatListingResponse = (
   return {
     id: listing.id,
     title: listing.title,
-    description: listing.description,
+    description: listing.description || '',
     price: listing.price,
     mainCategory: listing.mainCategory,
     subCategory: listing.subCategory,
@@ -154,12 +154,9 @@ const formatListingResponse = (
           warranty: listing.vehicleDetails.warranty
             ? String(listing.vehicleDetails.warranty)
             : undefined,
-          serviceHistory: listing.vehicleDetails.serviceHistory || undefined,
-          previousOwners: listing.vehicleDetails.previousOwners
-            ? String(listing.vehicleDetails.previousOwners)
-            : undefined,
-          registrationStatus:
-            listing.vehicleDetails.registrationStatus || undefined,
+          serviceHistory: listing.vehicleDetails.serviceHistory ? String(listing.vehicleDetails.serviceHistory) : undefined,
+          previousOwners: listing.vehicleDetails.previousOwners ? String(listing.vehicleDetails.previousOwners) : undefined,
+          registrationStatus: listing.vehicleDetails.registrationStatus ? String(listing.vehicleDetails.registrationStatus) : undefined,
         }
       : null,
     realEstateDetails: listing.realEstateDetails
@@ -379,13 +376,15 @@ export const createListing = async (req: AuthRequest, res: Response) => {
 
 export const getListings = async (req: AuthRequest, res: Response) => {
   try {
+    console.log('Request query:', req.query);
+    console.log('Request user:', req.user);
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(
       50,
       Math.max(1, parseInt(req.query.limit as string) || 12),
     );
     const search = (req.query.search as string) || "";
-    const category = (req.query.category as string) || "";
+    const mainCategory = (req.query.mainCategory as string) || "";
     const minPrice = parseFloat(req.query.minPrice as string) || 0;
     const maxPrice =
       parseFloat(req.query.maxPrice as string) || Number.MAX_SAFE_INTEGER;
@@ -408,7 +407,7 @@ export const getListings = async (req: AuthRequest, res: Response) => {
             { description: { contains: search, mode: "insensitive" } },
           ]
         : undefined,
-      mainCategory: category || undefined,
+      mainCategory: mainCategory || undefined,
       price: {
         gte: minPrice,
         lte: maxPrice,
@@ -447,10 +446,12 @@ export const getListings = async (req: AuthRequest, res: Response) => {
       prisma.listing.count({ where }),
     ]);
 
+    console.log('Found listings:', listings.length);
     const formattedListings = listings.map((listing) =>
       formatListingResponse(listing as ListingWithRelations),
     );
 
+    console.log('Formatted listings:', formattedListings.length);
     res.json({
       success: true,
       data: {
@@ -462,6 +463,7 @@ export const getListings = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Error getting listings:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
     res.status(500).json({
       success: false,
       message: "Error getting listings",

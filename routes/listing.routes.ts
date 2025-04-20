@@ -86,7 +86,6 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           warranty: listing.vehicleDetails.warranty,
           serviceHistory: listing.vehicleDetails.serviceHistory || [],
           previousOwners: listing.vehicleDetails.previousOwners,
-          registrationStatus: listing.vehicleDetails.registrationStatus,
           horsepower: listing.vehicleDetails.horsepower,
           torque: listing.vehicleDetails.torque,
           // Bus-specific fields
@@ -745,37 +744,73 @@ router.post(
                   vehicleType: parsedDetails.vehicles.vehicleType,
                   make: parsedDetails.vehicles.make,
                   model: parsedDetails.vehicles.model,
-                  year:
-                    Number(parsedDetails.vehicles.year) ||
-                    new Date().getFullYear(),
-                  mileage: parsedDetails.vehicles.mileage
-                    ? Number(parsedDetails.vehicles.mileage)
-                    : 0,
+                  year: parsedDetails.vehicles.year || new Date().getFullYear(),
+                  mileage: parsedDetails.vehicles.mileage ? Number(parsedDetails.vehicles.mileage) : 0,
                   fuelType: parsedDetails.vehicles.fuelType,
                   transmissionType: parsedDetails.vehicles.transmissionType,
-                  color:
-                    typeof parsedDetails.vehicles.color === "string"
-                      ? parsedDetails.vehicles.color
-                      : "#000000",
+                  color: parsedDetails.vehicles.color || "#000000",
                   condition: parsedDetails.vehicles.condition,
-                  interiorColor:
-                    typeof parsedDetails.vehicles.interiorColor === "string"
-                      ? parsedDetails.vehicles.interiorColor
-                      : "#000000",
+                  features: parsedDetails.vehicles.features || [],
+                  interiorColor: parsedDetails.vehicles.interiorColor || "#000000",
                   engine: parsedDetails.vehicles.engine || "",
-                  warranty: parsedDetails.vehicles.warranty
-                    ? Number(parsedDetails.vehicles.warranty)
-                    : 0,
-                  serviceHistory:
-                    parsedDetails.vehicles.serviceHistory || "none",
-                  previousOwners: parsedDetails.vehicles.previousOwners
-                    ? Number(parsedDetails.vehicles.previousOwners)
-                    : 0,
-                  registrationStatus:
-                    parsedDetails.vehicles.registrationStatus || "unregistered",
-                  features: Array.isArray(parsedDetails.vehicles.features)
-                    ? parsedDetails.vehicles.features
-                    : [],
+                  warranty: parsedDetails.vehicles.warranty || "",
+                  serviceHistory: parsedDetails.vehicles.serviceHistory || false,
+                  previousOwners: parsedDetails.vehicles.previousOwners !== undefined ? Number(parsedDetails.vehicles.previousOwners) : undefined,
+                  registrationStatus: parsedDetails.vehicles.registrationStatus || undefined,
+                  horsepower: parsedDetails.vehicles.horsepower,
+                  torque: parsedDetails.vehicles.torque,
+                  // Bus-specific fields
+                  seatingCapacity: parsedDetails.vehicles.seatingCapacity,
+                  luggageSpace: parsedDetails.vehicles.luggageSpace,
+                  comfortFeatures: parsedDetails.vehicles.comfortFeatures || [],
+                  seatType: parsedDetails.vehicles.seatType,
+                  seatMaterial: parsedDetails.vehicles.seatMaterial,
+                  wheelchairAccessible: parsedDetails.vehicles.wheelchairAccessible,
+                  wheelchairLift: parsedDetails.vehicles.wheelchairLift,
+                  accessibilityFeatures: parsedDetails.vehicles.accessibilityFeatures || [],
+                  emergencyExits: parsedDetails.vehicles.emergencyExits,
+                  safetyFeatures: parsedDetails.vehicles.safetyFeatures || [],
+                  seatBelts: parsedDetails.vehicles.seatBelts,
+                  emissionStandard: parsedDetails.vehicles.emissionStandard,
+                  enginePower: parsedDetails.vehicles.enginePower,
+                  engineTorque: parsedDetails.vehicles.engineTorque,
+                  suspension: parsedDetails.vehicles.suspension || [],
+                  brakeSystem: parsedDetails.vehicles.brakeSystem || [],
+                  entertainmentFeatures: parsedDetails.vehicles.entertainmentFeatures || [],
+                  navigationSystem: parsedDetails.vehicles.navigationSystem,
+                  communicationSystem: parsedDetails.vehicles.communicationSystem || [],
+                  maintenanceHistory: parsedDetails.vehicles.maintenanceHistory,
+                  lastInspectionDate: parsedDetails.vehicles.lastInspectionDate,
+                  certifications: parsedDetails.vehicles.certifications || [],
+                  luggageCompartments: parsedDetails.vehicles.luggageCompartments,
+                  luggageRacks: parsedDetails.vehicles.luggageRacks,
+                  fuelTankCapacity: parsedDetails.vehicles.fuelTankCapacity,
+                  // Tractor-specific fields
+                  hours: parsedDetails.vehicles.hours,
+                  driveSystem: parsedDetails.vehicles.driveSystem,
+                  engineSpecs: parsedDetails.vehicles.engineSpecs || [],
+                  engineManufacturer: parsedDetails.vehicles.engineManufacturer,
+                  engineModel: parsedDetails.vehicles.engineModel,
+                  displacement: parsedDetails.vehicles.displacement,
+                  cylinders: parsedDetails.vehicles.cylinders,
+                  emissions: parsedDetails.vehicles.emissions,
+                  hydraulicSystem: parsedDetails.vehicles.hydraulicSystem,
+                  hydraulicFlow: parsedDetails.vehicles.hydraulicFlow,
+                  hydraulicOutlets: parsedDetails.vehicles.hydraulicOutlets || [],
+                  ptoSystem: parsedDetails.vehicles.ptoSystem || [],
+                  ptoHorsepower: parsedDetails.vehicles.ptoHorsepower,
+                  frontAttachments: parsedDetails.vehicles.frontAttachments || [],
+                  rearAttachments: parsedDetails.vehicles.rearAttachments || [],
+                  threePointHitch: parsedDetails.vehicles.threePointHitch,
+                  hitchCapacity: parsedDetails.vehicles.hitchCapacity,
+                  cabFeatures: parsedDetails.vehicles.cabFeatures || [],
+                  seating: parsedDetails.vehicles.seating || [],
+                  steeringSystem: parsedDetails.vehicles.steeringSystem || [],
+                  lighting: parsedDetails.vehicles.lighting || [],
+                  precisionFarming: parsedDetails.vehicles.precisionFarming || [],
+                  monitor: parsedDetails.vehicles.monitor || [],
+                  electricalSystem: parsedDetails.vehicles.electricalSystem,
+                  modifications: parsedDetails.vehicles.modifications,
                 },
               }
             : undefined,
