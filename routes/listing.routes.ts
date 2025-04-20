@@ -84,21 +84,99 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           interiorColor: listing.vehicleDetails.interiorColor,
           engine: listing.vehicleDetails.engine,
           warranty: listing.vehicleDetails.warranty,
-          serviceHistory: listing.vehicleDetails.serviceHistory,
+          serviceHistory: listing.vehicleDetails.serviceHistory || [],
           previousOwners: listing.vehicleDetails.previousOwners,
           registrationStatus: listing.vehicleDetails.registrationStatus,
           horsepower: listing.vehicleDetails.horsepower,
           torque: listing.vehicleDetails.torque,
+          // Bus-specific fields
+          seatingCapacity: listing.vehicleDetails.seatingCapacity,
+          luggageSpace: listing.vehicleDetails.luggageSpace,
+          comfortFeatures: listing.vehicleDetails.comfortFeatures || [],
+          seatType: listing.vehicleDetails.seatType,
+          seatMaterial: listing.vehicleDetails.seatMaterial,
+          wheelchairAccessible: listing.vehicleDetails.wheelchairAccessible,
+          wheelchairLift: listing.vehicleDetails.wheelchairLift,
+          accessibilityFeatures: listing.vehicleDetails.accessibilityFeatures || [],
+          emergencyExits: listing.vehicleDetails.emergencyExits,
+          safetyFeatures: listing.vehicleDetails.safetyFeatures || [],
+          seatBelts: listing.vehicleDetails.seatBelts,
+          emissionStandard: listing.vehicleDetails.emissionStandard,
+          enginePower: listing.vehicleDetails.enginePower,
+          engineTorque: listing.vehicleDetails.engineTorque,
+          suspension: listing.vehicleDetails.suspension || [],
+          brakeSystem: listing.vehicleDetails.brakeSystem || [],
+          entertainmentFeatures: listing.vehicleDetails.entertainmentFeatures || [],
+          navigationSystem: listing.vehicleDetails.navigationSystem,
+          communicationSystem: listing.vehicleDetails.communicationSystem || [],
+          maintenanceHistory: listing.vehicleDetails.maintenanceHistory,
+          lastInspectionDate: listing.vehicleDetails.lastInspectionDate,
+          certifications: listing.vehicleDetails.certifications || [],
+          luggageCompartments: listing.vehicleDetails.luggageCompartments,
+          luggageRacks: listing.vehicleDetails.luggageRacks,
+          fuelTankCapacity: listing.vehicleDetails.fuelTankCapacity,
+          // Tractor-specific fields
+          hours: listing.vehicleDetails.hours,
+          driveSystem: listing.vehicleDetails.driveSystem,
+          engineSpecs: listing.vehicleDetails.engineSpecs || [],
+          engineManufacturer: listing.vehicleDetails.engineManufacturer,
+          engineModel: listing.vehicleDetails.engineModel,
+          displacement: listing.vehicleDetails.displacement,
+          cylinders: listing.vehicleDetails.cylinders,
+          emissions: listing.vehicleDetails.emissions,
+          hydraulicSystem: listing.vehicleDetails.hydraulicSystem,
+          hydraulicFlow: listing.vehicleDetails.hydraulicFlow,
+          hydraulicOutlets: listing.vehicleDetails.hydraulicOutlets || [],
+          ptoSystem: listing.vehicleDetails.ptoSystem || [],
+          ptoHorsepower: listing.vehicleDetails.ptoHorsepower,
+          frontAttachments: listing.vehicleDetails.frontAttachments || [],
+          rearAttachments: listing.vehicleDetails.rearAttachments || [],
+          threePointHitch: listing.vehicleDetails.threePointHitch,
+          hitchCapacity: listing.vehicleDetails.hitchCapacity,
+          cabFeatures: listing.vehicleDetails.cabFeatures || [],
+          seating: listing.vehicleDetails.seating || [],
+          steeringSystem: listing.vehicleDetails.steeringSystem || [],
+          lighting: listing.vehicleDetails.lighting || [],
+          precisionFarming: listing.vehicleDetails.precisionFarming || [],
+          monitor: listing.vehicleDetails.monitor || [],
+          electricalSystem: listing.vehicleDetails.electricalSystem,
+          modifications: listing.vehicleDetails.modifications,
         }
       : undefined,
     realEstate: listing.realEstateDetails
       ? {
           propertyType: listing.realEstateDetails.propertyType,
           size: listing.realEstateDetails.size,
+          yearBuilt: listing.realEstateDetails.yearBuilt,
           bedrooms: listing.realEstateDetails.bedrooms,
           bathrooms: listing.realEstateDetails.bathrooms,
           condition: listing.realEstateDetails.condition,
           features: listing.realEstateDetails.features || [],
+          parking: listing.realEstateDetails.parking,
+          constructionType: listing.realEstateDetails.constructionType,
+          floor: listing.realEstateDetails.floor,
+          totalFloors: listing.realEstateDetails.totalFloors,
+          elevator: listing.realEstateDetails.elevator,
+          balcony: listing.realEstateDetails.balcony,
+          storage: listing.realEstateDetails.storage,
+          heating: listing.realEstateDetails.heating,
+          cooling: listing.realEstateDetails.cooling,
+          buildingAmenities: listing.realEstateDetails.buildingAmenities || [],
+          energyRating: listing.realEstateDetails.energyRating,
+          furnished: listing.realEstateDetails.furnished,
+          petPolicy: listing.realEstateDetails.petPolicy,
+          view: listing.realEstateDetails.view,
+          securityFeatures: listing.realEstateDetails.securityFeatures || [],
+          fireSafety: listing.realEstateDetails.fireSafety || [],
+          flooringType: listing.realEstateDetails.flooringType,
+          internetIncluded: listing.realEstateDetails.internetIncluded,
+          windowType: listing.realEstateDetails.windowType,
+          accessibilityFeatures: listing.realEstateDetails.accessibilityFeatures || [],
+          renovationHistory: listing.realEstateDetails.renovationHistory,
+          parkingType: listing.realEstateDetails.parkingType,
+          utilities: listing.realEstateDetails.utilities || [],
+          exposureDirection: listing.realEstateDetails.exposureDirection || [],
+          storageType: listing.realEstateDetails.storageType || [],
         }
       : undefined,
   };
@@ -587,6 +665,19 @@ router.post(
           typeof details === "string" ? details : JSON.stringify(details)
         );
         console.log("Parsed details:", JSON.stringify(parsedDetails, null, 2));
+
+        // Handle vehicle details if present
+        if (mainCategory === "VEHICLES" && parsedDetails.vehicles) {
+          const vehicle = parsedDetails.vehicles;
+          // Convert serviceHistory to boolean if it's a string
+          if (typeof vehicle.serviceHistory === 'string') {
+            vehicle.serviceHistory = vehicle.serviceHistory.toLowerCase() === 'true';
+          }
+          // Ensure it's a boolean or null
+          if (typeof vehicle.serviceHistory !== 'boolean') {
+            vehicle.serviceHistory = false; // Default to false if not boolean
+          }
+        }
 
         // Validate real estate details if present
         if (mainCategory === "REAL_ESTATE" && parsedDetails.realEstate) {

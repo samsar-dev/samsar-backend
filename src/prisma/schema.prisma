@@ -196,41 +196,120 @@ model VehicleDetails {
   features           String[]          @default([])
   interiorColor      String?
   engine             String?
-  warranty           Int?
+  warranty           String?
   serviceHistory     Boolean?
-  previousOwners     Int?
-  registrationStatus String?
+  numberOfOwners     Int?
+  registrationExpiry String?
   listingId          String            @unique
   brakeType          String?
   engineSize         String?
   // Additional fields
   vin                String?
   engineNumber       String?
-  numberOfOwners     Int?
-  accidentFree       Boolean?
-  importStatus       String?
-  registrationExpiry String?
-  insuranceType      String?
-  upholsteryMaterial String?
   tireCondition      String?
+
+  // Bus-specific fields
+  seatingCapacity     Int?
+  luggageSpace        Int?
+  comfortFeatures     String[]          @default([])
+  seatType            String?
+  seatMaterial        String?
+  wheelchairAccessible Boolean?
+  wheelchairLift      Boolean?
+  accessibilityFeatures String[]         @default([])
+  emergencyExits      Int?
+  safetyFeatures      String[]          @default([])
+  seatBelts           String?
+  emissionStandard    String?
+  enginePower         String?
+  engineTorque        String?
+  suspension          String[]          @default([])
+  brakeSystem         String[]          @default([])
+  entertainmentFeatures String[]         @default([])
+  navigationSystem    String?
+  
+  // Additional car-specific fields
+  warrantyPeriod      String?
+  serviceHistoryDetails String?
+  customsCleared      Boolean?
+  communicationSystem String[]          @default([])
+  maintenanceHistory  String?
+  lastInspectionDate  String?
+  certifications      String[]          @default([])
+  luggageCompartments Int?
+  luggageRacks        Boolean?
+  fuelTankCapacity    Int?
+
+  // Tractor-specific fields
+  hours              Int?
+  horsepower         Int?
+  driveSystem        String?
+  engineSpecs        String[]          @default([])
+  engineManufacturer String?
+  engineModel        String?
+  displacement       String?
+  cylinders          String?
+  torque             Int?
+  emissions          String?
+  hydraulicSystem    String?
+  hydraulicFlow      Int?
+  hydraulicOutlets   String[]          @default([])
+  ptoSystem         String[]          @default([])
+  ptoHorsepower     Int?
+  frontAttachments   String[]          @default([])
+  rearAttachments    String[]          @default([])
+  threePointHitch    String?
+  hitchCapacity      Int?
+  cabFeatures        String[]          @default([])
+  seating            String[]          @default([])
+  steeringSystem     String[]          @default([])
+  lighting           String[]          @default([])
+  precisionFarming   String[]          @default([])
+  monitor            String[]          @default([])
+  electricalSystem   String?
+  modifications      String?
+
   listing            Listing           @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
 }
 
 model RealEstateDetails {
-  id               String   @id @default(cuid())
-  propertyType     String
-  size             String?
-  yearBuilt        String?
-  bedrooms         String?
-  bathrooms        String?
-  condition        String?
-  listingId        String   @unique
-  constructionType String?
-  features         String[] @default([])
-  parking          String?
-  listing          Listing  @relation(fields: [listingId], references: [id])
+  id                   String   @id @default(cuid())
+  propertyType         String
+  size                 String?
+  yearBuilt            String?
+  bedrooms             String?
+  bathrooms            String?
+  condition            String?
+  listingId            String   @unique
+  constructionType     String?
+  features             String[] @default([])
+  parking              String?
+  floor                Int?
+  totalFloors          Int?
+  elevator             Boolean?
+  balcony              Boolean?
+  storage              Boolean?
+  heating              String?
+  cooling              String?
+  buildingAmenities    String[] @default([])
+  energyRating         String?
+  furnished            String?
+  petPolicy            String?
+  view                 String?
+  securityFeatures     String[] @default([])
+  fireSafety           String[] @default([])
+  flooringType         String?
+  internetIncluded     Boolean?
+  windowType           String?
+  accessibilityFeatures String[] @default([])
+  renovationHistory    String?
+  parkingType          String?
+  utilities            String[] @default([])
+  exposureDirection    String[] @default([])
+  storageType         String[] @default([])
+  listing             Listing  @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
 }
@@ -272,6 +351,7 @@ enum VehicleType {
   VAN
   BUS
   CONSTRUCTION
+  TRACTOR
 }
 
 enum FuelType {
