@@ -270,6 +270,58 @@ model VehicleDetails {
   electricalSystem   String?
   modifications      String?
 
+  // Safety Features
+  blindSpotMonitor      Boolean?
+  laneAssist           Boolean?
+  adaptiveCruiseControl Boolean?
+  tractionControl      Boolean?
+  abs                  Boolean?
+  emergencyBrakeAssist Boolean?
+  tirePressureMonitoring Boolean?
+
+  // Camera Features
+  rearCamera           Boolean?
+  camera360            Boolean?
+  dashCam              Boolean?
+  nightVision          Boolean?
+  parkingSensors       Boolean?
+
+  // Climate Features
+  climateControl       Boolean?
+  heatedSeats         Boolean?
+  ventilatedSeats     Boolean?
+  dualZoneClimate     Boolean?
+  rearAC              Boolean?
+
+  // Entertainment Features
+  bluetooth           Boolean?
+  appleCarPlay        Boolean?
+  androidAuto         Boolean?
+  premiumSound        Boolean?
+  wirelessCharging    Boolean?
+
+  // Lighting Features
+  ledHeadlights       Boolean?
+  adaptiveHeadlights  Boolean?
+  ambientLighting     Boolean?
+  fogLights           Boolean?
+
+  // Convenience Features
+  keylessEntry        Boolean?
+  sunroof             Boolean?
+  spareKey            Boolean?
+  remoteStart         Boolean?
+
+  // Additional Technical Fields
+  driveType           String?
+  wheelSize           String?
+  wheelType           String?
+  bodyType            String?
+  roofType            String?
+  insuranceType       String?
+  upholsteryMaterial  String?
+   
+
   listing            Listing           @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
