@@ -239,7 +239,7 @@ model VehicleDetails {
   certifications      String[]          @default([])
   luggageCompartments Int?
   luggageRacks        Boolean?
-  fuelTankCapacity    Int?
+  fuelTankCapacity    String?
 
   // Tractor-specific fields
   hours              Int?
@@ -292,6 +292,7 @@ model VehicleDetails {
   ventilatedSeats     Boolean?
   dualZoneClimate     Boolean?
   rearAC              Boolean?
+  airQualitySensor    Boolean?
 
   // Entertainment Features
   bluetooth           Boolean?
@@ -299,18 +300,26 @@ model VehicleDetails {
   androidAuto         Boolean?
   premiumSound        Boolean?
   wirelessCharging    Boolean?
+  usbPorts            Boolean?
+  cdPlayer            Boolean?
+  dvdPlayer           Boolean?
+  rearSeatEntertainment Boolean?
 
   // Lighting Features
   ledHeadlights       Boolean?
   adaptiveHeadlights  Boolean?
   ambientLighting     Boolean?
   fogLights           Boolean?
+  automaticHighBeams  Boolean?
 
   // Convenience Features
   keylessEntry        Boolean?
   sunroof             Boolean?
   spareKey            Boolean?
   remoteStart         Boolean?
+  powerTailgate       Boolean?
+  autoDimmingMirrors  Boolean?
+  rainSensingWipers   Boolean?
 
   // Additional Technical Fields
   driveType           String?
@@ -320,7 +329,34 @@ model VehicleDetails {
   roofType            String?
   insuranceType       String?
   upholsteryMaterial  String?
-   
+  accidentFree        Boolean?
+  importStatus        String?
+  
+  // Motorcycle specific fields
+  startType           String?
+  coolingSystem       String?
+  frameType           String?
+  frontSuspension     String[]         @default([])
+  rearSuspension      String[]         @default([])
+  riderAids           String[]         @default([])
+  electronics         String[]         @default([])
+  seatHeight          Int?
+  handlebarType       String?
+  storageOptions      String[]         @default([])
+  protectiveEquipment String[]         @default([])
+  
+  // Nested Safety Features for forms
+  frontAirbags        Boolean?
+  sideAirbags         Boolean?
+  curtainAirbags      Boolean?
+  kneeAirbags         Boolean?
+  cruiseControl       Boolean?
+  laneDepartureWarning Boolean?
+  laneKeepAssist      Boolean?
+  automaticEmergencyBraking Boolean?
+  
+  // Additional notes field
+  additionalNotes     String?
 
   listing            Listing           @relation(fields: [listingId], references: [id])
 
