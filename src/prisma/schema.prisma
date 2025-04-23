@@ -278,6 +278,24 @@ model VehicleDetails {
   abs                  Boolean?
   emergencyBrakeAssist Boolean?
   tirePressureMonitoring Boolean?
+  distanceTempomat     Boolean?
+  distanceWarning      Boolean?
+  passengerAirbag      Boolean?
+  glarelessHighBeam    Boolean?
+  esp                  Boolean?
+  driverAirbag         Boolean?
+  highBeamAssistant    Boolean?
+  speedLimitingSystem  Boolean?
+  isofix               Boolean?
+  fatigueWarningSystem Boolean?
+  emergencyCallSystem  Boolean?
+  sideAirbag           Boolean?
+  trackHoldingAssistant Boolean?
+  deadAngleAssistant   Boolean?
+  trafficSignRecognition Boolean?
+  burglarAlarmSystem   Boolean?
+  immobilizer          Boolean?
+  centralLocking       Boolean?
 
   // Camera Features
   rearCamera           Boolean?
@@ -285,6 +303,10 @@ model VehicleDetails {
   dashCam              Boolean?
   nightVision          Boolean?
   parkingSensors       Boolean?
+  parkingAid           Boolean?
+  parkingAidCamera     Boolean?
+  parkingAidSensorsRear Boolean?
+  parkingAidSensorsFront Boolean?
 
   // Climate Features
   climateControl       Boolean?
@@ -293,6 +315,8 @@ model VehicleDetails {
   dualZoneClimate     Boolean?
   rearAC              Boolean?
   airQualitySensor    Boolean?
+  airConditioning     Boolean?
+  twoZoneClimateControl Boolean?
 
   // Entertainment Features
   bluetooth           Boolean?
@@ -304,6 +328,14 @@ model VehicleDetails {
   cdPlayer            Boolean?
   dvdPlayer           Boolean?
   rearSeatEntertainment Boolean?
+  androidCar          Boolean?
+  onBoardComputer     Boolean?
+  dabRadio            Boolean?
+  handsFreeCalling    Boolean?
+  integratedMusicStreaming Boolean?
+  radio               Boolean?
+  soundSystem         Boolean?
+  wifiHotspot         Boolean?
 
   // Lighting Features
   ledHeadlights       Boolean?
@@ -311,6 +343,10 @@ model VehicleDetails {
   ambientLighting     Boolean?
   fogLights           Boolean?
   automaticHighBeams  Boolean?
+  ledDaytimeRunningLights Boolean?
+  daytimeRunningLights Boolean?
+  headlightCleaning   Boolean?
+  lightSensor         Boolean?
 
   // Convenience Features
   keylessEntry        Boolean?
@@ -320,6 +356,28 @@ model VehicleDetails {
   powerTailgate       Boolean?
   autoDimmingMirrors  Boolean?
   rainSensingWipers   Boolean?
+  mountainDrivingAssistant Boolean?
+  electricalWindowLifter Boolean?
+  electricalSideMirrors Boolean?
+  electricSeats       Boolean?
+  headUpDisplay       Boolean?
+  leatherSteeringWheel Boolean?
+  lumbarSupport       Boolean?
+  multifunctionalSteeringWheel Boolean?
+  navigationSystem    String?
+  rainSensor          Boolean?
+  automaticStartStop  Boolean?
+  automaticDazzlingInteriorMirrors Boolean?
+  switchingRockers    Boolean?
+  armrest             Boolean?
+  voiceControl        Boolean?
+  touchscreen         Boolean?
+  
+  // Extras
+  aluminumRims        Boolean?
+  luggageCompartmentSeparation Boolean?
+  summerTires         Boolean?
+  powerSteering       Boolean?
 
   // Additional Technical Fields
   driveType           String?
