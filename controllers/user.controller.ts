@@ -137,6 +137,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       email,
       username,
       password,
+      currentPassword,
       bio,
       dateOfBirth,
       street,
@@ -174,10 +175,56 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (postalCode) updates.postalCode = postalCode.trim();
 
     if (password) {
-      if (password.length < 6) {
+      // Verify current password first
+      if (!currentPassword) {
         return res.status(400).json({
           success: false,
-          error: "Password must be at least 6 characters",
+          error: "Current password is required",
+          status: 400,
+          data: null,
+        });
+      }
+
+      // Check if current password is correct
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          error: "Current password is incorrect",
+          status: 401,
+          data: null,
+        });
+      }
+
+      // Validate new password requirements
+      if (password.length < 8) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must be at least 8 characters long",
+          status: 400,
+          data: null,
+        });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must contain at least one uppercase letter",
+          status: 400,
+          data: null,
+        });
+      }
+      if (!/[a-z]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must contain at least one lowercase letter",
+          status: 400,
+          data: null,
+        });
+      }
+      if (!/[0-9]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must contain at least one number",
           status: 400,
           data: null,
         });
