@@ -269,7 +269,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
           },
         },
         favorites: true,
-        vehicleDetails: true,
+        
         realEstateDetails: true,
       },
     });
@@ -842,7 +842,7 @@ router.post(
             },
           },
           favorites: true,
-          vehicleDetails: true,
+          
           realEstateDetails: true,
         },
       });
@@ -1001,7 +1001,7 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
           },
         },
         favorites: true,
-        vehicleDetails: true, // This includes all vehicle details
+         // This includes all vehicle details
         realEstateDetails: true, // This includes all real estate details
       },
     });
@@ -1019,19 +1019,7 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
 
     // Detailed logging
     console.log("Raw listing data:", JSON.stringify(listing, null, 2));
-    if (listing.vehicleDetails) {
-      console.log(
-        "Vehicle details found:",
-        JSON.stringify(listing.vehicleDetails, null, 2)
-      );
-      // Log all fields to check if advanced fields exist
-      console.log(
-        "Vehicle detail fields:",
-        Object.keys(listing.vehicleDetails)
-      );
-    } else {
-      console.log("No vehicle details found for this listing");
-    }
+    
 
     const formattedListing = formatListingResponse(listing);
 
@@ -1139,11 +1127,7 @@ router.put(
                 })),
               }
             : undefined,
-          vehicleDetails: vehicleDetails
-            ? {
-                update: vehicleDetails,
-              }
-            : undefined,
+          
           realEstateDetails: realEstateDetails
             ? {
                 update: realEstateDetails,
@@ -1160,7 +1144,7 @@ router.put(
           },
           images: true,
           favorites: true,
-          vehicleDetails: true,
+          
           realEstateDetails: true,
         },
       });
@@ -1195,7 +1179,7 @@ router.delete(
         include: {
           images: true,
           favorites: true,
-          vehicleDetails: true,
+          
           realEstateDetails: true,
         },
       });
@@ -1224,11 +1208,7 @@ router.delete(
       // Delete in a transaction to ensure atomicity
       await prisma.$transaction(async (tx) => {
         // Delete vehicle details if they exist
-        if (listing.vehicleDetails) {
-          await tx.vehicleDetails.delete({
-            where: { listingId: listing.id },
-          });
-        }
+        
 
         // Delete real estate details if they exist
         if (listing.realEstateDetails) {

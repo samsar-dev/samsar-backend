@@ -36,7 +36,7 @@ interface ListingResponse {
     order: number;
     listingId: string;
   }>;
-  vehicleDetails?: {
+  
     id: string;
     vehicleType: string;
     make: string;
@@ -133,13 +133,7 @@ const formatListingResponse = (
       order: img.order,
       listingId: img.listingId,
     })),
-    vehicleDetails: listing.vehicleDetails
-      ? {
-          id: listing.vehicleDetails.id,
-          vehicleType: listing.vehicleDetails.vehicleType,
-          make: listing.vehicleDetails.make,
-          model: listing.vehicleDetails.model,
-          year: String(listing.vehicleDetails.year),
+    vehicleDetails: null,
           mileage: listing.vehicleDetails.mileage
             ? String(listing.vehicleDetails.mileage)
             : undefined,
@@ -332,7 +326,7 @@ export const createListing = async (req: AuthRequest, res: Response) => {
             },
           },
           images: true,
-          vehicleDetails: true,
+          
           realEstateDetails: true,
           favorites: true,
           attributes: true,
@@ -488,7 +482,7 @@ export const getListing = async (req: AuthRequest, res: Response) => {
         favorites: true,
         attributes: true,
         features: true,
-        vehicleDetails: true,
+        
         realEstateDetails: true,
       },
     });
