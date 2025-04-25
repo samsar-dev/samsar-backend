@@ -186,7 +186,10 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       }
 
       // Check if current password is correct
-      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
       if (!isPasswordValid) {
         return res.status(401).json({
           success: false,

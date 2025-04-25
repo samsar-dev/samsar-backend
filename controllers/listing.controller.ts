@@ -4,6 +4,10 @@ import {
   ListingAction,
   Prisma,
   NotificationType,
+  VehicleType,
+  FuelType,
+  TransmissionType,
+  Condition,
 } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
@@ -36,23 +40,23 @@ interface ListingResponse {
     order: number;
     listingId: string;
   }>;
-  
+  vehicleDetails?: {
     id: string;
-    vehicleType: string;
+    vehicleType: VehicleType;
     make: string;
     model: string;
-    year: string;
-    mileage?: string;
-    fuelType?: string;
-    transmissionType?: string;
+    year: number;
+    mileage?: number;
+    fuelType?: FuelType;
+    transmissionType?: TransmissionType;
     color?: string;
-    condition?: string;
+    condition?: Condition;
     listingId: string;
     interiorColor?: string;
     engine?: string;
     warranty?: string;
     serviceHistory?: string;
-    previousOwners?: string;
+    previousOwners?: number;
     registrationStatus?: string;
   } | null;
   realEstateDetails?: {
@@ -80,11 +84,12 @@ interface ListingResponse {
   features: Array<{
     id: string;
     name: string;
+    value: boolean;
     listingId: string;
   }>;
 }
 
-type ListingCreateInput = Prisma.ListingUncheckedCreateInput;
+type ListingCreateInput = Prisma.ListingCreateInput;
 type NotificationCreateInput = Prisma.NotificationUncheckedCreateInput;
 
 type ListingWithRelations = Prisma.ListingGetPayload<{
@@ -97,11 +102,53 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
       };
     };
     images: true;
-    vehicleDetails: true;
+    vehicleDetails: {
+      select: {
+        id: true;
+        vehicleType: true;
+        make: true;
+        model: true;
+        year: true;
+        mileage: true;
+        fuelType: true;
+        transmissionType: true;
+        color: true;
+        condition: true;
+        listingId: true;
+        interiorColor: true;
+        engine: true;
+        warranty: true;
+        serviceHistory: true;
+        previousOwners: true;
+        registrationStatus: true;
+      };
+    };
     realEstateDetails: true;
     favorites: true;
     attributes: true;
     features: true;
+  };
+}>;
+
+type VehicleDetailsWithRelations = Prisma.VehicleDetailsGetPayload<{
+  select: {
+    id: true;
+    vehicleType: true;
+    make: true;
+    model: true;
+    year: true;
+    mileage: true;
+    fuelType: true;
+    transmissionType: true;
+    color: true;
+    condition: true;
+    listingId: true;
+    interiorColor: true;
+    engine: true;
+    warranty: true;
+    serviceHistory: true;
+    previousOwners: true;
+    registrationStatus: true;
   };
 }>;
 
@@ -111,7 +158,7 @@ const formatListingResponse = (
   return {
     id: listing.id,
     title: listing.title,
-    description: listing.description || '',
+    description: listing.description || "",
     price: listing.price,
     mainCategory: listing.mainCategory,
     subCategory: listing.subCategory,
@@ -133,10 +180,14 @@ const formatListingResponse = (
       order: img.order,
       listingId: img.listingId,
     })),
-    vehicleDetails: null,
-          mileage: listing.vehicleDetails.mileage
-            ? String(listing.vehicleDetails.mileage)
-            : undefined,
+    vehicleDetails: listing.vehicleDetails
+      ? {
+          id: listing.vehicleDetails.id,
+          vehicleType: listing.vehicleDetails.vehicleType,
+          make: listing.vehicleDetails.make,
+          model: listing.vehicleDetails.model,
+          year: listing.vehicleDetails.year,
+          mileage: listing.vehicleDetails.mileage || undefined,
           fuelType: listing.vehicleDetails.fuelType || undefined,
           transmissionType:
             listing.vehicleDetails.transmissionType || undefined,
@@ -145,12 +196,11 @@ const formatListingResponse = (
           listingId: listing.vehicleDetails.listingId,
           interiorColor: listing.vehicleDetails.interiorColor || undefined,
           engine: listing.vehicleDetails.engine || undefined,
-          warranty: listing.vehicleDetails.warranty
-            ? String(listing.vehicleDetails.warranty)
-            : undefined,
-          serviceHistory: listing.vehicleDetails.serviceHistory ? String(listing.vehicleDetails.serviceHistory) : undefined,
-          previousOwners: listing.vehicleDetails.previousOwners ? String(listing.vehicleDetails.previousOwners) : undefined,
-          registrationStatus: listing.vehicleDetails.registrationStatus ? String(listing.vehicleDetails.registrationStatus) : undefined,
+          warranty: listing.vehicleDetails.warranty || undefined,
+          serviceHistory: listing.vehicleDetails.serviceHistory || undefined,
+          previousOwners: listing.vehicleDetails.previousOwners || undefined,
+          registrationStatus:
+            listing.vehicleDetails.registrationStatus || undefined,
         }
       : null,
     realEstateDetails: listing.realEstateDetails
@@ -186,6 +236,7 @@ const formatListingResponse = (
     features: listing.features.map((feature) => ({
       id: feature.id,
       name: feature.name,
+      value: feature.value,
       listingId: feature.listingId,
     })),
   };
@@ -256,7 +307,7 @@ export const createListing = async (req: AuthRequest, res: Response) => {
     // Start transaction
     const result = await prismaClient.$transaction(async (tx) => {
       // Create listing data
-      const listingData: ListingCreateInput = {
+      const listingData: Prisma.ListingCreateInput = {
         title,
         description,
         price: parseFloat(price),
@@ -267,7 +318,11 @@ export const createListing = async (req: AuthRequest, res: Response) => {
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SELL,
-        userId: req.user.id,
+        user: {
+          connect: {
+            id: req.user.id,
+          },
+        },
         images: {
           create:
             req.processedImages?.map((img) => ({
@@ -278,15 +333,18 @@ export const createListing = async (req: AuthRequest, res: Response) => {
         vehicleDetails: parsedDetails?.vehicles
           ? {
               create: {
-                vehicleType: parsedDetails.vehicles.vehicleType,
+                vehicleType: parsedDetails.vehicles.vehicleType as VehicleType,
                 make: parsedDetails.vehicles.make,
                 model: parsedDetails.vehicles.model,
-                year: parsedDetails.vehicles.year,
-                mileage: parsedDetails.vehicles.mileage,
-                fuelType: parsedDetails.vehicles.fuelType,
-                transmissionType: parsedDetails.vehicles.transmissionType,
-                color: parsedDetails.vehicles.color,
-                condition: parsedDetails.vehicles.condition,
+                year: parseInt(parsedDetails.vehicles.year),
+                mileage: parsedDetails.vehicles.mileage
+                  ? parseInt(parsedDetails.vehicles.mileage)
+                  : null,
+                fuelType: parsedDetails.vehicles.fuelType as FuelType | null,
+                transmissionType: parsedDetails.vehicles
+                  .transmissionType as TransmissionType | null,
+                color: parsedDetails.vehicles.color || null,
+                condition: parsedDetails.vehicles.condition as Condition | null,
               },
             }
           : undefined,
@@ -326,7 +384,27 @@ export const createListing = async (req: AuthRequest, res: Response) => {
             },
           },
           images: true,
-          
+          vehicleDetails: {
+            select: {
+              id: true,
+              vehicleType: true,
+              make: true,
+              model: true,
+              year: true,
+              mileage: true,
+              fuelType: true,
+              transmissionType: true,
+              color: true,
+              condition: true,
+              listingId: true,
+              interiorColor: true,
+              engine: true,
+              warranty: true,
+              serviceHistory: true,
+              previousOwners: true,
+              registrationStatus: true,
+            },
+          },
           realEstateDetails: true,
           favorites: true,
           attributes: true,
@@ -368,10 +446,42 @@ export const createListing = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Simple in-memory cache for listings
+const listingsCache = new Map<string, { data: any; etag: string; timestamp: number }>();
+const CACHE_TTL = 60 * 1000; // 60 seconds cache TTL
+
 export const getListings = async (req: AuthRequest, res: Response) => {
   try {
-    console.log('Request query:', req.query);
-    console.log('Request user:', req.user);
+    console.log("Request query:", req.query);
+    
+    // Create a cache key from the request query parameters
+    const cacheKey = JSON.stringify(req.query);
+    const ifNoneMatch = req.headers['if-none-match'];
+    
+    // Check if we have a valid cache entry
+    const cachedResponse = listingsCache.get(cacheKey);
+    if (cachedResponse) {
+      const isExpired = Date.now() - cachedResponse.timestamp > CACHE_TTL;
+      
+      // If the client sent an ETag that matches our cached ETag and the cache isn't expired
+      if (ifNoneMatch === cachedResponse.etag && !isExpired) {
+        // Return 304 Not Modified to tell the client to use its cached version
+        console.log('Cache hit with matching ETag, returning 304');
+        return res.status(304).end();
+      }
+      
+      // If cache is still valid but client didn't send matching ETag
+      if (!isExpired) {
+        console.log('Cache hit, returning cached data');
+        res.set('ETag', cachedResponse.etag);
+        res.set('Cache-Control', 'private, max-age=60'); // Tell client to cache for 60 seconds
+        return res.json(cachedResponse.data);
+      }
+      
+      // Cache expired, will fetch new data
+      console.log('Cache expired, fetching new data');
+    }
+    
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(
       50,
@@ -435,18 +545,42 @@ export const getListings = async (req: AuthRequest, res: Response) => {
           favorites: true,
           attributes: true,
           features: true,
+          vehicleDetails: {
+            select: {
+              id: true,
+              vehicleType: true,
+              make: true,
+              model: true,
+              year: true,
+              mileage: true,
+              fuelType: true,
+              transmissionType: true,
+              color: true,
+              condition: true,
+              listingId: true,
+              interiorColor: true,
+              engine: true,
+              warranty: true,
+              serviceHistory: true,
+              previousOwners: true,
+              registrationStatus: true,
+            },
+          },
+          realEstateDetails: true,
         },
       }),
       prisma.listing.count({ where }),
     ]);
 
-    console.log('Found listings:', listings.length);
+    console.log("Found listings:", listings.length);
     const formattedListings = listings.map((listing) =>
       formatListingResponse(listing as ListingWithRelations),
     );
 
-    console.log('Formatted listings:', formattedListings.length);
-    res.json({
+    console.log("Formatted listings:", formattedListings.length);
+    
+    // Prepare response data
+    const responseData = {
       success: true,
       data: {
         listings: formattedListings,
@@ -454,10 +588,31 @@ export const getListings = async (req: AuthRequest, res: Response) => {
         page,
         limit,
       },
+      status: 200,
+    };
+    
+    // Generate ETag (simple hash of the JSON response)
+    const etag = `W/"${Buffer.from(JSON.stringify(responseData)).toString('base64').slice(0, 27)}"`; 
+    
+    // Store in cache
+    listingsCache.set(cacheKey, {
+      data: responseData,
+      etag,
+      timestamp: Date.now(),
     });
+    
+    // Set cache headers
+    res.set('ETag', etag);
+    res.set('Cache-Control', 'private, max-age=60'); // Tell client to cache for 60 seconds
+    
+    // Send response
+    res.json(responseData);
   } catch (error) {
     console.error("Error getting listings:", error);
-    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
     res.status(500).json({
       success: false,
       message: "Error getting listings",
@@ -482,7 +637,7 @@ export const getListing = async (req: AuthRequest, res: Response) => {
         favorites: true,
         attributes: true,
         features: true,
-        
+
         realEstateDetails: true,
       },
     });
@@ -759,6 +914,28 @@ export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
         favorites: true,
         attributes: true,
         features: true,
+        vehicleDetails: {
+          select: {
+            id: true,
+            vehicleType: true,
+            make: true,
+            model: true,
+            year: true,
+            mileage: true,
+            fuelType: true,
+            transmissionType: true,
+            color: true,
+            condition: true,
+            listingId: true,
+            interiorColor: true,
+            engine: true,
+            warranty: true,
+            serviceHistory: true,
+            previousOwners: true,
+            registrationStatus: true,
+          },
+        },
+        realEstateDetails: true,
       },
     });
 

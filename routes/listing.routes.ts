@@ -26,7 +26,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string
+  sortOrder?: string,
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -96,7 +96,8 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           seatMaterial: listing.vehicleDetails.seatMaterial,
           wheelchairAccessible: listing.vehicleDetails.wheelchairAccessible,
           wheelchairLift: listing.vehicleDetails.wheelchairLift,
-          accessibilityFeatures: listing.vehicleDetails.accessibilityFeatures || [],
+          accessibilityFeatures:
+            listing.vehicleDetails.accessibilityFeatures || [],
           emergencyExits: listing.vehicleDetails.emergencyExits,
           safetyFeatures: listing.vehicleDetails.safetyFeatures || [],
           seatBelts: listing.vehicleDetails.seatBelts,
@@ -105,7 +106,8 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           engineTorque: listing.vehicleDetails.engineTorque,
           suspension: listing.vehicleDetails.suspension || [],
           brakeSystem: listing.vehicleDetails.brakeSystem || [],
-          entertainmentFeatures: listing.vehicleDetails.entertainmentFeatures || [],
+          entertainmentFeatures:
+            listing.vehicleDetails.entertainmentFeatures || [],
           navigationSystem: listing.vehicleDetails.navigationSystem,
           communicationSystem: listing.vehicleDetails.communicationSystem || [],
           maintenanceHistory: listing.vehicleDetails.maintenanceHistory,
@@ -114,6 +116,7 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           luggageCompartments: listing.vehicleDetails.luggageCompartments,
           luggageRacks: listing.vehicleDetails.luggageRacks,
           fuelTankCapacity: listing.vehicleDetails.fuelTankCapacity,
+          
           // Tractor-specific fields
           hours: listing.vehicleDetails.hours,
           driveSystem: listing.vehicleDetails.driveSystem,
@@ -170,7 +173,8 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           flooringType: listing.realEstateDetails.flooringType,
           internetIncluded: listing.realEstateDetails.internetIncluded,
           windowType: listing.realEstateDetails.windowType,
-          accessibilityFeatures: listing.realEstateDetails.accessibilityFeatures || [],
+          accessibilityFeatures:
+            listing.realEstateDetails.accessibilityFeatures || [],
           renovationHistory: listing.realEstateDetails.renovationHistory,
           parkingType: listing.realEstateDetails.parkingType,
           utilities: listing.realEstateDetails.utilities || [],
@@ -242,8 +246,8 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
       where.realEstateDetails = {
         is: {
           ...(where.realEstateDetails?.is || {}),
-          yearBuilt: builtYear.toString()
-        }
+          yearBuilt: builtYear.toString(),
+        },
       };
     }
 
@@ -269,14 +273,14 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
           },
         },
         favorites: true,
-        
+
         realEstateDetails: true,
       },
     });
 
     // Format listings for response
     const formattedListings = listings.map((listing) =>
-      formatListingResponse(listing)
+      formatListingResponse(listing),
     );
 
     res.json({
@@ -409,7 +413,7 @@ router.use(authenticate);
 
 // Helper function to handle authenticated routes
 const handleAuthRoute = (
-  handler: (req: AuthRequest, res: Response) => Promise<void>
+  handler: (req: AuthRequest, res: Response) => Promise<void>,
 ) => {
   return async (req: Request, res: Response): Promise<void> => {
     try {
@@ -456,7 +460,7 @@ router.get(
       });
 
       const formattedListings = savedListings.map((favorite) =>
-        formatListingResponse(favorite.listing)
+        formatListingResponse(favorite.listing),
       );
 
       res.json({
@@ -473,7 +477,7 @@ router.get(
         data: null,
       });
     }
-  })
+  }),
 );
 
 // Save a listing to favorites
@@ -550,12 +554,13 @@ router.post(
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
         status: 500,
         data: null,
       });
     }
-  })
+  }),
 );
 
 // Delete a saved listing
@@ -604,12 +609,13 @@ router.delete(
     } catch (error) {
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : "An unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
         status: 500,
         data: null,
       });
     }
-  })
+  }),
 );
 
 router.post(
@@ -661,20 +667,16 @@ router.post(
       let parsedDetails;
       try {
         parsedDetails = JSON.parse(
-          typeof details === "string" ? details : JSON.stringify(details)
+          typeof details === "string" ? details : JSON.stringify(details),
         );
         console.log("Parsed details:", JSON.stringify(parsedDetails, null, 2));
 
         // Handle vehicle details if present
         if (mainCategory === "VEHICLES" && parsedDetails.vehicles) {
           const vehicle = parsedDetails.vehicles;
-          // Convert serviceHistory to boolean if it's a string
-          if (typeof vehicle.serviceHistory === 'string') {
-            vehicle.serviceHistory = vehicle.serviceHistory.toLowerCase() === 'true';
-          }
-          // Ensure it's a boolean or null
-          if (typeof vehicle.serviceHistory !== 'boolean') {
-            vehicle.serviceHistory = false; // Default to false if not boolean
+          // Ensure serviceHistory is a string or null
+          if (vehicle.serviceHistory !== null && typeof vehicle.serviceHistory !== "string") {
+            vehicle.serviceHistory = null;
           }
         }
 
@@ -715,10 +717,17 @@ router.post(
         return;
       }
 
+      // Helper to sanitize Int fields
+      function sanitizeIntField(value: any): number | null {
+        if (typeof value === "number" && !isNaN(value)) return value;
+        if (typeof value === "string" && value.trim() !== "" && !isNaN(Number(value))) return Number(value);
+        return null;
+      }
+
       // Create listing with images
       console.log(
         "Details sent to DB:",
-        JSON.stringify(parsedDetails, null, 2)
+        JSON.stringify(parsedDetails, null, 2),
       );
 
       const listing = await prisma.listing.create({
@@ -745,46 +754,29 @@ router.post(
                   make: parsedDetails.vehicles.make,
                   model: parsedDetails.vehicles.model,
                   year: parsedDetails.vehicles.year || new Date().getFullYear(),
-                  mileage: parsedDetails.vehicles.mileage ? Number(parsedDetails.vehicles.mileage) : 0,
+                  mileage: parsedDetails.vehicles.mileage
+                    ? Number(parsedDetails.vehicles.mileage)
+                    : 0,
                   fuelType: parsedDetails.vehicles.fuelType,
                   transmissionType: parsedDetails.vehicles.transmissionType,
                   color: parsedDetails.vehicles.color || "#000000",
                   condition: parsedDetails.vehicles.condition,
                   features: parsedDetails.vehicles.features || [],
-                  interiorColor: parsedDetails.vehicles.interiorColor || "#000000",
+                  interiorColor:
+                    parsedDetails.vehicles.interiorColor || "#000000",
                   engine: parsedDetails.vehicles.engine || "",
                   warranty: parsedDetails.vehicles.warranty || "",
-                  serviceHistory: parsedDetails.vehicles.serviceHistory || false,
-                  previousOwners: parsedDetails.vehicles.previousOwners !== undefined ? Number(parsedDetails.vehicles.previousOwners) : undefined,
-                  registrationStatus: parsedDetails.vehicles.registrationStatus || undefined,
+                  serviceHistory:
+                    parsedDetails.vehicles.serviceHistory || null,
+                  previousOwners:
+                    parsedDetails.vehicles.previousOwners !== undefined
+                      ? Number(parsedDetails.vehicles.previousOwners)
+                      : undefined,
+                  registrationStatus:
+                    parsedDetails.vehicles.registrationStatus || undefined,
                   horsepower: parsedDetails.vehicles.horsepower,
                   torque: parsedDetails.vehicles.torque,
-                  // Bus-specific fields
-                  seatingCapacity: parsedDetails.vehicles.seatingCapacity,
-                  luggageSpace: parsedDetails.vehicles.luggageSpace,
-                  comfortFeatures: parsedDetails.vehicles.comfortFeatures || [],
-                  seatType: parsedDetails.vehicles.seatType,
-                  seatMaterial: parsedDetails.vehicles.seatMaterial,
-                  wheelchairAccessible: parsedDetails.vehicles.wheelchairAccessible,
-                  wheelchairLift: parsedDetails.vehicles.wheelchairLift,
-                  accessibilityFeatures: parsedDetails.vehicles.accessibilityFeatures || [],
-                  emergencyExits: parsedDetails.vehicles.emergencyExits,
-                  safetyFeatures: parsedDetails.vehicles.safetyFeatures || [],
-                  seatBelts: parsedDetails.vehicles.seatBelts,
-                  emissionStandard: parsedDetails.vehicles.emissionStandard,
-                  enginePower: parsedDetails.vehicles.enginePower,
-                  engineTorque: parsedDetails.vehicles.engineTorque,
-                  suspension: parsedDetails.vehicles.suspension || [],
-                  brakeSystem: parsedDetails.vehicles.brakeSystem || [],
-                  entertainmentFeatures: parsedDetails.vehicles.entertainmentFeatures || [],
-                  navigationSystem: parsedDetails.vehicles.navigationSystem,
-                  communicationSystem: parsedDetails.vehicles.communicationSystem || [],
-                  maintenanceHistory: parsedDetails.vehicles.maintenanceHistory,
-                  lastInspectionDate: parsedDetails.vehicles.lastInspectionDate,
-                  certifications: parsedDetails.vehicles.certifications || [],
-                  luggageCompartments: parsedDetails.vehicles.luggageCompartments,
-                  luggageRacks: parsedDetails.vehicles.luggageRacks,
-                  fuelTankCapacity: parsedDetails.vehicles.fuelTankCapacity,
+                  
                   // Tractor-specific fields
                   hours: parsedDetails.vehicles.hours,
                   driveSystem: parsedDetails.vehicles.driveSystem,
@@ -796,10 +788,11 @@ router.post(
                   emissions: parsedDetails.vehicles.emissions,
                   hydraulicSystem: parsedDetails.vehicles.hydraulicSystem,
                   hydraulicFlow: parsedDetails.vehicles.hydraulicFlow,
-                  hydraulicOutlets: parsedDetails.vehicles.hydraulicOutlets || [],
+                  hydraulicOutlets: sanitizeIntField(parsedDetails.vehicles.hydraulicOutlets),
                   ptoSystem: parsedDetails.vehicles.ptoSystem || [],
                   ptoHorsepower: parsedDetails.vehicles.ptoHorsepower,
-                  frontAttachments: parsedDetails.vehicles.frontAttachments || [],
+                  frontAttachments:
+                    parsedDetails.vehicles.frontAttachments || [],
                   rearAttachments: parsedDetails.vehicles.rearAttachments || [],
                   threePointHitch: parsedDetails.vehicles.threePointHitch,
                   hitchCapacity: parsedDetails.vehicles.hitchCapacity,
@@ -807,7 +800,8 @@ router.post(
                   seating: parsedDetails.vehicles.seating || [],
                   steeringSystem: parsedDetails.vehicles.steeringSystem || [],
                   lighting: parsedDetails.vehicles.lighting || [],
-                  precisionFarming: parsedDetails.vehicles.precisionFarming || [],
+                  precisionFarming:
+                    parsedDetails.vehicles.precisionFarming || [],
                   monitor: parsedDetails.vehicles.monitor || [],
                   electricalSystem: parsedDetails.vehicles.electricalSystem,
                   modifications: parsedDetails.vehicles.modifications,
@@ -842,7 +836,7 @@ router.post(
             },
           },
           favorites: true,
-          
+
           realEstateDetails: true,
         },
       });
@@ -870,7 +864,7 @@ router.post(
             "Details:",
             typeof details === "string"
               ? details
-              : JSON.stringify(details, null, 2)
+              : JSON.stringify(details, null, 2),
           );
         } catch (e) {
           console.error("Error logging details:", e);
@@ -884,7 +878,7 @@ router.post(
         data: null,
       });
     }
-  })
+  }),
 );
 
 router.get(
@@ -939,7 +933,7 @@ router.get(
         },
       });
     }
-  })
+  }),
 );
 
 router.get(
@@ -982,7 +976,7 @@ router.get(
         },
       });
     }
-  })
+  }),
 );
 
 router.get("/:id", async (req: Request, res: Response): Promise<void> => {
@@ -1001,7 +995,7 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
           },
         },
         favorites: true,
-         // This includes all vehicle details
+        // This includes all vehicle details
         realEstateDetails: true, // This includes all real estate details
       },
     });
@@ -1019,7 +1013,6 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
 
     // Detailed logging
     console.log("Raw listing data:", JSON.stringify(listing, null, 2));
-    
 
     const formattedListing = formatListingResponse(listing);
 
@@ -1030,11 +1023,11 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
     ) {
       console.log(
         "Formatted listing:",
-        JSON.stringify(formattedListing, null, 2)
+        JSON.stringify(formattedListing, null, 2),
       );
       console.log(
         "Formatted vehicle details:",
-        JSON.stringify(formattedListing.details.vehicles, null, 2)
+        JSON.stringify(formattedListing.details.vehicles, null, 2),
       );
     }
 
@@ -1127,7 +1120,7 @@ router.put(
                 })),
               }
             : undefined,
-          
+
           realEstateDetails: realEstateDetails
             ? {
                 update: realEstateDetails,
@@ -1144,7 +1137,7 @@ router.put(
           },
           images: true,
           favorites: true,
-          
+
           realEstateDetails: true,
         },
       });
@@ -1164,7 +1157,7 @@ router.put(
         data: null,
       });
     }
-  })
+  }),
 );
 
 router.delete(
@@ -1179,7 +1172,7 @@ router.delete(
         include: {
           images: true,
           favorites: true,
-          
+
           realEstateDetails: true,
         },
       });
@@ -1208,7 +1201,6 @@ router.delete(
       // Delete in a transaction to ensure atomicity
       await prisma.$transaction(async (tx) => {
         // Delete vehicle details if they exist
-        
 
         // Delete real estate details if they exist
         if (listing.realEstateDetails) {
@@ -1248,7 +1240,7 @@ router.delete(
         data: null,
       });
     }
-  })
+  }),
 );
 
 export default router;

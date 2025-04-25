@@ -57,7 +57,7 @@ model Listing {
   fuelType         String?
   engineSize       Float?
   engineNumber     String?
-  vin              String?
+ 
   year             Int?
   make             String?
   model            String?
@@ -69,7 +69,6 @@ model Listing {
   floors           Int?
   yearBuilt        Int?
   parkingSpaces    Int?
-  furnished        Boolean?
   utilities        Boolean?
   
   // Common fields
@@ -82,6 +81,7 @@ model Listing {
   Message           Message[]
   notifications     Notification[]     @relation("ListingNotifications")
   realEstateDetails RealEstateDetails?
+  vehicleDetails   VehicleDetails?
 
   @@index([userId])
   @@index([mainCategory])
@@ -198,6 +198,9 @@ model VehicleDetails {
   warranty           String?
   serviceHistory     String?
   previousOwners     Int?
+  listingId          String            @unique
+  listing            Listing           @relation(fields: [listingId], references: [id])
+  registrationStatus String?
   
   // Common fields
   engineType         String?
@@ -212,15 +215,11 @@ model VehicleDetails {
   performanceFeatures String[]         @default([])
   modifications      String[]          @default([])
   customFeatures     String[]          @default([])
-
-  // Bus specific fields
-  busType            String?
-  seatingCapacity    Int?
-  luggageSpace       Float?
-  wheelchairAccessible Boolean?
-  wheelchairLift     Boolean?
-  accessibilityFeatures String[]       @default([])
-  emergencyExits     Int?
+  horsepower         Int?
+  torque             Int?
+  emissionStandard   String?
+  enginePower        String?
+  engineTorque       String?
 
   // Car specific fields
   trunkCapacity      Float?
@@ -231,7 +230,6 @@ model VehicleDetails {
   suspensionType     String?
   steeringType       String?
   parkingAssist      String[]          @default([])
-
 
   // Motorcycle specific fields
   motorcycleType     String?
@@ -245,74 +243,76 @@ model VehicleDetails {
   instrumentCluster  String[]          @default([])
   lightingSystem     String[]          @default([])
 
-  // Truck specific fields
-  truckType          String?
-  cargoFeatures      String[]          @default([])
-  bodyFeatures       String[]          @default([])
-  cargoCapacity      Float?
-  axleConfiguration  String?
-  cabType            String?
-  bedLength          String?
-  payload            Float?
-  towingCapacity     Float?
-  gvwr               Float?
-  wheelbase          String?
 
-  // Van specific fields
-  vanType            String?
-  passengerFeatures  String[]          @default([])
-  conversionFeatures String[]          @default([])
-  cargoVolume        Float?
-  roofHeight         String?
-  interiorHeight     String?
-  interiorLength     String?
-
-  // Relations
-
-  registrationStatus String?
-  registrationExpiry String?
-  vin                String?
-  engineNumber       String?
-  tireCondition      String?
-
-  // Additional car-specific fields
-  warrantyPeriod      String?
-  serviceHistoryDetails String?
-  customsCleared      Boolean?
-  communicationSystem String[]          @default([])
-  maintenanceHistory  String?
-  lastInspectionDate  String?
-  certifications      String[]          @default([])
-  luggageCompartments Int?
-  luggageRacks        Boolean?
-
-  // Tractor-specific fields
+  // Tractor specific fields
   hours              Int?
-  horsepower         Int?
   driveSystem        String?
   engineSpecs        String[]          @default([])
-  engineManufacturer String?
-  engineModel        String?
+  engineManufacturer  String?
+  engineModel         String?
   displacement       String?
   cylinders          String?
-  torque             Int?
   emissions          String?
-  hydraulicSystem    String?
-  hydraulicFlow      Int?
-  hydraulicOutlets   String[]          @default([])
-  ptoSystem         String[]          @default([])
-  ptoHorsepower     Int?
+  hydraulicFlow      Float?
+
+  ptoSystem          String[]          @default([])
+  ptoHorsepower      Int?
   frontAttachments   String[]          @default([])
   rearAttachments    String[]          @default([])
   threePointHitch    String?
-  hitchCapacity      Int?
+  hitchCapacity      Float?
   cabFeatures        String[]          @default([])
   seating            String[]          @default([])
   steeringSystem     String[]          @default([])
   lighting           String[]          @default([])
   precisionFarming   String[]          @default([])
-  monitor            String[]          @default([])
-  electricalSystem   String?
+
+ 
+
+
+  // Van specific fields
+  vanType            String?
+  cargoVolume        Int?
+  roofHeight         String?
+  loadingFeatures    String[]          @default([])
+
+  // Truck specific fields
+  truckType          String?
+  cabType            String?
+  bedLength          String?
+  payload            Int?
+
+  // Construction equipment specific
+  equipmentType      String?
+  operatingWeight    String?
+  maxLiftingCapacity String?
+  hydraulicSystem    String?
+  operatorCabType    String?
+  gps                Boolean?
+  ptoType            String?
+  hydraulicOutlets   Int?
+
+  // Bus specific fields
+  busType            String?
+  seatingCapacity    Int?
+  luggageSpace       Float?
+  wheelchairAccessible Boolean?
+  wheelchairLift     Boolean?
+  accessibilityFeatures String[]       @default([])
+  emergencyExits     Int?
+  luggageCompartments Int?
+  luggageRacks       Boolean?
+
+  // Additional fields
+  warrantyPeriod      String?
+  serviceHistoryDetails String?
+  customsCleared      Boolean?
+  communicationSystem String[]          @default([])
+  lastInspectionDate  String?
+  certifications      String[]          @default([])
+  monitor             String[]          @default([])
+  electricalSystem    String?
+  maintenanceHistory  String?
 
   // Safety Features
   blindSpotMonitor      Boolean?
@@ -438,11 +438,15 @@ model VehicleDetails {
   rearSuspension      String[]         @default([])
   riderAids           String[]         @default([])
   electronics         String[]         @default([])
+  seatType            String?
+  seatMaterial        String?
   seatHeight          Int?
   handlebarType       String?
   storageOptions      String[]         @default([])
-  protectiveEquipment String[]         @default([])
+  seatBelts           String?
   
+  protectiveEquipment String[]         @default([])
+
   // Nested Safety Features for forms
   frontAirbags        Boolean?
   sideAirbags         Boolean?
@@ -455,9 +459,8 @@ model VehicleDetails {
   
   // Additional notes field
   additionalNotes     String?
-
-
-
+  gearbox             String?
+  attachments         String[]          @default([])
 }
 
 model RealEstateDetails {
@@ -482,7 +485,6 @@ model RealEstateDetails {
   buildingAmenities    String[] @default([])
   energyRating         String?
   furnished            String?
-  petPolicy            String?
   view                 String?
   securityFeatures     String[] @default([])
   fireSafety           String[] @default([])
@@ -496,7 +498,30 @@ model RealEstateDetails {
   exposureDirection    String[] @default([])
   storageType         String[] @default([])
   listing             Listing  @relation(fields: [listingId], references: [id])
+  
+  // House specific fields 
+  halfBathrooms      Int?
+  stories            Int?
+  basement           String?
+  attic              String?
+  flooringTypes      String[]
 
+  // Land specific fields 
+  parcelNumber       String?
+  topography         String[]
+  elevation          Int?
+  waterFeatures      String?
+  naturalFeatures    String?
+  buildable          String?
+  buildingRestrictions String?
+  permitsInPlace     String?
+  environmentalFeatures String?
+  soilTypes          String[]
+
+  // Apartment specific fields 
+  petPolicy          String?
+ 
+  
   @@index([listingId])
 }
 
