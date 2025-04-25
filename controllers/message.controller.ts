@@ -3,6 +3,155 @@ import prisma from "../src/lib/prismaClient.js";
 import { AuthRequest } from "../types/index.js";
 import { NotificationType } from "../types/enums.js";
 
+export const createConversation = async (req: AuthRequest, res: Response) => {
+  try {
+    const { participantIds, initialMessage } = req.body;
+    const senderId = req.user.id;
+
+    // Validate required fields
+    if (!participantIds || !Array.isArray(participantIds) || participantIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: { message: "participantIds array is required" },
+      });
+    }
+
+    // Check if conversation already exists between these participants
+    const existingConversation = await prisma.conversation.findFirst({
+      where: {
+        AND: participantIds.map(id => ({
+          participants: {
+            some: { id }
+          }
+        }))
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true
+          }
+        }
+      }
+    });
+
+    if (existingConversation) {
+      return res.json({
+        success: true,
+        data: existingConversation
+      });
+    }
+
+    // Create new conversation
+    const conversation = await prisma.conversation.create({
+      data: {
+        participants: {
+          connect: participantIds.map(id => ({ id }))
+        },
+        lastMessage: initialMessage || "",
+        lastMessageAt: new Date()
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true
+          }
+        }
+      }
+    });
+
+    // If there's an initial message, create it
+    if (initialMessage) {
+      await prisma.message.create({
+        data: {
+          content: initialMessage,
+          sender: { connect: { id: senderId } },
+          recipient: { 
+            connect: { 
+              id: participantIds.find(id => id !== senderId) || participantIds[0] 
+            } 
+          },
+          conversation: { connect: { id: conversation.id } }
+        }
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: conversation
+    });
+
+  } catch (error) {
+    console.error("Error creating conversation:", error);
+    return res.status(500).json({
+      success: false,
+      error: { message: "Failed to create conversation" }
+    });
+  }
+};
+
+export const getConversations = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 20 } = req.query;
+
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            id: userId
+          }
+        }
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true
+          }
+        },
+        messages: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
+        }
+      },
+      orderBy: {
+        lastMessageAt: 'desc'
+      },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
+    });
+
+    // Format the response
+    const formattedConversations = conversations.map(conv => ({
+      ...conv,
+      lastMessage: conv.messages[0] || null
+    }));
+
+    return res.json({
+      success: true,
+      data: {
+        items: formattedConversations,
+        page: Number(page),
+        limit: Number(limit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching conversations:", error);
+    return res.status(500).json({
+      success: false,
+      error: { message: "Failed to fetch conversations" }
+    });
+  }
+};
+
 export const sendMessage = async (req: AuthRequest, res: Response) => {
   try {
     const { recipientId, content, listingId } = req.body;
@@ -233,41 +382,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getConversations = async (req: AuthRequest, res: Response) => {
-  try {
-    const conversations = await prisma.conversation.findMany({
-      where: {
-        participants: {
-          some: {
-            id: req.user.id,
-          },
-        },
-      },
-      include: {
-        messages: {
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 1,
-        },
-      },
-      orderBy: {
-        lastMessageAt: "desc",
-      },
-    });
 
-    res.json({
-      success: true,
-      conversations,
-    });
-  } catch (error) {
-    console.error("Get conversations error:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to get conversations",
-    });
-  }
-};
 
 export const getMessages = async (req: AuthRequest, res: Response) => {
   try {
