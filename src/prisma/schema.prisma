@@ -16,6 +16,10 @@ model User {
   profilePicture       String?
   bio                  String?
   location             String?
+  dateOfBirth          String?
+  street               String?
+  city                 String?
+  postalCode           String?
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   role                 UserRole       @default(USER)
@@ -44,16 +48,40 @@ model Listing {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   userId            String
-  attributes        Attribute[]
+  
+  // Vehicle-specific fields
+  color             String?
+  interiorColor     String?
+  mileage          Float?
+  transmission     String?
+  fuelType         String?
+  engineSize       Float?
+  engineNumber     String?
+ 
+  year             Int?
+  make             String?
+  model            String?
+  
+  // Property-specific fields
+  size             Float?
+  bedrooms         Int?
+  bathrooms        Float?
+  floors           Int?
+  yearBuilt        Int?
+  parkingSpaces    Int?
+  utilities        Boolean?
+  
+  // Common fields
+  features         Feature[]
+  images           Image[]
+  attributes       Attribute[]
   conversations     Conversation[]     @relation("ListingConversations")
   favorites         Favorite[]
-  features          Feature[]
-  images            Image[]
   user              User               @relation("UserListings", fields: [userId], references: [id])
   Message           Message[]
   notifications     Notification[]     @relation("ListingNotifications")
   realEstateDetails RealEstateDetails?
-  vehicleDetails    VehicleDetails?
+  vehicleDetails   VehicleDetails?
 
   @@index([userId])
   @@index([mainCategory])
@@ -167,32 +195,333 @@ model VehicleDetails {
   features           String[]          @default([])
   interiorColor      String?
   engine             String?
-  warranty           Int?
+  warranty           String?
   serviceHistory     String?
   previousOwners     Int?
-  registrationStatus String?
   listingId          String            @unique
-  brakeType          String?
-  engineSize         String?
   listing            Listing           @relation(fields: [listingId], references: [id])
+  registrationStatus String?
+  
+  // Common fields
+  engineType         String?
+  engineSize         String?
+  enginePowerOutput  String?
+  driveType          String?
+  bodyStyle          String?
+  safetyFeatures     String[]          @default([])
+  comfortFeatures    String[]          @default([])
+  entertainmentSystem String[]         @default([])
+  exteriorFeatures   String[]          @default([])
+  performanceFeatures String[]         @default([])
+  modifications      String[]          @default([])
+  customFeatures     String[]          @default([])
+  horsepower         Int?
+  torque             Int?
+  emissionStandard   String?
+  enginePower        String?
+  engineTorque       String?
 
-  @@index([listingId])
+  // Car specific fields
+  trunkCapacity      Float?
+  airbags            Int?
+  brakeType          String?
+  fuelTankCapacity   String?
+  roofType           String?
+  suspensionType     String?
+  steeringType       String?
+  parkingAssist      String[]          @default([])
+
+  // Motorcycle specific fields
+  motorcycleType     String?
+  engineConfiguration String?
+  ridingStyle        String?
+  brakeSystem        String[]          @default([])
+  frameType          String?
+  wheelSize          String?
+  tireType           String?
+  startingSystem     String?
+  instrumentCluster  String[]          @default([])
+  lightingSystem     String[]          @default([])
+
+
+  // Tractor specific fields
+  hours              Int?
+  driveSystem        String?
+  engineSpecs        String[]          @default([])
+  engineManufacturer  String?
+  engineModel         String?
+  displacement       String?
+  cylinders          String?
+  emissions          String?
+  hydraulicFlow      Float?
+
+  ptoSystem          String[]          @default([])
+  ptoHorsepower      Int?
+  frontAttachments   String[]          @default([])
+  rearAttachments    String[]          @default([])
+  threePointHitch    String?
+  hitchCapacity      Float?
+  cabFeatures        String[]          @default([])
+  seating            String[]          @default([])
+  steeringSystem     String[]          @default([])
+  lighting           String[]          @default([])
+  precisionFarming   String[]          @default([])
+
+ 
+
+
+  // Van specific fields
+  vanType            String?
+  cargoVolume        Int?
+  roofHeight         String?
+  loadingFeatures    String[]          @default([])
+
+  // Truck specific fields
+  truckType          String?
+  cabType            String?
+  bedLength          String?
+  payload            Int?
+
+  // Construction equipment specific
+  equipmentType      String?
+  operatingWeight    String?
+  maxLiftingCapacity String?
+  hydraulicSystem    String?
+  operatorCabType    String?
+  gps                Boolean?
+  ptoType            String?
+  hydraulicOutlets   Int?
+
+  // Bus specific fields
+  busType            String?
+  seatingCapacity    Int?
+  luggageSpace       Float?
+  wheelchairAccessible Boolean?
+  wheelchairLift     Boolean?
+  accessibilityFeatures String[]       @default([])
+  emergencyExits     Int?
+  luggageCompartments Int?
+  luggageRacks       Boolean?
+
+  // Additional fields
+  warrantyPeriod      String?
+  serviceHistoryDetails String?
+  customsCleared      Boolean?
+  communicationSystem String[]          @default([])
+  lastInspectionDate  String?
+  certifications      String[]          @default([])
+  monitor             String[]          @default([])
+  electricalSystem    String?
+  maintenanceHistory  String?
+
+  // Safety Features
+  blindSpotMonitor      Boolean?
+  laneAssist           Boolean?
+  adaptiveCruiseControl Boolean?
+  tractionControl      Boolean?
+  abs                  Boolean?
+  emergencyBrakeAssist Boolean?
+  tirePressureMonitoring Boolean?
+  distanceTempomat     Boolean?
+  distanceWarning      Boolean?
+  passengerAirbag      Boolean?
+  glarelessHighBeam    Boolean?
+  esp                  Boolean?
+  driverAirbag         Boolean?
+  highBeamAssistant    Boolean?
+  speedLimitingSystem  Boolean?
+  isofix               Boolean?
+  fatigueWarningSystem Boolean?
+  emergencyCallSystem  Boolean?
+  sideAirbag           Boolean?
+  trackHoldingAssistant Boolean?
+  deadAngleAssistant   Boolean?
+  trafficSignRecognition Boolean?
+  burglarAlarmSystem   Boolean?
+  immobilizer          Boolean?
+  centralLocking       Boolean?
+
+  // Camera Features
+  rearCamera           Boolean?
+  camera360            Boolean?
+  dashCam              Boolean?
+  nightVision          Boolean?
+  parkingSensors       Boolean?
+  parkingAid           Boolean?
+  parkingAidCamera     Boolean?
+  parkingAidSensorsRear Boolean?
+  parkingAidSensorsFront Boolean?
+
+  // Climate Features
+  climateControl       Boolean?
+  heatedSeats         Boolean?
+  ventilatedSeats     Boolean?
+  dualZoneClimate     Boolean?
+  rearAC              Boolean?
+  airQualitySensor    Boolean?
+  airConditioning     Boolean?
+  twoZoneClimateControl Boolean?
+
+  // Entertainment Features
+  bluetooth           Boolean?
+  appleCarPlay        Boolean?
+  androidAuto         Boolean?
+  premiumSound        Boolean?
+  wirelessCharging    Boolean?
+  usbPorts            Boolean?
+  cdPlayer            Boolean?
+  dvdPlayer           Boolean?
+  rearSeatEntertainment Boolean?
+  androidCar          Boolean?
+  onBoardComputer     Boolean?
+  dabRadio            Boolean?
+  handsFreeCalling    Boolean?
+  integratedMusicStreaming Boolean?
+  radio               Boolean?
+  soundSystem         Boolean?
+  wifiHotspot         Boolean?
+
+  // Lighting Features
+  ledHeadlights       Boolean?
+  adaptiveHeadlights  Boolean?
+  ambientLighting     Boolean?
+  fogLights           Boolean?
+  automaticHighBeams  Boolean?
+  ledDaytimeRunningLights Boolean?
+  daytimeRunningLights Boolean?
+  headlightCleaning   Boolean?
+  lightSensor         Boolean?
+
+  // Convenience Features
+  keylessEntry        Boolean?
+  sunroof             Boolean?
+  spareKey            Boolean?
+  remoteStart         Boolean?
+  powerTailgate       Boolean?
+  autoDimmingMirrors  Boolean?
+  rainSensingWipers   Boolean?
+  mountainDrivingAssistant Boolean?
+  electricalWindowLifter Boolean?
+  electricalSideMirrors Boolean?
+  electricSeats       Boolean?
+  headUpDisplay       Boolean?
+  leatherSteeringWheel Boolean?
+  lumbarSupport       Boolean?
+  multifunctionalSteeringWheel Boolean?
+  navigationSystem    String?
+  rainSensor          Boolean?
+  automaticStartStop  Boolean?
+  automaticDazzlingInteriorMirrors Boolean?
+  switchingRockers    Boolean?
+  armrest             Boolean?
+  voiceControl        Boolean?
+  touchscreen         Boolean?
+  
+  // Extras
+  aluminumRims        Boolean?
+  luggageCompartmentSeparation Boolean?
+  summerTires         Boolean?
+  powerSteering       Boolean?
+
+  // Additional Technical Fields
+  wheelType           String?
+  bodyType            String?
+  insuranceType       String?
+  upholsteryMaterial  String?
+  accidentFree        Boolean?
+  importStatus        String?
+  
+  // Motorcycle specific fields
+  startType           String?
+
+  frontSuspension     String[]         @default([])
+  rearSuspension      String[]         @default([])
+  riderAids           String[]         @default([])
+  electronics         String[]         @default([])
+  seatType            String?
+  seatMaterial        String?
+  seatHeight          Int?
+  handlebarType       String?
+  storageOptions      String[]         @default([])
+  seatBelts           String?
+  
+  protectiveEquipment String[]         @default([])
+
+  // Nested Safety Features for forms
+  frontAirbags        Boolean?
+  sideAirbags         Boolean?
+  curtainAirbags      Boolean?
+  kneeAirbags         Boolean?
+  cruiseControl       Boolean?
+  laneDepartureWarning Boolean?
+  laneKeepAssist      Boolean?
+  automaticEmergencyBraking Boolean?
+  
+  // Additional notes field
+  additionalNotes     String?
+  gearbox             String?
+  attachments         String[]          @default([])
 }
 
 model RealEstateDetails {
-  id               String   @id @default(cuid())
-  propertyType     String
-  size             String?
-  yearBuilt        String?
-  bedrooms         String?
-  bathrooms        String?
-  condition        String?
-  listingId        String   @unique
-  constructionType String?
-  features         String[] @default([])
-  parking          String?
-  listing          Listing  @relation(fields: [listingId], references: [id])
+  id                   String   @id @default(cuid())
+  propertyType         String
+  size                 String?
+  yearBuilt            String?
+  bedrooms             String?
+  bathrooms            String?
+  condition            String?
+  listingId            String   @unique
+  constructionType     String?
+  features             String[] @default([])
+  parking              String?
+  floor                Int?
+  totalFloors          Int?
+  elevator             Boolean?
+  balcony              Boolean?
+  storage              Boolean?
+  heating              String?
+  cooling              String?
+  buildingAmenities    String[] @default([])
+  energyRating         String?
+  furnished            String?
+  view                 String?
+  securityFeatures     String[] @default([])
+  fireSafety           String[] @default([])
+  flooringType         String?
+  internetIncluded     Boolean?
+  windowType           String?
+  accessibilityFeatures String[] @default([])
+  renovationHistory    String?
+  parkingType          String?
+  utilities            String[] @default([])
+  exposureDirection    String[] @default([])
+  storageType         String[] @default([])
+  listing             Listing  @relation(fields: [listingId], references: [id])
+  
+  // House specific fields 
+  halfBathrooms      Int?
+  stories            Int?
+  basement           String?
+  attic              String?
+  flooringTypes      String[]
 
+  // Land specific fields 
+  parcelNumber       String?
+  topography         String[]
+  elevation          Int?
+  waterFeatures      String?
+  naturalFeatures    String?
+  buildable          String?
+  buildingRestrictions String?
+  permitsInPlace     String?
+  environmentalFeatures String?
+  soilTypes          String[]
+
+  // Apartment specific fields 
+  petPolicy          String?
+ 
+  
   @@index([listingId])
 }
 
@@ -232,8 +561,8 @@ enum VehicleType {
   OTHER
   VAN
   BUS
-  BOAT
   CONSTRUCTION
+  TRACTOR
 }
 
 enum FuelType {

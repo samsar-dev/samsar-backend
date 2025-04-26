@@ -40,8 +40,8 @@ export const register = async (req: Request, res: Response) => {
         error: {
           code: "VALIDATION_ERROR",
           message: "Invalid input data",
-          errors: errors.array()
-        }
+          errors: errors.array(),
+        },
       });
     }
 
@@ -49,7 +49,7 @@ export const register = async (req: Request, res: Response) => {
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
@@ -57,8 +57,8 @@ export const register = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "USER_EXISTS",
-          message: "User already exists with this email"
-        }
+          message: "User already exists with this email",
+        },
       });
     }
 
@@ -70,18 +70,18 @@ export const register = async (req: Request, res: Response) => {
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
-        username: email.split('@')[0], // Use email prefix as default username
+        username: email.split("@")[0], // Use email prefix as default username
         password: hashedPassword,
         name,
-        role: 'USER'
+        role: "USER",
       },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
 
     // Generate tokens
@@ -91,8 +91,8 @@ export const register = async (req: Request, res: Response) => {
       success: true,
       data: {
         user,
-        tokens
-      }
+        tokens,
+      },
     });
   } catch (error) {
     console.error("Registration error:", error);
@@ -100,8 +100,8 @@ export const register = async (req: Request, res: Response) => {
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Failed to register user"
-      }
+        message: "Failed to register user",
+      },
     });
   }
 };
@@ -117,14 +117,14 @@ export const login = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "VALIDATION_ERROR",
-          message: "Email and password are required"
-        }
+          message: "Email and password are required",
+        },
       });
     }
 
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
     });
 
     if (!user) {
@@ -132,8 +132,8 @@ export const login = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "INVALID_CREDENTIALS",
-          message: "Invalid credentials"
-        }
+          message: "Invalid credentials",
+        },
       });
     }
 
@@ -144,8 +144,8 @@ export const login = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "INVALID_CREDENTIALS",
-          message: "Invalid credentials"
-        }
+          message: "Invalid credentials",
+        },
       });
     }
 
@@ -159,8 +159,8 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       data: {
         user: userData,
-        tokens
-      }
+        tokens,
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -168,8 +168,8 @@ export const login = async (req: Request, res: Response) => {
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Failed to login"
-      }
+        message: "Failed to login",
+      },
     });
   }
 };
@@ -184,8 +184,8 @@ export const refreshToken = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "NO_TOKEN",
-          message: "Refresh token is required"
-        }
+          message: "Refresh token is required",
+        },
       });
     }
 
@@ -196,15 +196,15 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     try {
       const decoded = jwt.verify(refreshToken, jwtSecret) as { id: string };
-      
+
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
         select: {
           id: true,
           email: true,
           name: true,
-          role: true
-        }
+          role: true,
+        },
       });
 
       if (!user) {
@@ -212,8 +212,8 @@ export const refreshToken = async (req: Request, res: Response) => {
           success: false,
           error: {
             code: "INVALID_TOKEN",
-            message: "Invalid refresh token"
-          }
+            message: "Invalid refresh token",
+          },
         });
       }
 
@@ -224,8 +224,8 @@ export const refreshToken = async (req: Request, res: Response) => {
         success: true,
         data: {
           user,
-          tokens
-        }
+          tokens,
+        },
       });
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
@@ -233,8 +233,8 @@ export const refreshToken = async (req: Request, res: Response) => {
           success: false,
           error: {
             code: "TOKEN_EXPIRED",
-            message: "Refresh token has expired"
-          }
+            message: "Refresh token has expired",
+          },
         });
       }
 
@@ -242,8 +242,8 @@ export const refreshToken = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "INVALID_TOKEN",
-          message: "Invalid refresh token"
-        }
+          message: "Invalid refresh token",
+        },
       });
     }
   } catch (error) {
@@ -252,8 +252,8 @@ export const refreshToken = async (req: Request, res: Response) => {
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Failed to refresh token"
-      }
+        message: "Failed to refresh token",
+      },
     });
   }
 };
@@ -266,8 +266,8 @@ export const logout = async (req: Request, res: Response) => {
     return res.json({
       success: true,
       data: {
-        message: "Logged out successfully"
-      }
+        message: "Logged out successfully",
+      },
     });
   } catch (error) {
     console.error("Logout error:", error);
@@ -275,8 +275,8 @@ export const logout = async (req: Request, res: Response) => {
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Failed to logout"
-      }
+        message: "Failed to logout",
+      },
     });
   }
 };
@@ -289,8 +289,8 @@ export const getMe = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "UNAUTHORIZED",
-          message: "Not authenticated"
-        }
+          message: "Not authenticated",
+        },
       });
     }
 
@@ -302,8 +302,9 @@ export const getMe = async (req: Request, res: Response) => {
         name: true,
         role: true,
         createdAt: true,
-        updatedAt: true
-      }
+        updatedAt: true,
+        profilePicture: true,
+      },
     });
 
     if (!user) {
@@ -311,14 +312,14 @@ export const getMe = async (req: Request, res: Response) => {
         success: false,
         error: {
           code: "NOT_FOUND",
-          message: "User not found"
-        }
+          message: "User not found",
+        },
       });
     }
 
     return res.json({
       success: true,
-      data: { user }
+      data: { user },
     });
   } catch (error) {
     console.error("Get user info error:", error);
@@ -326,8 +327,8 @@ export const getMe = async (req: Request, res: Response) => {
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Failed to get user info"
-      }
+        message: "Failed to get user info",
+      },
     });
   }
 };

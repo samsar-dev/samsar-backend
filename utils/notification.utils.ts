@@ -1,24 +1,26 @@
-import prismaClient from '../src/lib/prismaClient';
-import { NotificationType as PrismaNotificationType } from '@prisma/client';
-import { NotificationType } from '../types/enums';
+import prismaClient from "../src/lib/prismaClient";
+import { NotificationType as PrismaNotificationType } from "@prisma/client";
+import { NotificationType } from "../types/enums";
 
 // Mapping function to convert custom enum to Prisma enum
-const mapNotificationType = (type: NotificationType): PrismaNotificationType => {
+const mapNotificationType = (
+  type: NotificationType,
+): PrismaNotificationType => {
   switch (type) {
     case NotificationType.NEW_MESSAGE:
-      return 'NEW_MESSAGE';
+      return "NEW_MESSAGE";
     case NotificationType.LISTING_INTEREST:
-      return 'LISTING_INTEREST';
+      return "LISTING_INTEREST";
     case NotificationType.PRICE_UPDATE:
-      return 'PRICE_UPDATE';
+      return "PRICE_UPDATE";
     case NotificationType.LISTING_SOLD:
-      return 'LISTING_SOLD';
+      return "LISTING_SOLD";
     case NotificationType.LISTING_CREATED:
-      return 'LISTING_CREATED';
+      return "LISTING_CREATED";
     case NotificationType.SYSTEM_NOTICE:
-      return 'SYSTEM_NOTICE';
+      return "SYSTEM_NOTICE";
     default:
-      return 'SYSTEM_NOTICE';
+      return "SYSTEM_NOTICE";
   }
 };
 
@@ -34,7 +36,7 @@ export const createNotification = async ({
   relatedListingId?: string;
 }) => {
   if (!userId || !type || !message) {
-    throw new Error('Invalid notification data');
+    throw new Error("Invalid notification data");
   }
 
   return prismaClient.notification.create({

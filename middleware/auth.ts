@@ -24,52 +24,63 @@ declare global {
 
 // Rate limiters
 export const loginLimiter = rateLimit({
-  windowMs: env.NODE_ENV === 'development' ? 1000 : 15 * 60 * 1000,
-  max: env.NODE_ENV === 'development' ? 100 : 5,
-  message: {
-    success: false,
-    error: {
-      code: "RATE_LIMIT",
-      message: env.NODE_ENV === 'development' 
-        ? "Rate limit hit (development mode)"
-        : "Too many login attempts, please try again after 15 minutes"
-    }
+  windowMs: env.NODE_ENV === "development" ? 1000 : 15 * 60 * 1000,
+  max: env.NODE_ENV === "development" ? 100 : 5,
+  message: (req, res, next, options) => {
+    // Calculate seconds until rate limit resets
+    const retryAfterSeconds = Math.ceil(options.windowMs / 1000);
+    res.set("Retry-After", retryAfterSeconds.toString());
+    return {
+      success: false,
+      error: {
+        code: "RATE_LIMIT",
+        message:
+          env.NODE_ENV === "development"
+            ? `Rate limit hit (development mode)`
+            : `Too many login attempts, please try again after ${Math.floor(options.windowMs / 60000)} minutes`,
+      },
+    };
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 export const uploadLimiter = rateLimit({
-  windowMs: env.NODE_ENV === 'development' ? 1000 : 60 * 60 * 1000,
-  max: env.NODE_ENV === 'development' ? 100 : 10,
+  windowMs: env.NODE_ENV === "development" ? 1000 : 60 * 60 * 1000,
+  max: env.NODE_ENV === "development" ? 100 : 10,
   message: {
     success: false,
     error: {
       code: "RATE_LIMIT",
-      message: env.NODE_ENV === 'development' 
-        ? "Rate limit hit (development mode)"
-        : "Upload limit reached, please try again later"
-    }
+      message:
+        env.NODE_ENV === "development"
+          ? "Rate limit hit (development mode)"
+          : "Upload limit reached, please try again later",
+    },
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 // Auth middleware
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
         error: {
           code: "UNAUTHORIZED",
-          message: "No token provided"
-        }
+          message: "No token provided",
+        },
       });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token = authHeader.split(" ")[1];
     const jwtSecret = env.JWT_SECRET;
 
     if (!jwtSecret) {
@@ -78,10 +89,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     try {
       const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
-      
+
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, role: true }
+        select: { id: true, email: true, role: true },
       });
 
       if (!user) {
@@ -89,8 +100,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
           success: false,
           error: {
             code: "UNAUTHORIZED",
-            message: "User not found"
-          }
+            message: "User not found",
+          },
         });
       }
 
@@ -102,17 +113,17 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
           success: false,
           error: {
             code: "TOKEN_EXPIRED",
-            message: "Token has expired"
-          }
+            message: "Token has expired",
+          },
         });
       }
-      
+
       return res.status(401).json({
         success: false,
         error: {
           code: "INVALID_TOKEN",
-          message: "Invalid token"
-        }
+          message: "Invalid token",
+        },
       });
     }
   } catch (error) {
@@ -121,8 +132,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Internal server error"
-      }
+        message: "Internal server error",
+      },
     });
   }
 };
@@ -134,18 +145,18 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
       success: false,
       error: {
         code: "UNAUTHORIZED",
-        message: "Authentication required"
-      }
+        message: "Authentication required",
+      },
     });
   }
 
-  if (req.user.role !== 'ADMIN') {
+  if (req.user.role !== "ADMIN") {
     return res.status(403).json({
       success: false,
       error: {
         code: "FORBIDDEN",
-        message: "Admin access required"
-      }
+        message: "Admin access required",
+      },
     });
   }
 
@@ -153,15 +164,19 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
 };
 
 // Listing ownership middleware
-export const isListingOwner = async (req: Request, res: Response, next: NextFunction) => {
+export const isListingOwner = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     if (!req.user) {
       return res.status(401).json({
         success: false,
         error: {
           code: "UNAUTHORIZED",
-          message: "Authentication required"
-        }
+          message: "Authentication required",
+        },
       });
     }
 
@@ -171,14 +186,14 @@ export const isListingOwner = async (req: Request, res: Response, next: NextFunc
         success: false,
         error: {
           code: "BAD_REQUEST",
-          message: "Listing ID is required"
-        }
+          message: "Listing ID is required",
+        },
       });
     }
 
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
-      select: { userId: true }
+      select: { userId: true },
     });
 
     if (!listing) {
@@ -186,18 +201,18 @@ export const isListingOwner = async (req: Request, res: Response, next: NextFunc
         success: false,
         error: {
           code: "NOT_FOUND",
-          message: "Listing not found"
-        }
+          message: "Listing not found",
+        },
       });
     }
 
-    if (listing.userId !== req.user.id && req.user.role !== 'ADMIN') {
+    if (listing.userId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({
         success: false,
         error: {
           code: "FORBIDDEN",
-          message: "You don't have permission to modify this listing"
-        }
+          message: "You don't have permission to modify this listing",
+        },
       });
     }
 
@@ -208,8 +223,8 @@ export const isListingOwner = async (req: Request, res: Response, next: NextFunc
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Internal server error"
-      }
+        message: "Internal server error",
+      },
     });
   }
 };

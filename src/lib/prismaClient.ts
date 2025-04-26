@@ -1,11 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 let prisma: PrismaClient;
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === "production") {
   prisma = new PrismaClient({
-    log: ['error', 'warn'],
-    errorFormat: 'pretty',
+    log: ["error", "warn"],
+    errorFormat: "pretty",
   });
 } else {
   // Prevent multiple instances in development
@@ -15,8 +15,8 @@ if (process.env.NODE_ENV === 'production') {
 
   if (!globalWithPrisma.prisma) {
     globalWithPrisma.prisma = new PrismaClient({
-      log: ['error', 'warn'],
-      errorFormat: 'pretty',
+      log: ["error", "warn"],
+      errorFormat: "pretty",
     });
   }
 
@@ -27,9 +27,9 @@ if (process.env.NODE_ENV === 'production') {
 async function validateConnection() {
   try {
     await prisma.$connect();
-    console.log('✅ Database connection successful');
+    console.log("✅ Database connection successful");
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    console.error("❌ Database connection failed:", error);
     process.exit(1);
   }
 }

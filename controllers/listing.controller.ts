@@ -1,11 +1,19 @@
 import { Request, Response } from "express";
-import { ListingStatus, ListingAction, Prisma } from "@prisma/client";
+import {
+  ListingStatus,
+  ListingAction,
+  Prisma,
+  NotificationType,
+  VehicleType,
+  FuelType,
+  TransmissionType,
+  Condition,
+} from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import fs from "fs";
 import { AuthRequest } from "../middleware/auth.middleware";
-import { createNotification } from '../utils/notification.utils';
-import { NotificationType } from '../types/enums';
+import { handleListingPriceUpdate } from "../src/services/notification.service.js";
 
 interface ListingResponse {
   id: string;
@@ -34,21 +42,21 @@ interface ListingResponse {
   }>;
   vehicleDetails?: {
     id: string;
-    vehicleType: string;
+    vehicleType: VehicleType;
     make: string;
     model: string;
-    year: string;
-    mileage?: string;
-    fuelType?: string;
-    transmissionType?: string;
+    year: number;
+    mileage?: number;
+    fuelType?: FuelType;
+    transmissionType?: TransmissionType;
     color?: string;
-    condition?: string;
+    condition?: Condition;
     listingId: string;
     interiorColor?: string;
     engine?: string;
     warranty?: string;
     serviceHistory?: string;
-    previousOwners?: string;
+    previousOwners?: number;
     registrationStatus?: string;
   } | null;
   realEstateDetails?: {
@@ -76,11 +84,12 @@ interface ListingResponse {
   features: Array<{
     id: string;
     name: string;
+    value: boolean;
     listingId: string;
   }>;
 }
 
-type ListingCreateInput = Prisma.ListingUncheckedCreateInput;
+type ListingCreateInput = Prisma.ListingCreateInput;
 type NotificationCreateInput = Prisma.NotificationUncheckedCreateInput;
 
 type ListingWithRelations = Prisma.ListingGetPayload<{
@@ -93,7 +102,27 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
       };
     };
     images: true;
-    vehicleDetails: true;
+    vehicleDetails: {
+      select: {
+        id: true;
+        vehicleType: true;
+        make: true;
+        model: true;
+        year: true;
+        mileage: true;
+        fuelType: true;
+        transmissionType: true;
+        color: true;
+        condition: true;
+        listingId: true;
+        interiorColor: true;
+        engine: true;
+        warranty: true;
+        serviceHistory: true;
+        previousOwners: true;
+        registrationStatus: true;
+      };
+    };
     realEstateDetails: true;
     favorites: true;
     attributes: true;
@@ -101,11 +130,35 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
   };
 }>;
 
-const formatListingResponse = (listing: ListingWithRelations): ListingResponse => {
+type VehicleDetailsWithRelations = Prisma.VehicleDetailsGetPayload<{
+  select: {
+    id: true;
+    vehicleType: true;
+    make: true;
+    model: true;
+    year: true;
+    mileage: true;
+    fuelType: true;
+    transmissionType: true;
+    color: true;
+    condition: true;
+    listingId: true;
+    interiorColor: true;
+    engine: true;
+    warranty: true;
+    serviceHistory: true;
+    previousOwners: true;
+    registrationStatus: true;
+  };
+}>;
+
+const formatListingResponse = (
+  listing: ListingWithRelations,
+): ListingResponse => {
   return {
     id: listing.id,
     title: listing.title,
-    description: listing.description,
+    description: listing.description || "",
     price: listing.price,
     mainCategory: listing.mainCategory,
     subCategory: listing.subCategory,
@@ -127,35 +180,47 @@ const formatListingResponse = (listing: ListingWithRelations): ListingResponse =
       order: img.order,
       listingId: img.listingId,
     })),
-    vehicleDetails: listing.vehicleDetails ? {
-      id: listing.vehicleDetails.id,
-      vehicleType: listing.vehicleDetails.vehicleType,
-      make: listing.vehicleDetails.make,
-      model: listing.vehicleDetails.model,
-      year: String(listing.vehicleDetails.year),
-      mileage: listing.vehicleDetails.mileage ? String(listing.vehicleDetails.mileage) : undefined,
-      fuelType: listing.vehicleDetails.fuelType || undefined,
-      transmissionType: listing.vehicleDetails.transmissionType || undefined,
-      color: listing.vehicleDetails.color || undefined,
-      condition: listing.vehicleDetails.condition || undefined,
-      listingId: listing.vehicleDetails.listingId,
-      interiorColor: listing.vehicleDetails.interiorColor || undefined,
-      engine: listing.vehicleDetails.engine || undefined,
-      warranty: listing.vehicleDetails.warranty ? String(listing.vehicleDetails.warranty) : undefined,
-      serviceHistory: listing.vehicleDetails.serviceHistory || undefined,
-      previousOwners: listing.vehicleDetails.previousOwners ? String(listing.vehicleDetails.previousOwners) : undefined,
-      registrationStatus: listing.vehicleDetails.registrationStatus || undefined,
-    } : null,
-    realEstateDetails: listing.realEstateDetails ? {
-      id: listing.realEstateDetails.id,
-      propertyType: listing.realEstateDetails.propertyType,
-      size: listing.realEstateDetails.size || undefined,
-      yearBuilt: listing.realEstateDetails.yearBuilt ? String(listing.realEstateDetails.yearBuilt) : undefined,
-      bedrooms: listing.realEstateDetails.bedrooms ? String(listing.realEstateDetails.bedrooms) : undefined,
-      bathrooms: listing.realEstateDetails.bathrooms ? String(listing.realEstateDetails.bathrooms) : undefined,
-      condition: listing.realEstateDetails.condition || undefined,
-      listingId: listing.realEstateDetails.listingId,
-    } : null,
+    vehicleDetails: listing.vehicleDetails
+      ? {
+          id: listing.vehicleDetails.id,
+          vehicleType: listing.vehicleDetails.vehicleType,
+          make: listing.vehicleDetails.make,
+          model: listing.vehicleDetails.model,
+          year: listing.vehicleDetails.year,
+          mileage: listing.vehicleDetails.mileage || undefined,
+          fuelType: listing.vehicleDetails.fuelType || undefined,
+          transmissionType:
+            listing.vehicleDetails.transmissionType || undefined,
+          color: listing.vehicleDetails.color || undefined,
+          condition: listing.vehicleDetails.condition || undefined,
+          listingId: listing.vehicleDetails.listingId,
+          interiorColor: listing.vehicleDetails.interiorColor || undefined,
+          engine: listing.vehicleDetails.engine || undefined,
+          warranty: listing.vehicleDetails.warranty || undefined,
+          serviceHistory: listing.vehicleDetails.serviceHistory || undefined,
+          previousOwners: listing.vehicleDetails.previousOwners || undefined,
+          registrationStatus:
+            listing.vehicleDetails.registrationStatus || undefined,
+        }
+      : null,
+    realEstateDetails: listing.realEstateDetails
+      ? {
+          id: listing.realEstateDetails.id,
+          propertyType: listing.realEstateDetails.propertyType,
+          size: listing.realEstateDetails.size || undefined,
+          yearBuilt: listing.realEstateDetails.yearBuilt
+            ? String(listing.realEstateDetails.yearBuilt)
+            : undefined,
+          bedrooms: listing.realEstateDetails.bedrooms
+            ? String(listing.realEstateDetails.bedrooms)
+            : undefined,
+          bathrooms: listing.realEstateDetails.bathrooms
+            ? String(listing.realEstateDetails.bathrooms)
+            : undefined,
+          condition: listing.realEstateDetails.condition || undefined,
+          listingId: listing.realEstateDetails.listingId,
+        }
+      : null,
     favorites: listing.favorites.map((fav) => ({
       id: fav.id,
       createdAt: fav.createdAt,
@@ -171,6 +236,7 @@ const formatListingResponse = (listing: ListingWithRelations): ListingResponse =
     features: listing.features.map((feature) => ({
       id: feature.id,
       name: feature.name,
+      value: feature.value,
       listingId: feature.listingId,
     })),
   };
@@ -224,7 +290,8 @@ export const createListing = async (req: AuthRequest, res: Response) => {
     } = req.body;
 
     // Parse details if it's a string
-    const parsedDetails = typeof details === 'string' ? JSON.parse(details) : details;
+    const parsedDetails =
+      typeof details === "string" ? JSON.parse(details) : details;
 
     const errors = validateListingData(req.body);
     if (errors.length > 0) {
@@ -240,7 +307,7 @@ export const createListing = async (req: AuthRequest, res: Response) => {
     // Start transaction
     const result = await prismaClient.$transaction(async (tx) => {
       // Create listing data
-      const listingData: ListingCreateInput = {
+      const listingData: Prisma.ListingCreateInput = {
         title,
         description,
         price: parseFloat(price),
@@ -251,42 +318,58 @@ export const createListing = async (req: AuthRequest, res: Response) => {
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SELL,
-        userId: req.user.id,
-        images: {
-          create: req.processedImages?.map((img) => ({
-            url: img.url,
-            order: img.order,
-          })) || [],
+        user: {
+          connect: {
+            id: req.user.id,
+          },
         },
-        vehicleDetails: parsedDetails?.vehicles ? {
-          create: {
-            vehicleType: parsedDetails.vehicles.vehicleType,
-            make: parsedDetails.vehicles.make,
-            model: parsedDetails.vehicles.model,
-            year: parsedDetails.vehicles.year,
-            mileage: parsedDetails.vehicles.mileage,
-            fuelType: parsedDetails.vehicles.fuelType,
-            transmissionType: parsedDetails.vehicles.transmissionType,
-            color: parsedDetails.vehicles.color,
-            condition: parsedDetails.vehicles.condition,
-          }
-        } : undefined,
-        realEstateDetails: parsedDetails?.realEstate ? {
-          create: {
-            propertyType: parsedDetails.realEstate.propertyType,
-            size: parsedDetails.realEstate.size,
-            yearBuilt: parsedDetails.realEstate.yearBuilt,
-            bedrooms: parsedDetails.realEstate.bedrooms,
-            bathrooms: parsedDetails.realEstate.bathrooms,
-            condition: parsedDetails.realEstate.condition,
-          }
-        } : undefined,
-        attributes: attributes ? {
-          create: attributes,
-        } : undefined,
-        features: features ? {
-          create: features,
-        } : undefined,
+        images: {
+          create:
+            req.processedImages?.map((img) => ({
+              url: img.url,
+              order: img.order,
+            })) || [],
+        },
+        vehicleDetails: parsedDetails?.vehicles
+          ? {
+              create: {
+                vehicleType: parsedDetails.vehicles.vehicleType as VehicleType,
+                make: parsedDetails.vehicles.make,
+                model: parsedDetails.vehicles.model,
+                year: parseInt(parsedDetails.vehicles.year),
+                mileage: parsedDetails.vehicles.mileage
+                  ? parseInt(parsedDetails.vehicles.mileage)
+                  : null,
+                fuelType: parsedDetails.vehicles.fuelType as FuelType | null,
+                transmissionType: parsedDetails.vehicles
+                  .transmissionType as TransmissionType | null,
+                color: parsedDetails.vehicles.color || null,
+                condition: parsedDetails.vehicles.condition as Condition | null,
+              },
+            }
+          : undefined,
+        realEstateDetails: parsedDetails?.realEstate
+          ? {
+              create: {
+                propertyType: parsedDetails.realEstate.propertyType,
+                size: parsedDetails.realEstate.size,
+                yearBuilt: parsedDetails.realEstate.yearBuilt,
+                bedrooms: parsedDetails.realEstate.bedrooms,
+                bathrooms: parsedDetails.realEstate.bathrooms,
+                condition: parsedDetails.realEstate.condition,
+              },
+            }
+          : undefined,
+        attributes: attributes
+          ? {
+              create: attributes,
+            }
+          : undefined,
+        features: features
+          ? {
+              create: features,
+            }
+          : undefined,
       };
 
       // Create listing
@@ -301,7 +384,27 @@ export const createListing = async (req: AuthRequest, res: Response) => {
             },
           },
           images: true,
-          vehicleDetails: true,
+          vehicleDetails: {
+            select: {
+              id: true,
+              vehicleType: true,
+              make: true,
+              model: true,
+              year: true,
+              mileage: true,
+              fuelType: true,
+              transmissionType: true,
+              color: true,
+              condition: true,
+              listingId: true,
+              interiorColor: true,
+              engine: true,
+              warranty: true,
+              serviceHistory: true,
+              previousOwners: true,
+              registrationStatus: true,
+            },
+          },
           realEstateDetails: true,
           favorites: true,
           attributes: true,
@@ -310,11 +413,13 @@ export const createListing = async (req: AuthRequest, res: Response) => {
       });
 
       // Create notification
-      await createNotification({
-        userId: listing.userId,
-        type: NotificationType.LISTING_CREATED,
-        message: `Your listing "${listing.title}" has been created successfully.`,
-        relatedListingId: listing.id
+      await prisma.notification.create({
+        data: {
+          userId: listing.userId,
+          type: NotificationType.LISTING_CREATED,
+          content: `Your listing "${listing.title}" has been created.`,
+          relatedListingId: listing.id,
+        },
       });
 
       return listing;
@@ -330,31 +435,74 @@ export const createListing = async (req: AuthRequest, res: Response) => {
       status: 201,
     });
   } catch (error) {
-    console.error('Error creating listing:', error);
+    console.error("Error creating listing:", error);
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create listing',
+      error:
+        error instanceof Error ? error.message : "Failed to create listing",
       status: 500,
       data: null,
     });
   }
 };
 
+// Simple in-memory cache for listings
+const listingsCache = new Map<string, { data: any; etag: string; timestamp: number }>();
+const CACHE_TTL = 60 * 1000; // 60 seconds cache TTL
+
 export const getListings = async (req: AuthRequest, res: Response) => {
   try {
+    console.log("Request query:", req.query);
+    
+    // Create a cache key from the request query parameters
+    const cacheKey = JSON.stringify(req.query);
+    const ifNoneMatch = req.headers['if-none-match'];
+    
+    // Check if we have a valid cache entry
+    const cachedResponse = listingsCache.get(cacheKey);
+    if (cachedResponse) {
+      const isExpired = Date.now() - cachedResponse.timestamp > CACHE_TTL;
+      
+      // If the client sent an ETag that matches our cached ETag and the cache isn't expired
+      if (ifNoneMatch === cachedResponse.etag && !isExpired) {
+        // Return 304 Not Modified to tell the client to use its cached version
+        console.log('Cache hit with matching ETag, returning 304');
+        return res.status(304).end();
+      }
+      
+      // If cache is still valid but client didn't send matching ETag
+      if (!isExpired) {
+        console.log('Cache hit, returning cached data');
+        res.set('ETag', cachedResponse.etag);
+        res.set('Cache-Control', 'private, max-age=60'); // Tell client to cache for 60 seconds
+        return res.json(cachedResponse.data);
+      }
+      
+      // Cache expired, will fetch new data
+      console.log('Cache expired, fetching new data');
+    }
+    
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(
       50,
       Math.max(1, parseInt(req.query.limit as string) || 12),
     );
     const search = (req.query.search as string) || "";
-    const category = (req.query.category as string) || "";
+    const mainCategory = (req.query.mainCategory as string) || "";
     const minPrice = parseFloat(req.query.minPrice as string) || 0;
     const maxPrice =
       parseFloat(req.query.maxPrice as string) || Number.MAX_SAFE_INTEGER;
     const sortBy = (req.query.sortBy as string) || "createdAt";
     const sortOrder =
       (req.query.sortOrder as string)?.toLowerCase() === "asc" ? "asc" : "desc";
+
+    // Year filter
+    const year =
+      req.query.year !== undefined &&
+      req.query.year !== null &&
+      req.query.year !== ""
+        ? Number(req.query.year)
+        : undefined;
 
     const where: Prisma.ListingWhereInput = {
       OR: search
@@ -363,12 +511,20 @@ export const getListings = async (req: AuthRequest, res: Response) => {
             { description: { contains: search, mode: "insensitive" } },
           ]
         : undefined,
-      mainCategory: category || undefined,
+      mainCategory: mainCategory || undefined,
       price: {
         gte: minPrice,
         lte: maxPrice,
       },
       status: ListingStatus.ACTIVE,
+      // Vehicle year filter (only for vehicle listings)
+      ...(year
+        ? {
+            vehicleDetails: {
+              year: year,
+            },
+          }
+        : {}),
     };
 
     const [listings, total] = await Promise.all([
@@ -389,16 +545,42 @@ export const getListings = async (req: AuthRequest, res: Response) => {
           favorites: true,
           attributes: true,
           features: true,
+          vehicleDetails: {
+            select: {
+              id: true,
+              vehicleType: true,
+              make: true,
+              model: true,
+              year: true,
+              mileage: true,
+              fuelType: true,
+              transmissionType: true,
+              color: true,
+              condition: true,
+              listingId: true,
+              interiorColor: true,
+              engine: true,
+              warranty: true,
+              serviceHistory: true,
+              previousOwners: true,
+              registrationStatus: true,
+            },
+          },
+          realEstateDetails: true,
         },
       }),
       prisma.listing.count({ where }),
     ]);
 
+    console.log("Found listings:", listings.length);
     const formattedListings = listings.map((listing) =>
       formatListingResponse(listing as ListingWithRelations),
     );
 
-    res.json({
+    console.log("Formatted listings:", formattedListings.length);
+    
+    // Prepare response data
+    const responseData = {
       success: true,
       data: {
         listings: formattedListings,
@@ -406,9 +588,31 @@ export const getListings = async (req: AuthRequest, res: Response) => {
         page,
         limit,
       },
+      status: 200,
+    };
+    
+    // Generate ETag (simple hash of the JSON response)
+    const etag = `W/"${Buffer.from(JSON.stringify(responseData)).toString('base64').slice(0, 27)}"`; 
+    
+    // Store in cache
+    listingsCache.set(cacheKey, {
+      data: responseData,
+      etag,
+      timestamp: Date.now(),
     });
+    
+    // Set cache headers
+    res.set('ETag', etag);
+    res.set('Cache-Control', 'private, max-age=60'); // Tell client to cache for 60 seconds
+    
+    // Send response
+    res.json(responseData);
   } catch (error) {
     console.error("Error getting listings:", error);
+    console.error(
+      "Error stack:",
+      error instanceof Error ? error.stack : "No stack trace",
+    );
     res.status(500).json({
       success: false,
       message: "Error getting listings",
@@ -433,7 +637,7 @@ export const getListing = async (req: AuthRequest, res: Response) => {
         favorites: true,
         attributes: true,
         features: true,
-        vehicleDetails: true,
+
         realEstateDetails: true,
       },
     });
@@ -447,11 +651,13 @@ export const getListing = async (req: AuthRequest, res: Response) => {
 
     // Create view notification if viewer is not the seller
     if (req.user && req.user.id !== listing.userId) {
-      await createNotification({
-        userId: listing.userId,
-        type: NotificationType.LISTING_INTEREST,
-        message: `${req.user.username} viewed your listing "${listing.title}"`,
-        relatedListingId: listing.id
+      await prisma.notification.create({
+        data: {
+          userId: listing.userId,
+          type: NotificationType.LISTING_INTEREST,
+          content: `${req.user.username} viewed your listing "${listing.title}"`,
+          relatedListingId: listing.id,
+        },
       });
     }
 
@@ -485,7 +691,7 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
 
     const oldListing = await prisma.listing.findUnique({
       where: { id },
-      select: { price: true, title: true }
+      select: { price: true, title: true, userId: true },
     });
 
     if (!oldListing) {
@@ -495,6 +701,11 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
         status: 404,
         data: null,
       });
+    }
+
+    // Check if price has changed
+    if (price && price !== oldListing.price) {
+      await handleListingPriceUpdate(id, oldListing.price, price);
     }
 
     const listing = await prisma.listing.update({
@@ -544,14 +755,24 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // Create notification for price update
-    if (oldListing.price !== parseFloat(price)) {
-      await createNotification({
-        userId: listing.userId,
-        type: NotificationType.PRICE_UPDATE,
-        message: `The price of your listing "${oldListing.title}" has been updated from ${oldListing.price} to ${price}.`,
-        relatedListingId: listing.id
+    // Handle price update notifications
+    if (price && oldListing.price !== parseFloat(price)) {
+      // Notify the listing owner
+      await prisma.notification.create({
+        data: {
+          userId: listing.userId,
+          type: NotificationType.PRICE_UPDATE,
+          content: `The price of your listing "${oldListing.title}" has been updated from ${oldListing.price} to ${price}.`,
+          relatedListingId: listing.id,
+        },
       });
+
+      // Notify users who have favorited the listing
+      await handleListingPriceUpdate(
+        listing.id,
+        oldListing.price,
+        parseFloat(price),
+      );
     }
 
     res.json({
@@ -668,11 +889,13 @@ export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
 
       // Create save notification
       if (req.user.id !== listing.userId) {
-        await createNotification({
-          userId: listing.userId,
-          type: NotificationType.LISTING_INTEREST,
-          message: `${req.user.username} saved your listing "${listing.title}"`,
-          relatedListingId: listing.id,
+        await prisma.notification.create({
+          data: {
+            userId: listing.userId,
+            type: NotificationType.LISTING_INTEREST,
+            content: `${req.user.username} saved your listing "${listing.title}"`,
+            relatedListingId: listing.id,
+          },
         });
       }
     }
@@ -691,6 +914,28 @@ export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
         favorites: true,
         attributes: true,
         features: true,
+        vehicleDetails: {
+          select: {
+            id: true,
+            vehicleType: true,
+            make: true,
+            model: true,
+            year: true,
+            mileage: true,
+            fuelType: true,
+            transmissionType: true,
+            color: true,
+            condition: true,
+            listingId: true,
+            interiorColor: true,
+            engine: true,
+            warranty: true,
+            serviceHistory: true,
+            previousOwners: true,
+            registrationStatus: true,
+          },
+        },
+        realEstateDetails: true,
       },
     });
 

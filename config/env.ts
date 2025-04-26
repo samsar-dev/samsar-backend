@@ -8,7 +8,7 @@ const envSchema = z.object({
   CLOUDFLARE_ACCESS_KEY_ID: z.string().optional(),
   CLOUDFLARE_SECRET_ACCESS_KEY: z.string().optional(),
   CLOUDFLARE_BUCKET_NAME: z.string().optional(),
-  CLOUDFLARE_ENDPOINT: z.string().url().optional(), 
+  CLOUDFLARE_ENDPOINT: z.string().url().optional(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
   PORT: z.string().default("3000"),
   DATABASE_URL: z.string().min(1, "Database URL is required"),
@@ -22,11 +22,12 @@ const envSchema = z.object({
 const envParse = envSchema.safeParse(process.env);
 
 if (!envParse.success) {
-  console.error("❌ Invalid environment variables:", 
+  console.error(
+    "❌ Invalid environment variables:",
     Object.entries(envParse.error.format())
-      .filter(([key]) => key !== '_errors')
-      .map(([key, value]) => `\n  ${key}: ${(value as any)._errors.join(', ')}`)
-      .join('')
+      .filter(([key]) => key !== "_errors")
+      .map(([key, value]) => `\n  ${key}: ${(value as any)._errors.join(", ")}`)
+      .join(""),
   );
   console.warn("⚠️ Using default values for missing environment variables");
 }

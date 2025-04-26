@@ -28,7 +28,7 @@ const storage = multer.memoryStorage();
 const fileFilter = (
   req: Request,
   file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  cb: multer.FileFilterCallback,
 ) => {
   if (!file.mimetype.startsWith("image/")) {
     cb(new Error("Only image files are allowed"));
@@ -62,7 +62,7 @@ export const processImage = async (buffer: Buffer): Promise<Buffer> => {
 export const processImagesMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     if (!req.files || !Array.isArray(req.files)) {
@@ -73,16 +73,16 @@ export const processImagesMiddleware = async (
 
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i] as Express.Multer.File;
-      
+
       // Process image with Sharp
       const processedBuffer = await processImage(file.buffer);
-      
+
       // Update the file buffer with processed image
       file.buffer = processedBuffer;
-      
+
       // Upload to Cloudflare R2
       const { url } = await uploadToCloudflare(file, "listings");
-      
+
       // Store the processed image URL and order
       processedImages.push({
         url,
@@ -103,7 +103,7 @@ export const uploadMiddleware = upload.array("images", 10);
 export const processUpload = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -112,11 +112,11 @@ export const processUpload = async (
 
     const uploadedFiles = req.files as Express.Multer.File[];
     const uploadPromises = uploadedFiles.map((file) =>
-      uploadToCloudflare(file, "listing")
+      uploadToCloudflare(file, "listing"),
     );
 
     const results = await Promise.all(uploadPromises);
-    req.uploadedFiles = results.map(result => result.url);
+    req.uploadedFiles = results.map((result) => result.url);
     next();
   } catch (error) {
     console.error("Error in upload middleware:", error);

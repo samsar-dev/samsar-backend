@@ -8,7 +8,6 @@
 
 ALTER TYPE "VehicleType" ADD VALUE 'VAN';
 ALTER TYPE "VehicleType" ADD VALUE 'BUS';
-ALTER TYPE "VehicleType" ADD VALUE 'BOAT';
 ALTER TYPE "VehicleType" ADD VALUE 'CONSTRUCTION';
 
 -- DropForeignKey

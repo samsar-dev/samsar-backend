@@ -32,13 +32,13 @@ const asyncHandler = <T>(
   fn: (
     req: AuthRequest,
     res: express.Response,
-    next: express.NextFunction
-  ) => Promise<T>
+    next: express.NextFunction,
+  ) => Promise<T>,
 ) => {
   return async (
     req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    next: express.NextFunction,
   ): Promise<void> => {
     try {
       await fn(req as AuthRequest, res, next);
@@ -53,14 +53,14 @@ const processProfilePicture = asyncHandler(
   async (
     req: AuthRequest,
     res: express.Response,
-    next: express.NextFunction
+    next: express.NextFunction,
   ): Promise<void> => {
     if (req.file) {
       // Upload processed image to R2
       req.body.profilePicture = await uploadToR2(req.file, "avatar");
     }
     next();
-  }
+  },
 );
 
 // ✅ Get user public details
@@ -77,7 +77,7 @@ router.put(
   "/profile",
   upload.single("profilePicture"),
   processProfilePicture,
-  asyncHandler(updateProfile)
+  asyncHandler(updateProfile),
 );
 
 // ✅ Get user settings

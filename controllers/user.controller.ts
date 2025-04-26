@@ -17,6 +17,10 @@ interface UpdateData {
   bio?: string;
   profilePicture?: string;
   preferences?: Prisma.InputJsonValue;
+  dateOfBirth?: string;
+  street?: string;
+  city?: string;
+  postalCode?: string;
 }
 
 interface UploadResult {
@@ -129,7 +133,17 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 
     const updates: UpdateData = {};
 
-    const { email, username, password, bio } = req.body;
+    const {
+      email,
+      username,
+      password,
+      currentPassword,
+      bio,
+      dateOfBirth,
+      street,
+      city,
+      postalCode,
+    } = req.body;
 
     if (email && !validator.isEmail(email)) {
       return res.status(400).json({
@@ -155,12 +169,65 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 
     if (username) updates.username = username.trim();
     if (bio) updates.bio = bio.trim();
+    if (dateOfBirth) updates.dateOfBirth = dateOfBirth.trim();
+    if (street) updates.street = street.trim();
+    if (city) updates.city = city.trim();
+    if (postalCode) updates.postalCode = postalCode.trim();
 
     if (password) {
-      if (password.length < 6) {
+      // Verify current password first
+      if (!currentPassword) {
         return res.status(400).json({
           success: false,
-          error: "Password must be at least 6 characters",
+          error: "Current password is required",
+          status: 400,
+          data: null,
+        });
+      }
+
+      // Check if current password is correct
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password,
+      );
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          error: "Current password is incorrect",
+          status: 401,
+          data: null,
+        });
+      }
+
+      // Validate new password requirements
+      if (password.length < 8) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must be at least 8 characters long",
+          status: 400,
+          data: null,
+        });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must contain at least one uppercase letter",
+          status: 400,
+          data: null,
+        });
+      }
+      if (!/[a-z]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must contain at least one lowercase letter",
+          status: 400,
+          data: null,
+        });
+      }
+      if (!/[0-9]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          error: "Password must contain at least one number",
           status: 400,
           data: null,
         });
@@ -251,13 +318,11 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 
     await prisma.user.delete({ where: { id: user.id } });
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        data: { message: "Account and listings deleted successfully" },
-        status: 200,
-      });
+    res.status(200).json({
+      success: true,
+      data: { message: "Account and listings deleted successfully" },
+      status: 200,
+    });
   } catch (error) {
     console.error("Delete error:", error);
     res
@@ -332,7 +397,7 @@ export const updateUserSettings = async (req: AuthRequest, res: Response) => {
     const { preferences } = req.body;
 
     // Validate preferences structure
-    if (!preferences || typeof preferences !== 'object') {
+    if (!preferences || typeof preferences !== "object") {
       return res.status(400).json({
         success: false,
         error: "Invalid preferences format",
@@ -353,12 +418,12 @@ export const updateUserSettings = async (req: AuthRequest, res: Response) => {
         emailNotifications: {
           newMessage: true,
           listingUpdates: true,
-          promotions: true
-        }
+          promotions: true,
+        },
       },
       currency: "USD",
       timezone: "UTC",
-      dateFormat: "MM/DD/YYYY"
+      dateFormat: "MM/DD/YYYY",
     };
 
     // Merge with defaults to ensure all required fields are present
@@ -370,16 +435,16 @@ export const updateUserSettings = async (req: AuthRequest, res: Response) => {
         ...(preferences.notifications || {}),
         emailNotifications: {
           ...defaultPreferences.notifications.emailNotifications,
-          ...(preferences.notifications?.emailNotifications || {})
-        }
-      }
+          ...(preferences.notifications?.emailNotifications || {}),
+        },
+      },
     } as UserPreferences;
 
     const updatedUser = await prisma.user.update({
       where: { id: req.user.id },
       data: {
-        preferences: updatedPreferences
-      }
+        preferences: updatedPreferences,
+      },
     });
 
     res.status(200).json({

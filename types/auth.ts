@@ -11,4 +11,4 @@ export interface AuthRequest extends Request {
     url: string;
     order: number;
   }>;
-} 
+}
