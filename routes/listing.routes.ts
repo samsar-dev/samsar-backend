@@ -1219,6 +1219,12 @@ router.put(
                 update: realEstateDetails,
               }
             : undefined,
+
+          vehicleDetails: vehicleDetails
+            ? {
+                update: vehicleDetails,
+              }
+            : undefined,
         },
         include: {
           user: {
@@ -1265,8 +1271,8 @@ router.delete(
         include: {
           images: true,
           favorites: true,
-
           realEstateDetails: true,
+          vehicleDetails: true,
         },
       });
 
