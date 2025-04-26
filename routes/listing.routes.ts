@@ -26,7 +26,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string,
+  sortOrder?: string
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -116,7 +116,7 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           luggageCompartments: listing.vehicleDetails.luggageCompartments,
           luggageRacks: listing.vehicleDetails.luggageRacks,
           fuelTankCapacity: listing.vehicleDetails.fuelTankCapacity,
-          
+
           // Tractor-specific fields
           hours: listing.vehicleDetails.hours,
           driveSystem: listing.vehicleDetails.driveSystem,
@@ -184,6 +184,8 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
       : undefined,
   };
 
+  // console.log("Details sent to DB:", details);
+
   return {
     id: listing.id,
     title: listing.title,
@@ -198,7 +200,7 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
     userId: listing.userId,
-    details,
+    details: details,
     listingAction: listing.listingAction,
     status: listing.status,
     seller: listing.user
@@ -273,14 +275,14 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
           },
         },
         favorites: true,
-
         realEstateDetails: true,
+        vehicleDetails: true,
       },
     });
 
     // Format listings for response
     const formattedListings = listings.map((listing) =>
-      formatListingResponse(listing),
+      formatListingResponse(listing)
     );
 
     res.json({
@@ -413,7 +415,7 @@ router.use(authenticate);
 
 // Helper function to handle authenticated routes
 const handleAuthRoute = (
-  handler: (req: AuthRequest, res: Response) => Promise<void>,
+  handler: (req: AuthRequest, res: Response) => Promise<void>
 ) => {
   return async (req: Request, res: Response): Promise<void> => {
     try {
@@ -461,7 +463,7 @@ router.get(
       });
 
       const formattedListings = savedListings.map((favorite) =>
-        formatListingResponse(favorite.listing),
+        formatListingResponse(favorite.listing)
       );
 
       res.json({
@@ -478,7 +480,7 @@ router.get(
         data: null,
       });
     }
-  }),
+  })
 );
 
 // Save a listing to favorites
@@ -561,7 +563,7 @@ router.post(
         data: null,
       });
     }
-  }),
+  })
 );
 
 // Delete a saved listing
@@ -616,7 +618,7 @@ router.delete(
         data: null,
       });
     }
-  }),
+  })
 );
 
 // ✅ Add save listing
@@ -748,7 +750,7 @@ router.post(
       let parsedDetails;
       try {
         parsedDetails = JSON.parse(
-          typeof details === "string" ? details : JSON.stringify(details),
+          typeof details === "string" ? details : JSON.stringify(details)
         );
         console.log("Parsed details:", JSON.stringify(parsedDetails, null, 2));
 
@@ -756,7 +758,10 @@ router.post(
         if (mainCategory === "VEHICLES" && parsedDetails.vehicles) {
           const vehicle = parsedDetails.vehicles;
           // Ensure serviceHistory is a string or null
-          if (vehicle.serviceHistory !== null && typeof vehicle.serviceHistory !== "string") {
+          if (
+            vehicle.serviceHistory !== null &&
+            typeof vehicle.serviceHistory !== "string"
+          ) {
             vehicle.serviceHistory = null;
           }
         }
@@ -801,14 +806,19 @@ router.post(
       // Helper to sanitize Int fields
       function sanitizeIntField(value: any): number | null {
         if (typeof value === "number" && !isNaN(value)) return value;
-        if (typeof value === "string" && value.trim() !== "" && !isNaN(Number(value))) return Number(value);
+        if (
+          typeof value === "string" &&
+          value.trim() !== "" &&
+          !isNaN(Number(value))
+        )
+          return Number(value);
         return null;
       }
 
       // Create listing with images
       console.log(
         "Details sent to DB:",
-        JSON.stringify(parsedDetails, null, 2),
+        JSON.stringify(parsedDetails, null, 2)
       );
 
       const listing = await prisma.listing.create({
@@ -847,8 +857,7 @@ router.post(
                     parsedDetails.vehicles.interiorColor || "#000000",
                   engine: parsedDetails.vehicles.engine || "",
                   warranty: parsedDetails.vehicles.warranty || "",
-                  serviceHistory:
-                    parsedDetails.vehicles.serviceHistory || null,
+                  serviceHistory: parsedDetails.vehicles.serviceHistory || null,
                   previousOwners:
                     parsedDetails.vehicles.previousOwners !== undefined
                       ? Number(parsedDetails.vehicles.previousOwners)
@@ -857,7 +866,7 @@ router.post(
                     parsedDetails.vehicles.registrationStatus || undefined,
                   horsepower: parsedDetails.vehicles.horsepower,
                   torque: parsedDetails.vehicles.torque,
-                  
+
                   // Tractor-specific fields
                   hours: parsedDetails.vehicles.hours,
                   driveSystem: parsedDetails.vehicles.driveSystem,
@@ -869,7 +878,9 @@ router.post(
                   emissions: parsedDetails.vehicles.emissions,
                   hydraulicSystem: parsedDetails.vehicles.hydraulicSystem,
                   hydraulicFlow: parsedDetails.vehicles.hydraulicFlow,
-                  hydraulicOutlets: sanitizeIntField(parsedDetails.vehicles.hydraulicOutlets),
+                  hydraulicOutlets: sanitizeIntField(
+                    parsedDetails.vehicles.hydraulicOutlets
+                  ),
                   ptoSystem: parsedDetails.vehicles.ptoSystem || [],
                   ptoHorsepower: parsedDetails.vehicles.ptoHorsepower,
                   frontAttachments:
@@ -945,7 +956,7 @@ router.post(
             "Details:",
             typeof details === "string"
               ? details
-              : JSON.stringify(details, null, 2),
+              : JSON.stringify(details, null, 2)
           );
         } catch (e) {
           console.error("Error logging details:", e);
@@ -959,7 +970,7 @@ router.post(
         data: null,
       });
     }
-  }),
+  })
 );
 
 router.get(
@@ -1014,7 +1025,7 @@ router.get(
         },
       });
     }
-  }),
+  })
 );
 
 router.get(
@@ -1057,7 +1068,7 @@ router.get(
         },
       });
     }
-  }),
+  })
 );
 
 router.get("/:id", async (req: Request, res: Response): Promise<void> => {
@@ -1078,6 +1089,8 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
         favorites: true,
         // This includes all vehicle details
         realEstateDetails: true, // This includes all real estate details
+        // This includes all vehicle details
+        vehicleDetails: true,
       },
     });
 
@@ -1104,11 +1117,11 @@ router.get("/:id", async (req: Request, res: Response): Promise<void> => {
     ) {
       console.log(
         "Formatted listing:",
-        JSON.stringify(formattedListing, null, 2),
+        JSON.stringify(formattedListing, null, 2)
       );
       console.log(
         "Formatted vehicle details:",
-        JSON.stringify(formattedListing.details.vehicles, null, 2),
+        JSON.stringify(formattedListing.details.vehicles, null, 2)
       );
     }
 
@@ -1237,7 +1250,7 @@ router.put(
         data: null,
       });
     }
-  }),
+  })
 );
 
 router.delete(
@@ -1320,7 +1333,7 @@ router.delete(
         data: null,
       });
     }
-  }),
+  })
 );
 
 export default router;
