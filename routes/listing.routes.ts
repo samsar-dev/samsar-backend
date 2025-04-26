@@ -1300,6 +1300,11 @@ router.delete(
       // Delete in a transaction to ensure atomicity
       await prisma.$transaction(async (tx) => {
         // Delete vehicle details if they exist
+        if (listing.vehicleDetails) {
+          await tx.vehicleDetails.delete({
+            where: { listingId: listing.id },
+          });
+        }
 
         // Delete real estate details if they exist
         if (listing.realEstateDetails) {
