@@ -313,7 +313,7 @@ model VehicleDetails {
   motorcycleType                   String?
   mountainDrivingAssistant         Boolean?
   multifunctionalSteeringWheel     Boolean?
-  navigationSystem                 Boolean?
+  navigationSystem                 String?
   nightVision                      Boolean?
   onBoardComputer                  Boolean?
   parkingAid                       Boolean?
