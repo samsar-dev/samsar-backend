@@ -93,35 +93,35 @@ if (process.env.NODE_ENV === "development") {
 }
 
 // Add before your routes
-// app.use((req: Request, res: Response, next: NextFunction) => {
-//   console.log(`📥 ${req.method} ${req.url}`, {
-//     headers: req.headers,
-//     body: req.body,
-//     query: req.query,
-//   });
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log(`📥 ${req.method} ${req.url}`, {
+    headers: req.headers,
+    body: req.body,
+    query: req.query,
+  });
 
-//   // Log response
-//   const originalSend = res.send;
-//   res.send = function (body: any) {
-//     console.log(`📤 Response ${res.statusCode}`, {
-//       body: body,
-//     });
-//     return originalSend.call(this, body);
-//   };
+  // Log response
+  const originalSend = res.send;
+  res.send = function (body: any) {
+    console.log(`📤 Response ${res.statusCode}`, {
+      body: body,
+    });
+    return originalSend.call(this, body);
+  };
 
-//   next();
-// });
+  next();
+});
 
 // Health check endpoint
-// app.get("/api/health", (req: Request, res: Response) => {
-//   res.status(200).json({
-//     status: "healthy",
-//     timestamp: new Date().toISOString(),
-//     uptime: process.uptime(),
-//     environment: process.env.NODE_ENV,
-//     version: process.env.npm_package_version || "development",
-//   });
-// });
+app.get("/api/health", (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+    version: process.env.npm_package_version || "development",
+  });
+});
 
 // Import Routes
 import authRoutes from "./routes/auth.routes.js";
