@@ -768,6 +768,20 @@ router.post(
           ) {
             vehicle.serviceHistory = null;
           }
+
+          // Validate navigationSystem
+          if (vehicle.navigationSystem !== undefined) {
+            if (!["built-in", "portable", "none"].includes(vehicle.navigationSystem)) {
+              // Convert boolean values to appropriate strings
+              if (vehicle.navigationSystem === true || vehicle.navigationSystem === "true") {
+                vehicle.navigationSystem = "built-in";
+              } else if (vehicle.navigationSystem === false || vehicle.navigationSystem === "false") {
+                vehicle.navigationSystem = "none";
+              } else {
+                throw new Error("Invalid navigation system value. Must be one of: built-in, portable, none");
+              }
+            }
+          }
         }
 
         // Validate real estate details if present
