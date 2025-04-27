@@ -479,3 +479,54 @@ export const deleteMessage = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+export const deleteConversation = async (req: AuthRequest, res: Response) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    // Check if conversation exists and user is a participant
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        participants: {
+          some: {
+            id: userId
+          }
+        }
+      },
+    });
+
+    if (!conversation) {
+      return res.status(404).json({
+        success: false,
+        error: "Conversation not found or you are not a participant",
+      });
+    }
+
+    // Delete all messages in the conversation
+    await prisma.message.deleteMany({
+      where: {
+        conversationId: conversationId,
+      },
+    });
+
+    // Delete the conversation
+    await prisma.conversation.delete({
+      where: {
+        id: conversationId,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Conversation deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete conversation error:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to delete conversation",
+    });
+  }
+};
