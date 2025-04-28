@@ -306,75 +306,79 @@ router.get("/trending", async (_req: Request, res: Response): Promise<void> => {
 });
 
 // Get listing by ID (public route)
-router.get("/:id", async (req: Request, res: Response): Promise<void> => {
-  try {
-    console.log(`Fetching listing with ID: ${req.params.id}`);
+router.get(
+  "/public/:id",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      console.log(`Fetching listing with ID: ${req.params.id}`);
 
-    const listing = await prisma.listing.findUnique({
-      where: { id: req.params.id },
-      include: {
-        images: true,
-        user: {
-          select: {
-            id: true,
-            username: true,
-            profilePicture: true,
+      const listing = await prisma.listing.findUnique({
+        where: { id: req.params.id },
+        include: {
+          images: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              profilePicture: true,
+            },
           },
+          favorites: true,
+          // This includes all vehicle details
+          realEstateDetails: true, // This includes all real estate details
+          // This includes all vehicle details
+          vehicleDetails: true,
         },
-        favorites: true,
-        // This includes all vehicle details
-        realEstateDetails: true, // This includes all real estate details
-        // This includes all vehicle details
-        vehicleDetails: true,
-      },
-    });
+      });
 
-    if (!listing) {
-      console.log(`Listing not found with ID: ${req.params.id}`);
-      res.status(404).json({
+      if (!listing) {
+        console.log(`Listing not found with ID: ${req.params.id}`);
+        res.status(404).json({
+          success: false,
+          error: "Listing not found",
+          status: 404,
+          data: null,
+        });
+        return;
+      }
+
+      // Detailed logging
+      console.log("Raw listing data:", JSON.stringify(listing, null, 2));
+
+      const formattedListing = formatListingResponse(listing);
+
+      if (
+        formattedListing &&
+        formattedListing.details &&
+        formattedListing.details.vehicles
+      ) {
+        console.log(
+          "Formatted listing:",
+          JSON.stringify(formattedListing, null, 2)
+        );
+        console.log(
+          "Formatted vehicle details:",
+          JSON.stringify(formattedListing.details.vehicles, null, 2)
+        );
+      }
+
+      res.json({
+        success: true,
+        data: formattedListing,
+        status: 200,
+      });
+    } catch (error) {
+      console.error("Error fetching listing:", error);
+      res.status(500).json({
         success: false,
-        error: "Listing not found",
-        status: 404,
+        error:
+          error instanceof Error ? error.message : "Failed to fetch listing",
+        status: 500,
         data: null,
       });
-      return;
     }
-
-    // Detailed logging
-    console.log("Raw listing data:", JSON.stringify(listing, null, 2));
-
-    const formattedListing = formatListingResponse(listing);
-
-    if (
-      formattedListing &&
-      formattedListing.details &&
-      formattedListing.details.vehicles
-    ) {
-      console.log(
-        "Formatted listing:",
-        JSON.stringify(formattedListing, null, 2)
-      );
-      console.log(
-        "Formatted vehicle details:",
-        JSON.stringify(formattedListing.details.vehicles, null, 2)
-      );
-    }
-
-    res.json({
-      success: true,
-      data: formattedListing,
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error fetching listing:", error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to fetch listing",
-      status: 500,
-      data: null,
-    });
   }
-});
+);
 
 // Protected Routes
 router.use(authenticate);
@@ -733,14 +737,26 @@ router.post(
 
           // Validate navigationSystem
           if (vehicle.navigationSystem !== undefined) {
-            if (!["built-in", "portable", "none"].includes(vehicle.navigationSystem)) {
+            if (
+              !["built-in", "portable", "none"].includes(
+                vehicle.navigationSystem
+              )
+            ) {
               // Convert boolean values to appropriate strings
-              if (vehicle.navigationSystem === true || vehicle.navigationSystem === "true") {
+              if (
+                vehicle.navigationSystem === true ||
+                vehicle.navigationSystem === "true"
+              ) {
                 vehicle.navigationSystem = "built-in";
-              } else if (vehicle.navigationSystem === false || vehicle.navigationSystem === "false") {
+              } else if (
+                vehicle.navigationSystem === false ||
+                vehicle.navigationSystem === "false"
+              ) {
                 vehicle.navigationSystem = "none";
               } else {
-                throw new Error("Invalid navigation system value. Must be one of: built-in, portable, none");
+                throw new Error(
+                  "Invalid navigation system value. Must be one of: built-in, portable, none"
+                );
               }
             }
           }
