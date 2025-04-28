@@ -9,7 +9,11 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
     const senderId = req.user.id;
 
     // Validate required fields
-    if (!participantIds || !Array.isArray(participantIds) || participantIds.length === 0) {
+    if (
+      !participantIds ||
+      !Array.isArray(participantIds) ||
+      participantIds.length === 0
+    ) {
       return res.status(400).json({
         success: false,
         error: { message: "participantIds array is required" },
@@ -19,27 +23,27 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
     // Check if conversation already exists between these participants
     const existingConversation = await prisma.conversation.findFirst({
       where: {
-        AND: participantIds.map(id => ({
+        AND: participantIds.map((id) => ({
           participants: {
-            some: { id }
-          }
-        }))
+            some: { id },
+          },
+        })),
       },
       include: {
         participants: {
           select: {
             id: true,
             username: true,
-            profilePicture: true
-          }
-        }
-      }
+            profilePicture: true,
+          },
+        },
+      },
     });
 
     if (existingConversation) {
       return res.json({
         success: true,
-        data: existingConversation
+        data: existingConversation,
       });
     }
 
@@ -47,20 +51,20 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
     const conversation = await prisma.conversation.create({
       data: {
         participants: {
-          connect: participantIds.map(id => ({ id }))
+          connect: participantIds.map((id) => ({ id })),
         },
         lastMessage: initialMessage || "",
-        lastMessageAt: new Date()
+        lastMessageAt: new Date(),
       },
       include: {
         participants: {
           select: {
             id: true,
             username: true,
-            profilePicture: true
-          }
-        }
-      }
+            profilePicture: true,
+          },
+        },
+      },
     });
 
     // If there's an initial message, create it
@@ -69,26 +73,27 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
         data: {
           content: initialMessage,
           sender: { connect: { id: senderId } },
-          recipient: { 
-            connect: { 
-              id: participantIds.find(id => id !== senderId) || participantIds[0] 
-            } 
+          recipient: {
+            connect: {
+              id:
+                participantIds.find((id) => id !== senderId) ||
+                participantIds[0],
+            },
           },
-          conversation: { connect: { id: conversation.id } }
-        }
+          conversation: { connect: { id: conversation.id } },
+        },
       });
     }
 
     return res.json({
       success: true,
-      data: conversation
+      data: conversation,
     });
-
   } catch (error) {
     console.error("Error creating conversation:", error);
     return res.status(500).json({
       success: false,
-      error: { message: "Failed to create conversation" }
+      error: { message: "Failed to create conversation" },
     });
   }
 };
@@ -102,36 +107,36 @@ export const getConversations = async (req: AuthRequest, res: Response) => {
       where: {
         participants: {
           some: {
-            id: userId
-          }
-        }
+            id: userId,
+          },
+        },
       },
       include: {
         participants: {
           select: {
             id: true,
             username: true,
-            profilePicture: true
-          }
+            profilePicture: true,
+          },
         },
         messages: {
           orderBy: {
-            createdAt: 'desc'
+            createdAt: "desc",
           },
-          take: 1
-        }
+          take: 1,
+        },
       },
       orderBy: {
-        lastMessageAt: 'desc'
+        lastMessageAt: "desc",
       },
       skip: (Number(page) - 1) * Number(limit),
-      take: Number(limit)
+      take: Number(limit),
     });
 
     // Format the response
-    const formattedConversations = conversations.map(conv => ({
+    const formattedConversations = conversations.map((conv) => ({
       ...conv,
-      lastMessage: conv.messages[0] || null
+      lastMessage: conv.messages[0] || null,
     }));
 
     return res.json({
@@ -139,15 +144,14 @@ export const getConversations = async (req: AuthRequest, res: Response) => {
       data: {
         items: formattedConversations,
         page: Number(page),
-        limit: Number(limit)
-      }
+        limit: Number(limit),
+      },
     });
-
   } catch (error) {
     console.error("Error fetching conversations:", error);
     return res.status(500).json({
       success: false,
-      error: { message: "Failed to fetch conversations" }
+      error: { message: "Failed to fetch conversations" },
     });
   }
 };
@@ -382,8 +386,6 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
-
 export const getMessages = async (req: AuthRequest, res: Response) => {
   try {
     const { conversationId } = req.params;
@@ -491,9 +493,9 @@ export const deleteConversation = async (req: AuthRequest, res: Response) => {
         id: conversationId,
         participants: {
           some: {
-            id: userId
-          }
-        }
+            id: userId,
+          },
+        },
       },
     });
 

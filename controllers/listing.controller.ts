@@ -447,41 +447,44 @@ export const createListing = async (req: AuthRequest, res: Response) => {
 };
 
 // Simple in-memory cache for listings
-const listingsCache = new Map<string, { data: any; etag: string; timestamp: number }>();
+const listingsCache = new Map<
+  string,
+  { data: any; etag: string; timestamp: number }
+>();
 const CACHE_TTL = 60 * 1000; // 60 seconds cache TTL
 
 export const getListings = async (req: AuthRequest, res: Response) => {
   try {
     console.log("Request query:", req.query);
-    
+
     // Create a cache key from the request query parameters
     const cacheKey = JSON.stringify(req.query);
-    const ifNoneMatch = req.headers['if-none-match'];
-    
+    const ifNoneMatch = req.headers["if-none-match"];
+
     // Check if we have a valid cache entry
     const cachedResponse = listingsCache.get(cacheKey);
     if (cachedResponse) {
       const isExpired = Date.now() - cachedResponse.timestamp > CACHE_TTL;
-      
+
       // If the client sent an ETag that matches our cached ETag and the cache isn't expired
       if (ifNoneMatch === cachedResponse.etag && !isExpired) {
         // Return 304 Not Modified to tell the client to use its cached version
-        console.log('Cache hit with matching ETag, returning 304');
+        console.log("Cache hit with matching ETag, returning 304");
         return res.status(304).end();
       }
-      
+
       // If cache is still valid but client didn't send matching ETag
       if (!isExpired) {
-        console.log('Cache hit, returning cached data');
-        res.set('ETag', cachedResponse.etag);
-        res.set('Cache-Control', 'private, max-age=60'); // Tell client to cache for 60 seconds
+        console.log("Cache hit, returning cached data");
+        res.set("ETag", cachedResponse.etag);
+        res.set("Cache-Control", "private, max-age=60"); // Tell client to cache for 60 seconds
         return res.json(cachedResponse.data);
       }
-      
+
       // Cache expired, will fetch new data
-      console.log('Cache expired, fetching new data');
+      console.log("Cache expired, fetching new data");
     }
-    
+
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(
       50,
@@ -578,7 +581,7 @@ export const getListings = async (req: AuthRequest, res: Response) => {
     );
 
     console.log("Formatted listings:", formattedListings.length);
-    
+
     // Prepare response data
     const responseData = {
       success: true,
@@ -590,21 +593,21 @@ export const getListings = async (req: AuthRequest, res: Response) => {
       },
       status: 200,
     };
-    
+
     // Generate ETag (simple hash of the JSON response)
-    const etag = `W/"${Buffer.from(JSON.stringify(responseData)).toString('base64').slice(0, 27)}"`; 
-    
+    const etag = `W/"${Buffer.from(JSON.stringify(responseData)).toString("base64").slice(0, 27)}"`;
+
     // Store in cache
     listingsCache.set(cacheKey, {
       data: responseData,
       etag,
       timestamp: Date.now(),
     });
-    
+
     // Set cache headers
-    res.set('ETag', etag);
-    res.set('Cache-Control', 'private, max-age=60'); // Tell client to cache for 60 seconds
-    
+    res.set("ETag", etag);
+    res.set("Cache-Control", "private, max-age=60"); // Tell client to cache for 60 seconds
+
     // Send response
     res.json(responseData);
   } catch (error) {

@@ -26,7 +26,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string
+  sortOrder?: string,
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -173,7 +173,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 
     // Format listings for response
     const formattedListings = listings.map((listing) =>
-      formatListingResponse(listing)
+      formatListingResponse(listing),
     );
 
     res.json({
@@ -354,11 +354,11 @@ router.get(
       ) {
         console.log(
           "Formatted listing:",
-          JSON.stringify(formattedListing, null, 2)
+          JSON.stringify(formattedListing, null, 2),
         );
         console.log(
           "Formatted vehicle details:",
-          JSON.stringify(formattedListing.details.vehicles, null, 2)
+          JSON.stringify(formattedListing.details.vehicles, null, 2),
         );
       }
 
@@ -377,7 +377,7 @@ router.get(
         data: null,
       });
     }
-  }
+  },
 );
 
 // Protected Routes
@@ -385,7 +385,7 @@ router.use(authenticate);
 
 // Helper function to handle authenticated routes
 const handleAuthRoute = (
-  handler: (req: AuthRequest, res: Response) => Promise<void>
+  handler: (req: AuthRequest, res: Response) => Promise<void>,
 ) => {
   return async (req: Request, res: Response): Promise<void> => {
     try {
@@ -433,7 +433,7 @@ router.get(
       });
 
       const formattedListings = savedListings.map((favorite) =>
-        formatListingResponse(favorite.listing)
+        formatListingResponse(favorite.listing),
       );
 
       res.json({
@@ -450,7 +450,7 @@ router.get(
         data: null,
       });
     }
-  })
+  }),
 );
 
 // Save a listing to favorites
@@ -533,7 +533,7 @@ router.post(
         data: null,
       });
     }
-  })
+  }),
 );
 
 // Delete a saved listing
@@ -588,7 +588,7 @@ router.delete(
         data: null,
       });
     }
-  })
+  }),
 );
 
 // ✅ Add save listing
@@ -654,7 +654,7 @@ router.post(
             "Details:",
             typeof details === "string"
               ? details
-              : JSON.stringify(details, null, 2)
+              : JSON.stringify(details, null, 2),
           );
         } catch (e) {
           console.error("Error logging details:", e);
@@ -668,7 +668,7 @@ router.post(
         data: null,
       });
     }
-  })
+  }),
 );
 
 router.post(
@@ -720,7 +720,7 @@ router.post(
       let parsedDetails;
       try {
         parsedDetails = JSON.parse(
-          typeof details === "string" ? details : JSON.stringify(details)
+          typeof details === "string" ? details : JSON.stringify(details),
         );
         console.log("Parsed details:", JSON.stringify(parsedDetails, null, 2));
 
@@ -739,7 +739,7 @@ router.post(
           if (vehicle.navigationSystem !== undefined) {
             if (
               !["built-in", "portable", "none"].includes(
-                vehicle.navigationSystem
+                vehicle.navigationSystem,
               )
             ) {
               // Convert boolean values to appropriate strings
@@ -755,7 +755,7 @@ router.post(
                 vehicle.navigationSystem = "none";
               } else {
                 throw new Error(
-                  "Invalid navigation system value. Must be one of: built-in, portable, none"
+                  "Invalid navigation system value. Must be one of: built-in, portable, none",
                 );
               }
             }
@@ -814,7 +814,7 @@ router.post(
       // Create listing with images
       console.log(
         "Details sent to DB:",
-        JSON.stringify(parsedDetails, null, 2)
+        JSON.stringify(parsedDetails, null, 2),
       );
 
       const listing = await prisma.listing.create({
@@ -1216,7 +1216,7 @@ router.post(
             "Details:",
             typeof details === "string"
               ? details
-              : JSON.stringify(details, null, 2)
+              : JSON.stringify(details, null, 2),
           );
         } catch (e) {
           console.error("Error logging details:", e);
@@ -1230,7 +1230,7 @@ router.post(
         data: null,
       });
     }
-  })
+  }),
 );
 
 router.get(
@@ -1285,7 +1285,7 @@ router.get(
         },
       });
     }
-  })
+  }),
 );
 
 router.get(
@@ -1328,7 +1328,7 @@ router.get(
         },
       });
     }
-  })
+  }),
 );
 
 // This route has been moved above the authentication middleware to make it public
@@ -1448,7 +1448,7 @@ router.put(
         data: null,
       });
     }
-  })
+  }),
 );
 
 router.delete(
@@ -1536,7 +1536,7 @@ router.delete(
         data: null,
       });
     }
-  })
+  }),
 );
 
 export default router;
