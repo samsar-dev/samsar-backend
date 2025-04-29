@@ -1,27 +1,15 @@
-import fastify,{ FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
  
-import { authenticate } from "../middleware/auth.js";
-import prisma from "../src/lib/prismaClient.js";
 import { Prisma } from "@prisma/client";
+import { authenticate } from "../middleware/auth.js";
 import {
-  VehicleType,
-  FuelType,
-  TransmissionType,
-  Condition,
-} from "../types/enums.js";
-import {
-  upload,
-  processImagesMiddleware,
-  processImage,
+  processImagesMiddleware
 } from "../middleware/upload.middleware.js";
-import { isListingOwner } from "../middleware/auth.js";
+import prisma from "../src/lib/prismaClient.js";
 import { AuthRequest, MultipartAuthRequest } from "../types/auth.js";
 import {
-  ListingCreateInput,
-  ListingUpdateInput,
-  ListingWithRelations,
-  ListingBase,
   ListingDetails,
+  ListingWithRelations
 } from "../types/shared.js";
 interface ListingQuery {
   mainCategory?: string;
