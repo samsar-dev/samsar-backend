@@ -2,15 +2,12 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { Prisma, NotificationType } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { Server } from "socket.io";
+import { UserPayload } from "../types/auth.js";
 
-// Extend Fastify request type to include user
-declare module "fastify" {
-  interface FastifyRequest {
-    user: {
-      id: string;
-      username: string;
-      email: string;
-    };
+// Extend Fastify JWT interface to include user properties
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
+    user: UserPayload;
   }
 }
 
@@ -51,6 +48,10 @@ export const createNotification = async (
 
 export const getNotifications = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    if (!req.user) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+
     const page = Math.max(1, parseInt((req.query as any).page as string) || 1);
     const limit = Math.max(
       1,
@@ -96,6 +97,10 @@ export const getNotifications = async (req: FastifyRequest, reply: FastifyReply)
 
 export const markAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    if (!req.user) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+
     const { id } = req.params as { id: string };
 
     const notification = await prisma.notification.findFirst({
@@ -132,6 +137,10 @@ export const markAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
 
 export const markAllAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    if (!req.user) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+
     await prisma.notification.updateMany({
       where: {
         userId: req.user.id,
@@ -157,6 +166,10 @@ export const markAllAsRead = async (req: FastifyRequest, reply: FastifyReply) =>
 
 export const deleteNotification = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    if (!req.user) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+
     const { id } = req.params as { id: string };
     const notification = await prisma.notification.delete({
       where: { id, userId: req.user.id },
@@ -184,6 +197,10 @@ export const deleteNotification = async (req: FastifyRequest, reply: FastifyRepl
 
 export const clearAllNotifications = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
+    if (!req.user) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+
     const result = await prisma.notification.deleteMany({
       where: { userId: req.user.id },
     });

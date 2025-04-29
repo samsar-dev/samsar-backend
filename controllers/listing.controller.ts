@@ -13,16 +13,12 @@ import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
+import { UserPayload } from "../types/auth.js";
 
 // Extend Fastify request with custom properties
 declare module 'fastify' {
   interface FastifyRequest {
-    user?: {
-      id: string;
-      username: string;
-      email: string;
-      role: 'USER' | 'ADMIN';
-    };
+    user?: UserPayload;
     processedImages?: Array<{
       url: string;
       order: number;

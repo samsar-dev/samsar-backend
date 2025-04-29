@@ -24,6 +24,8 @@ model User {
   dateOfBirth          String?
   postalCode           String?
   street               String?
+  refreshToken         String?        @db.Text
+  refreshTokenExpiresAt DateTime?
   favorites            Favorite[]
   listings             Listing[]      @relation("UserListings")
   receivedMessages     Message[]      @relation("ReceivedMessages")
@@ -31,6 +33,8 @@ model User {
   relatedNotifications Notification[] @relation("RelatedNotifications")
   notifications        Notification[]
   conversations        Conversation[] @relation("UserConversations")
+
+  @@index([refreshToken])
 }
 
 model Listing {

@@ -20,6 +20,8 @@ interface ListingQuery {
   limit?: string;
   location?: string;
   builtYear?: string;
+  preview?: string;
+  publicAccess?: string;
 }
 interface SearchQuery {
   query?: string;
@@ -124,6 +126,15 @@ const handleAuthRoute = (
 ) => {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     try {
+      // Only authenticate if this is not a public listings request
+      if (!request.url.includes('/listings') || (request.query as any)?.publicAccess !== 'true') {
+        await authenticate(request, reply);
+        if (!request.user) {
+          reply.code(401).send({ success: false, error: "Unauthorized: User not found" });
+          return;
+        }
+      }
+      
       // Cast request to AuthRequest since it's been authenticated
       const authReq = request as unknown as MultipartAuthRequest;
       await handler(authReq, reply);
@@ -141,14 +152,13 @@ const handleAuthRoute = (
 };
 
 export default async function (fastify: FastifyInstance) {
-  // Note: The authenticate middleware needs to be adapted for Fastify
-  // For now, we'll comment this out until it's properly adapted
-  // fastify.addHook('preHandler', authenticate);
-
+  // Remove global auth middleware and handle auth per route
+  
   // Public Routes
   fastify.get<{ Querystring: ListingQuery }>("/", async (req, reply) => {
-  try {
-  const { mainCategory, subCategory, sortBy, sortOrder, page = "1", limit = "10", location, builtYear } = req.query as ListingQuery;
+    try {
+      // No authentication needed for this route
+      const { mainCategory, subCategory, sortBy, sortOrder, page = "1", limit = "10", location, builtYear, preview = "false" } = req.query as ListingQuery;
 
     // Build where clause for filtering
     const where: Prisma.ListingWhereInput = {};
@@ -177,31 +187,106 @@ export default async function (fastify: FastifyInstance) {
     // Get total count for pagination
     const total = await prisma.listing.count({ where });
 
+    // Determine if we should fetch full data or just preview data
+    const isPreview = preview === "true";
+    
     // Get listings with pagination, sorting, and filtering
     const listings = await prisma.listing.findMany({
       where,
       take: Number(limit),
       skip,
       orderBy: buildOrderBy(sortBy as string, sortOrder as string),
-      include: {
-        images: true,
-        user: {
-          select: {
-            id: true,
-            username: true,
-            profilePicture: true,
+      include: isPreview 
+        ? {
+            // Preview mode - fetch minimal data
+            images: {
+              take: 1, // Only get the first image
+              select: {
+                url: true,
+                id: true,
+              }
+            },
+            user: {
+              select: {
+                id: true,
+                username: true,
+              },
+            },
+            _count: {
+              select: {
+                favorites: true,
+              }
+            },
+            vehicleDetails: {
+              select: {
+                make: true,
+                model: true,
+                year: true,
+                mileage: true,
+                transmissionType: true,
+                fuelType: true,
+              }
+            },
+            realEstateDetails: {
+              select: {
+                size: true,
+                bedrooms: true,
+                bathrooms: true,
+              }
+            },
+          }
+        : {
+            // Full data mode
+            images: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+                profilePicture: true,
+              },
+            },
+            favorites: true,
+            realEstateDetails: true,
+            vehicleDetails: true,
           },
-        },
-        favorites: true,
-        realEstateDetails: true,
-        vehicleDetails: true,
-      },
     });
 
     // Format listings for response
-    const formattedListings = listings.map((listing) =>
-      formatListingResponse(listing),
-    );
+    const formattedListings = isPreview
+      ? listings.map((listing: any) => ({
+          id: listing.id,
+          title: listing.title,
+          price: listing.price,
+          category: {
+            mainCategory: listing.mainCategory,
+            subCategory: listing.subCategory,
+          },
+          location: listing.location,
+          createdAt: listing.createdAt,
+          updatedAt: listing.updatedAt,
+          image: listing.images?.[0]?.url || null,
+          user: {
+            id: listing.user.id,
+            username: listing.user.username,
+          },
+          favoritesCount: listing._count?.favorites || 0,
+          details: {
+            vehicles: listing.vehicleDetails ? {
+              make: listing.vehicleDetails.make,
+              model: listing.vehicleDetails.model,
+              year: listing.vehicleDetails.year,
+              mileage: listing.vehicleDetails.mileage,
+              transmissionType: listing.vehicleDetails.transmissionType,
+              fuelType: listing.vehicleDetails.fuelType,
+            } : undefined,
+            realEstate: listing.realEstateDetails ? {
+              size: listing.realEstateDetails.size,
+              bedrooms: listing.realEstateDetails.bedrooms,
+              bathrooms: listing.realEstateDetails.bathrooms,
+            } : undefined,
+          },
+        }))
+      : listings.map((listing) => formatListingResponse(listing));
 
     reply.send({
       success: true,
@@ -683,7 +768,7 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
     try {
-      const user = request.getUserInfo?.();
+      const user = request.user;
       if (!user) {
         reply.code(401).send({
           success: false,
