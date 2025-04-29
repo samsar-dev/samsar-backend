@@ -42,15 +42,16 @@ export const authenticate = async (
   reply: FastifyReply
 ) => {
   try {
-    // Check for token in cookies first
-    let token = request.cookies.jwt;
+    // First check Authorization header
+    let token: string | undefined;
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    }
 
-    // If no token in cookies, check Authorization header
+    // If no token in header, check cookies as fallback
     if (!token) {
-      const authHeader = request.headers.authorization;
-      if (authHeader && authHeader.startsWith("Bearer ")) {
-        token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      }
+      token = request.cookies.jwt;
     }
 
     if (!token) {

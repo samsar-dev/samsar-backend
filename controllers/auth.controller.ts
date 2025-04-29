@@ -4,6 +4,9 @@ import bcrypt from "bcryptjs";
 import prisma from "../src/lib/prismaClient.js";
 import { env } from "../config/env.js";
 
+// Add to the imports
+import { verify } from "jsonwebtoken";
+
 // Define JWT user interface
 interface JWTUser {
   sub: string;
@@ -304,6 +307,61 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
 };
 
 // Refresh Token
+export const verifyToken = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const token = request.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "TOKEN_MISSING",
+          message: "No token provided"
+        }
+      });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JWTUser;
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.sub },
+        select: { id: true }
+      });
+
+      if (!user) {
+        return reply.code(401).send({
+          success: false,
+          error: {
+            code: "INVALID_TOKEN",
+            message: "User not found"
+          }
+        });
+      }
+
+      return reply.send({
+        success: true,
+        data: { valid: true }
+      });
+    } catch (error) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "INVALID_TOKEN",
+          message: "Token is invalid or expired"
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return reply.code(500).send({
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: "Internal server error"
+      }
+    });
+  }
+};
+
 export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { refreshToken } = request.body as { refreshToken: string };

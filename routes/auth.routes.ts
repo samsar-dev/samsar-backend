@@ -5,6 +5,7 @@ import {
   logout,
   getMe,
   refresh,
+  verifyToken,
 } from "../controllers/auth.controller.js";
 import {
   validateRegistration,
@@ -45,6 +46,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post("/login", loginRouteOptions);
 
   fastify.post("/refresh", handler(refresh));
+
+  // Token verification endpoint
+  const verifyTokenRouteOptions: RouteOptions = {
+    method: "GET",
+    url: "/verify-token",
+    handler: handler(verifyToken)
+  };
+  fastify.get("/verify-token", verifyTokenRouteOptions);
 
   // Protected routes
   const logoutRouteOptions: RouteOptions = {
