@@ -1,8 +1,18 @@
-import { Request, Response } from "express";
+import { FastifyRequest, FastifyReply } from "fastify";
 import { Prisma, NotificationType } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { Server } from "socket.io";
-import { AuthRequest } from "../types/index.js";
+
+// Extend Fastify request type to include user
+declare module "fastify" {
+  interface FastifyRequest {
+    user: {
+      id: string;
+      username: string;
+      email: string;
+    };
+  }
+}
 
 const validateNotificationType = (type: string): type is NotificationType => {
   return Object.values(NotificationType).includes(type as NotificationType);
@@ -39,12 +49,12 @@ export const createNotification = async (
   }
 };
 
-export const getNotifications = async (req: AuthRequest, res: Response) => {
+export const getNotifications = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const page = Math.max(1, parseInt((req.query as any).page as string) || 1);
     const limit = Math.max(
       1,
-      Math.min(50, parseInt(req.query.limit as string) || 20),
+      Math.min(50, parseInt((req.query as any).limit as string) || 20),
     );
     const skip = (page - 1) * limit;
 
@@ -65,7 +75,7 @@ export const getNotifications = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    reply.send({
       success: true,
       notifications,
       pagination: {
@@ -77,16 +87,16 @@ export const getNotifications = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Get notifications error:", error);
-    res.status(500).json({
+    reply.code(500).send({
       success: false,
       error: "Failed to get notifications",
     });
   }
 };
 
-export const markAsRead = async (req: AuthRequest, res: Response) => {
+export const markAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const notification = await prisma.notification.findFirst({
       where: {
@@ -96,7 +106,7 @@ export const markAsRead = async (req: AuthRequest, res: Response) => {
     });
 
     if (!notification) {
-      return res.status(404).json({
+      return reply.code(404).send({
         success: false,
         error: "Notification not found",
       });
@@ -107,20 +117,20 @@ export const markAsRead = async (req: AuthRequest, res: Response) => {
       data: { read: true },
     });
 
-    res.json({
+    reply.send({
       success: true,
       message: "Notification marked as read",
     });
   } catch (error) {
     console.error("Mark as read error:", error);
-    res.status(500).json({
+    reply.code(500).send({
       success: false,
       error: "Failed to mark notification as read",
     });
   }
 };
 
-export const markAllAsRead = async (req: AuthRequest, res: Response) => {
+export const markAllAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     await prisma.notification.updateMany({
       where: {
@@ -132,63 +142,60 @@ export const markAllAsRead = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    reply.send({
       success: true,
       message: "All notifications marked as read",
     });
   } catch (error) {
     console.error("Mark all as read error:", error);
-    res.status(500).json({
+    reply.code(500).send({
       success: false,
       error: "Failed to mark all notifications as read",
     });
   }
 };
 
-export const deleteNotification = async (req: AuthRequest, res: Response) => {
+export const deleteNotification = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const notification = await prisma.notification.delete({
       where: { id, userId: req.user.id },
     });
 
     if (!notification) {
-      return res.status(404).json({
+      return reply.code(404).send({
         success: false,
         error: "Notification not found",
       });
     }
 
-    res.json({
+    reply.send({
       success: true,
       message: "Notification deleted",
     });
   } catch (error) {
     console.error("Delete notification error:", error);
-    res.status(500).json({
+    reply.code(500).send({
       success: false,
       error: "Failed to delete notification",
     });
   }
 };
 
-export const clearAllNotifications = async (
-  req: AuthRequest,
-  res: Response,
-) => {
+export const clearAllNotifications = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const result = await prisma.notification.deleteMany({
       where: { userId: req.user.id },
     });
 
-    res.json({
+    reply.send({
       success: true,
       message: "All notifications cleared",
       deletedCount: result.count,
     });
   } catch (error) {
     console.error("Clear all notifications error:", error);
-    res.status(500).json({
+    reply.code(500).send({
       success: false,
       error: "Failed to clear all notifications",
     });

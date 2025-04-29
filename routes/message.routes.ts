@@ -1,4 +1,5 @@
-import express from "express";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { NextFunction } from "express";
 import { authenticate } from "../middleware/auth.js";
 import {
   sendMessage,
@@ -9,39 +10,52 @@ import {
   deleteConversation,
 } from "../controllers/message.controller.js";
 
-const router = express.Router();
+// Define Fastify handler types
+type FastifyHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 
-router.use(authenticate);
+// Create Fastify-compatible handlers
+const createFastifyHandler = (controller: any): FastifyHandler => {
+  return async (request, reply) => {
+    // Add Express-compatible methods to Fastify objects
+    await controller(request, reply);
+  };
+};
 
-// Conversations routes
-router.get(
-  "/conversations",
-  getConversations as unknown as express.RequestHandler,
-);
-router.post(
-  "/conversations",
-  createConversation as unknown as express.RequestHandler,
-);
-router.delete(
-  "/conversations/:conversationId",
-  deleteConversation as unknown as express.RequestHandler,
-);
+export default async function (fastify: FastifyInstance) {
+  // Apply authentication to all routes
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Authenticate using Fastify request/reply (adapt your middleware if needed)
+    await authenticate(request, reply);
+  });
 
-// Messages routes
-router.post("/", sendMessage as unknown as express.RequestHandler);
-router.get(
-  "/:conversationId",
-  getMessages as unknown as express.RequestHandler,
-);
-router.delete(
-  "/:messageId",
-  deleteMessage as unknown as express.RequestHandler,
-);
+  // Conversations routes
+  fastify.get(
+    "/conversations",
+    createFastifyHandler(getConversations)
+  );
+  fastify.post(
+    "/conversations",
+    createFastifyHandler(createConversation)
+  );
+  fastify.delete(
+    "/conversations/:conversationId",
+    createFastifyHandler(deleteConversation)
+  );
 
-// Listing message routes
-router.post(
-  "/listings/messages",
-  sendMessage as unknown as express.RequestHandler,
-);
+  // Messages routes
+  fastify.post("/", createFastifyHandler(sendMessage));
+  fastify.get(
+    "/:conversationId",
+    createFastifyHandler(getMessages)
+  );
+  fastify.delete(
+    "/:messageId",
+    createFastifyHandler(deleteMessage)
+  );
 
-export default router;
+  // Listing message routes
+  fastify.post(
+    "/listings/messages",
+    createFastifyHandler(sendMessage)
+  );
+}

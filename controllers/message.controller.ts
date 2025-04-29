@@ -1,9 +1,19 @@
-import { Response } from "express";
 import prisma from "../src/lib/prismaClient.js";
-import { AuthRequest } from "../types/index.js";
+import { FastifyRequest, FastifyReply } from "fastify";
+import { AuthRequest } from "../types/auth.js";
 import { NotificationType } from "../types/enums.js";
+import {
+  CreateConversationBody,
+  PaginationQuery,
+  SendMessageBody,
+  ParamWithConversationId,
+  ParamWithMessageId,
+} from "../types/auth.js";
 
-export const createConversation = async (req: AuthRequest, res: Response) => {
+export const createConversation = async (
+  req: AuthRequest<CreateConversationBody>,
+  reply: FastifyReply
+) => {
   try {
     const { participantIds, initialMessage } = req.body;
     const senderId = req.user.id;
@@ -14,7 +24,7 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
       !Array.isArray(participantIds) ||
       participantIds.length === 0
     ) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: { message: "participantIds array is required" },
       });
@@ -41,7 +51,7 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
     });
 
     if (existingConversation) {
-      return res.json({
+      return reply.send({
         success: true,
         data: existingConversation,
       });
@@ -85,20 +95,23 @@ export const createConversation = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    return res.json({
+    return reply.send({
       success: true,
       data: conversation,
     });
   } catch (error) {
     console.error("Error creating conversation:", error);
-    return res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: { message: "Failed to create conversation" },
     });
   }
 };
 
-export const getConversations = async (req: AuthRequest, res: Response) => {
+export const getConversations = async (
+  req: AuthRequest<unknown, PaginationQuery>,
+  reply: FastifyReply
+) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 20 } = req.query;
@@ -139,7 +152,7 @@ export const getConversations = async (req: AuthRequest, res: Response) => {
       lastMessage: conv.messages[0] || null,
     }));
 
-    return res.json({
+    return reply.send({
       success: true,
       data: {
         items: formattedConversations,
@@ -149,34 +162,37 @@ export const getConversations = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Error fetching conversations:", error);
-    return res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: { message: "Failed to fetch conversations" },
     });
   }
 };
 
-export const sendMessage = async (req: AuthRequest, res: Response) => {
+export const sendMessage = async (
+  req: AuthRequest<SendMessageBody>,
+  reply: FastifyReply
+) => {
   try {
     const { recipientId, content, listingId } = req.body;
 
     // Validate required fields
     if (!recipientId) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: { message: "recipientId is required" },
       });
     }
 
     if (!content?.trim()) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: { message: "message content cannot be empty" },
       });
     }
 
     if (!listingId) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: { message: "listingId is required" },
       });
@@ -263,7 +279,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
         },
       });
 
-      return res.json({
+      return reply.send({
         success: true,
         data: {
           message,
@@ -344,7 +360,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    return reply.send({
       success: true,
       data: {
         message,
@@ -356,7 +372,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
 
     // Handle Prisma errors
     if (error.code === "P2025") {
-      return res.status(404).json({
+      return reply.code(404).send({
         success: false,
         error: {
           message: "Recipient, listing, or conversation not found",
@@ -367,7 +383,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
 
     // Handle other database constraint errors
     if (error.code?.startsWith("P2")) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: {
           message: "Invalid data provided",
@@ -376,7 +392,7 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: {
         message: "Failed to send message",
@@ -386,7 +402,10 @@ export const sendMessage = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getMessages = async (req: AuthRequest, res: Response) => {
+export const getMessages = async (
+  req: AuthRequest<unknown, PaginationQuery, ParamWithConversationId>,
+  reply: FastifyReply
+) => {
   try {
     const { conversationId } = req.params;
     const { page = "1", limit = "20" } = req.query as {
@@ -428,7 +447,7 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    return reply.send({
       success: true,
       messages: messages.reverse(),
       page: Number(page),
@@ -436,14 +455,17 @@ export const getMessages = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error("Get messages error:", error);
-    res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: "Failed to get messages",
     });
   }
 };
 
-export const deleteMessage = async (req: AuthRequest, res: Response) => {
+export const deleteMessage = async (
+  req: AuthRequest<unknown, unknown, ParamWithMessageId>,
+  reply: FastifyReply
+) => {
   try {
     const { messageId } = req.params;
 
@@ -452,14 +474,14 @@ export const deleteMessage = async (req: AuthRequest, res: Response) => {
     });
 
     if (!message) {
-      return res.status(404).json({
+      return reply.code(404).send({
         success: false,
         error: "Message not found",
       });
     }
 
     if (message.senderId !== req.user.id) {
-      return res.status(403).json({
+      return reply.code(403).send({
         success: false,
         error: "Not authorized to delete this message",
       });
@@ -469,20 +491,23 @@ export const deleteMessage = async (req: AuthRequest, res: Response) => {
       where: { id: messageId },
     });
 
-    res.json({
+    return reply.send({
       success: true,
       message: "Message deleted successfully",
     });
   } catch (error) {
     console.error("Delete message error:", error);
-    res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: "Failed to delete message",
     });
   }
 };
 
-export const deleteConversation = async (req: AuthRequest, res: Response) => {
+export const deleteConversation = async (
+  req: AuthRequest<unknown, unknown, ParamWithConversationId>,
+  reply: FastifyReply
+) => {
   try {
     const { conversationId } = req.params;
     const userId = req.user.id;
@@ -500,7 +525,7 @@ export const deleteConversation = async (req: AuthRequest, res: Response) => {
     });
 
     if (!conversation) {
-      return res.status(404).json({
+      return reply.code(404).send({
         success: false,
         error: "Conversation not found or you are not a participant",
       });
@@ -520,13 +545,13 @@ export const deleteConversation = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    reply.send({
       success: true,
       message: "Conversation deleted successfully",
     });
   } catch (error) {
     console.error("Delete conversation error:", error);
-    res.status(500).json({
+    reply.code(500).send({
       success: false,
       error: "Failed to delete conversation",
     });

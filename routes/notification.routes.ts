@@ -1,4 +1,4 @@
-import express from "express";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { authenticate } from "../middleware/auth.js";
 import {
   getNotifications,
@@ -6,13 +6,31 @@ import {
   markAllAsRead,
 } from "../controllers/notification.controller.js";
 
-const router = express.Router();
+// Define Fastify handler types
+type FastifyHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 
-// All notification routes should be protected
-router.use(authenticate);
+// Create Fastify-compatible handlers
+const createFastifyHandler = (controller: any): FastifyHandler => {
+  return async (request, reply) => {
+    // Add Express-compatible methods to Fastify objects
+    await controller(request, reply);
+  };
+};
 
-router.get("/", getNotifications as unknown as express.RequestHandler);
-router.put("/:id/read", markAsRead as unknown as express.RequestHandler);
-router.put("/read-all", markAllAsRead as unknown as express.RequestHandler);
+export default async function (fastify: FastifyInstance) {
+  // All notification routes should be protected
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Authenticate using Fastify request/reply
+    await authenticate(request, reply);
+    const user = request.getUserInfo?.();
+    if (!user) {
+      reply.code(401).send({ success: false, error: "Unauthorized: User not found" });
+      return;
+    }
+    request.user = user;
+  });
 
-export default router;
+  fastify.get("/", createFastifyHandler(getNotifications));
+  fastify.put("/:id/read", createFastifyHandler(markAsRead));
+  fastify.put("/read-all", createFastifyHandler(markAllAsRead));
+}

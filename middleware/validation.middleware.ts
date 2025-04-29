@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import { body, validationResult } from "express-validator";
+import { FastifyRequest, FastifyReply } from "fastify";
+import { body, validationResult, ValidationChain } from "express-validator";
 
-export const validateRegistration = [
+export const validateRegistration: ValidationChain[] = [
   body("email")
     .isEmail()
     .withMessage("Please enter a valid email address")
@@ -11,7 +11,7 @@ export const validateRegistration = [
     .withMessage("Password must be at least 8 characters long")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/)
     .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
     ),
   body("name")
     .trim()
@@ -19,7 +19,7 @@ export const validateRegistration = [
     .withMessage("Name must be at least 2 characters long"),
 ];
 
-export const validateListing = [
+export const validateListing: ValidationChain[] = [
   body("title")
     .trim()
     .isLength({ min: 3 })
@@ -28,18 +28,23 @@ export const validateListing = [
     .trim()
     .isLength({ min: 10 })
     .withMessage("Description must be at least 10 characters long"),
-  body("price").isNumeric().withMessage("Price must be a number"),
-  body("category").trim().notEmpty().withMessage("Category is required"),
+  body("price")
+    .isNumeric()
+    .withMessage("Price must be a number"),
+  body("category")
+    .trim()
+    .notEmpty()
+    .withMessage("Category is required"),
 ];
 
-export const validate = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): void => {
-  const errors = validationResult(req);
+export const validate = async (request: FastifyRequest, reply: FastifyReply, done: (error?: Error) => void) => {
+  // Run validation chains
+  await Promise.all(validateRegistration.map(validation => validation.run(request as any)));
+
+  // Check for validation errors
+  const errors = validationResult(request as any);
   if (!errors.isEmpty()) {
-    res.status(400).json({
+    reply.code(400).send({
       success: false,
       error: {
         code: "VALIDATION_ERROR",
@@ -49,5 +54,7 @@ export const validate = (
     });
     return;
   }
-  next();
+
+  // Continue to next middleware/handler
+  done();
 };

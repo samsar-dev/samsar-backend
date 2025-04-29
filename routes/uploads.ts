@@ -1,51 +1,57 @@
-import express from "express";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { upload } from "../middleware/upload.middleware.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-const router = express.Router();
+export default async function (fastify: FastifyInstance) {
+  // Upload Image to Cloudflare R2
+  fastify.post("/upload", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      // Note: Fastify file handling will need to be configured separately
+      // This is a placeholder for the file upload handling
+      const file = (request as any).file; // This will need proper Fastify multipart handling
+      
+      if (!file) {
+        reply.code(400).send({ error: "No file uploaded" });
+        return;
+      }
 
-// Upload Image to Cloudflare R2
-router.post("/upload", upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+      const body = request.body as any;
+      const { category } = body; // Pass category from frontend ("avatar" or "listing")
+      if (!category || (category !== "avatar" && category !== "listing")) {
+        reply.code(400).send({ error: "Invalid category. Use 'avatar' or 'listing'." });
+        return;
+      }
+
+      const result = await uploadToR2(file, category);
+      reply.send({ imageUrl: result.url, key: result.key });
+    } catch (error) {
+      reply.code(500).send({
+        error: "Image upload failed",
+        details: (error as Error).message,
+      });
     }
+  });
 
-    const { category } = req.body; // Pass category from frontend ("avatar" or "listing")
-    if (!category || (category !== "avatar" && category !== "listing")) {
-      return res
-        .status(400)
-        .json({ error: "Invalid category. Use 'avatar' or 'listing'." });
+  // DELETE Image from Cloudflare R2
+  fastify.delete("/delete", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const body = request.body as any;
+      const { key } = body;
+
+      if (!key) {
+        reply.code(400).send({ error: "No image key provided" });
+        return;
+      }
+
+      await deleteFromR2(key);
+      reply.send({ success: true, message: "Image deleted successfully" });
+    } catch (error) {
+      reply.code(500).send({ 
+        error: "Server error", 
+        details: (error as Error).message 
+      });
     }
-
-    const result = await uploadToR2(req.file, category);
-    res.json({ imageUrl: result.url, key: result.key });
-  } catch (error) {
-    res.status(500).json({
-      error: "Image upload failed",
-      details: (error as Error).message,
-    });
-  }
-});
-
-// DELETE Image from Cloudflare R2
-router.delete("/delete", async (req, res) => {
-  try {
-    const { key } = req.body;
-
-    if (!key) {
-      return res.status(400).json({ error: "No image key provided" });
-    }
-
-    await deleteFromR2(key);
-    res.json({ success: true, message: "Image deleted successfully" });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Server error", details: (error as Error).message });
-  }
-});
-
-export default router;
+  });
+}

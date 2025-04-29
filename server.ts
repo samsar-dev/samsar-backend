@@ -1,64 +1,95 @@
-import express, { Request, Response, NextFunction } from "express";
-import cors from "cors";
-import helmet from "helmet";
-import compression from "compression";
-import rateLimit from "express-rate-limit";
-import cookieParser from "cookie-parser";
-import { createServer } from "node:http";
-import { Server, Socket } from "socket.io";
-import prisma from "./src/lib/prismaClient.js";
+// src/server.ts
+
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import compress from "@fastify/compress";
+import rateLimit from "@fastify/rate-limit";
+import cookie from "@fastify/cookie";
+import multipart, { FastifyMultipartBaseOptions } from '@fastify/multipart';
+import type { MultipartFile } from '@fastify/multipart';
 import dotenv from "dotenv";
-import morgan from "morgan";
-import errorHandler from "./middleware/errorHandler.js";
+import { Server as SocketIOServer } from "socket.io";
+import { createServer } from "node:http";
+import prisma from "./src/lib/prismaClient.js";
 import { getDirname } from "./utils/path.utils.js";
+
 const __dirname = getDirname(import.meta.url);
 
 // Load environment variables
 dotenv.config();
 console.log("✅ JWT_SECRET from process.env:", process.env.JWT_SECRET);
 
-// Initialize app and HTTP server
-const app = express();
-const httpServer = createServer(app);
+// -----------------
+// Create HTTP server manually
+// -----------------
+const httpServer = createServer();
 
-// Middleware
-app.use(helmet());
-app.use(compression());
-app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Increased limit to 200 requests per windowMs
-  message: {
-    success: false,
-    error: {
-      code: "RATE_LIMIT",
-      message: "Too many requests from this IP, please try again later.",
-    },
+// Create Fastify instance using existing HTTP server
+const fastify = Fastify({
+  logger: process.env.NODE_ENV === "development",
+  serverFactory: (handler) => {
+    httpServer.on('request', handler);
+    return httpServer;
   },
-  standardHeaders: true,
-  legacyHeaders: false,
 });
 
-// Apply rate limiting to specific routes only
-app.use("/api/auth/login", limiter);
-app.use("/api/auth/register", limiter);
+// Attach Socket.IO to httpServer
+const io = new SocketIOServer(httpServer, {
+  serveClient: false,
+  pingTimeout: 30000,
+  pingInterval: 25000,
+  cors: {
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      "http://localhost:5173",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
-// CORS Configuration
-const corsOptions = {
+// BEFORE listen, decorate Fastify
+fastify.decorate("io", io);
+
+// -----------------
+// Register middlewares
+// -----------------
+await fastify.register(helmet);
+// Configure compression with specific settings
+await fastify.register(compress, {
+  global: false,  // Only compress responses that have the appropriate headers
+  encodings: ['gzip', 'deflate'],
+  customTypes: /^text\/|^application\/json|^application\/javascript/
+});
+await fastify.register(cookie);
+await fastify.register(import('@fastify/formbody'));
+await fastify.register(multipart, {
+  attachFieldsToBody: false, // Changed from true to false to handle files manually
+  limits: {
+    fieldSize: 5 * 1024 * 1024, // 5MB
+    files: 10,
+    fileSize: 10 * 1024 * 1024 // 10MB
+  }
+} as FastifyMultipartBaseOptions);  // Add multipart file upload support
+
+// Rate Limiting
+await fastify.register(rateLimit, {
+  global: false,
+});
+
+// CORS
+await fastify.register(cors, {
   origin: [
     "https://tijara-frontend-ashk4pprf-darians-projects-e6352288.vercel.app",
     "https://tijara-frontend-production.up.railway.app",
-    "http://localhost:3000", // For local development
-    "http://localhost:5173", // For Vite's default port
-    "http://localhost:3001", // Alternative port
-    "http://127.0.0.1:3000", // Alternative localhost
-    "http://127.0.0.1:5173", // Alternative localhost
-    "http://127.0.0.1:3001", // Alternative localhost
-    "https://tijara-frontend.vercel.app", // ✅ Add your frontend URL
+    "https://tijara-frontend.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3001",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -70,60 +101,54 @@ const corsOptions = {
     "Origin",
     "Access-Control-Allow-Headers",
     "Access-Control-Allow-Origin",
-    "Access-Control-Allow-Credentials",
+    "Access-Control-Allow-Credentials"
   ],
   exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 600, // Cache preflight request results for 10 minutes
-};
-
-// Apply CORS middleware
-app.use(cors(corsOptions));
-
-// Add security headers
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.header("X-Content-Type-Options", "nosniff");
-  res.header("X-Frame-Options", "DENY");
-  res.header("X-XSS-Protection", "1; mode=block");
-  next();
+  maxAge: 600,
 });
 
-// Logging
+// Remove all onSend hooks to prevent conflicts with route handlers
+// fastify.addHook("onSend", async (request, reply, payload) => {
+//   // Set security headers
+//   reply.header("X-Content-Type-Options", "nosniff");
+//   reply.header("X-Frame-Options", "DENY");
+//   reply.header("X-XSS-Protection", "1; mode=block");
+
+//   // Set proper content type and encoding headers
+//   if (!reply.getHeader('content-type')) {
+//     reply.header('content-type', 'application/json; charset=utf-8');
+//   }
+
+//   // Return payload unchanged - no formatting
+//   return payload;
+// });
+
+// Logging (only development)
 if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
+  fastify.addHook("onRequest", async (request) => {
+    console.log(`📥 ${request.method} ${request.url}`);
+  });
+  
+  // Comment out the onSend hook for logging to prevent conflicts
+  // fastify.addHook("onSend", async (request, reply, payload) => {
+  //   console.log(`📤 Response ${reply.statusCode}`);
+  //   return payload; // Return payload unchanged
+  // });
 }
 
-// Add before your routes
-app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`📥 ${req.method} ${req.url}`, {
-    headers: req.headers,
-    body: req.body,
-    query: req.query,
-  });
-
-  // Log response
-  const originalSend = res.send;
-  res.send = function (body: any) {
-    console.log(`📤 Response ${res.statusCode}`, {
-      body: body,
-    });
-    return originalSend.call(this, body);
-  };
-
-  next();
-});
-
-// Health check endpoint
-app.get("/api/health", (req: Request, res: Response) => {
-  res.status(200).json({
+// Health route
+fastify.get("/api/health", async (_, reply) => {
+  reply.status(200).send({
     status: "healthy",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV,
-    version: process.env.npm_package_version || "development",
   });
 });
 
-// Import Routes
+// -----------------
+// Import routes
+// -----------------
 import authRoutes from "./routes/auth.routes.js";
 import listingRoutes from "./routes/listing.routes.js";
 import userRoutes from "./routes/user.routes.js";
@@ -131,20 +156,28 @@ import messageRoutes from "./routes/message.routes.js";
 import uploadRoutes from "./routes/uploads.js";
 import notificationRoutes from "./routes/notification.routes.js";
 
-// API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/listings", listingRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/uploads", uploadRoutes);
-app.use("/api/notifications", notificationRoutes);
+// Attach routes
+await fastify.register(authRoutes, { prefix: "/api/auth" });
+await fastify.register(listingRoutes, { prefix: "/api/listings" });
+await fastify.register(userRoutes, { prefix: "/api/users" });
+await fastify.register(messageRoutes, { prefix: "/api/messages" });
+await fastify.register(uploadRoutes, { prefix: "/api/uploads" });
+await fastify.register(notificationRoutes, { prefix: "/api/notifications" });
 
-// Error handling middleware
-app.use(errorHandler);
+// Error handling
+fastify.setErrorHandler((error, _, reply) => {
+  console.error(error);
+  reply.status(error.statusCode || 500).send({
+    success: false,
+    error: {
+      code: error.code || "INTERNAL_SERVER_ERROR",
+      message: error.message || "Something went wrong",
+    },
+  });
+});
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
+fastify.setNotFoundHandler((_, reply) => {
+  reply.status(404).send({
     success: false,
     error: {
       code: "NOT_FOUND",
@@ -153,53 +186,38 @@ app.use((req: Request, res: Response) => {
   });
 });
 
-// Socket.io Setup
-const io = new Server(httpServer, {
-  serveClient: false,
-  pingTimeout: 30000,
-  pingInterval: 25000,
-  cookie: false,
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
-
-app.set("io", io);
-
-// Socket.io connection handling
-io.on("connection", (socket: Socket) => {
-  console.log("User connected:", socket.id);
-
-  socket.on("join", (userId: string) => {
-    socket.join(userId);
-    console.log(`User ${userId} joined their room`);
-  });
-
-  socket.on("leave", (userId: string) => {
-    socket.leave(userId);
-    console.log(`User ${userId} left their room`);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
-
+// -----------------
+// Start server
+// -----------------
 async function startServer() {
   try {
-    // Test database connection
     await prisma.$connect();
     console.log("✅ Connected to database");
 
-    // Start server
-    const port = process.env.PORT || 5000;
+    const port = Number(process.env.PORT || 5000);
+    await fastify.listen({ port, host: "0.0.0.0" });
 
-    httpServer.listen(port, () => {
-      console.log(`🚀 Server running on port ${port}`);
-      console.log("Environment:", process.env.NODE_ENV);
+    console.log(`🚀 Server running on http://localhost:${port}`);
+
+    // Socket.io handlers
+    io.on("connection", (socket) => {
+      console.log("User connected:", socket.id);
+
+      socket.on("join", (userId: string) => {
+        socket.join(userId);
+        console.log(`User ${userId} joined their room`);
+      });
+
+      socket.on("leave", (userId: string) => {
+        socket.leave(userId);
+        console.log(`User ${userId} left their room`);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("User disconnected:", socket.id);
+      });
     });
+
   } catch (error) {
     console.error("❌ Failed to start server:", error);
     process.exit(1);

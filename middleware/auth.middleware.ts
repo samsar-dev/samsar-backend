@@ -1,45 +1,27 @@
-import { Request, Response, NextFunction } from "express";
+import { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
-import type { Multer } from "multer";
+import { MultipartAuthRequest } from "../types/auth";
 
-export interface AuthRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    role: string;
-  };
-  file?: Express.Multer.File;
-  files?: {
-    [fieldname: string]: Express.Multer.File[];
-  };
-  processedImages?: Array<{ url: string; order: number }>;
-}
-
+// ✅ Fastify Middleware
 export const auth = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+  request: FastifyRequest,
+  reply: FastifyReply,
 ): Promise<void> => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-
-    if (!token) {
-      throw new Error();
-    }
+    const token = request.headers.authorization?.replace("Bearer ", "");
+    if (!token) throw new Error();
 
     const decoded = jwt.verify(token, config.jwtSecret) as {
       id: string;
       email: string;
       username: string;
-      role: string;
+      role: "USER" | "ADMIN";
     };
 
-    (req as AuthRequest).user = decoded;
-    next();
+    (request as MultipartAuthRequest).user = decoded;
   } catch (error) {
-    res.status(401).json({
+    reply.code(401).send({
       success: false,
       error: "Please authenticate",
       status: 401,

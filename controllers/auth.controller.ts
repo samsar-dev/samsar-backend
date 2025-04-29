@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+import { FastifyRequest, FastifyReply } from "fastify";
 import jwt, { SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import prisma from "../src/lib/prismaClient.js";
-import { validationResult } from "express-validator";
+// NOTE: Use Fastify's built-in schema validation or a plugin instead of express-validator
 import { env } from "../config/env.js";
 
 interface AuthTokens {
@@ -31,21 +31,11 @@ const generateTokens = (userId: string): AuthTokens => {
 };
 
 // Register a New User
-export const register = async (req: Request, res: Response) => {
+export const register = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "Invalid input data",
-          errors: errors.array(),
-        },
-      });
-    }
-
-    const { email, password, name } = req.body;
+    // TODO: Add Fastify schema validation here
+    // If validation fails, reply.code(400).send({ ... })
+    const { email, password, name } = (request.body as any);
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -53,7 +43,7 @@ export const register = async (req: Request, res: Response) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: {
           code: "USER_EXISTS",
@@ -87,7 +77,7 @@ export const register = async (req: Request, res: Response) => {
     // Generate tokens
     const tokens = generateTokens(user.id);
 
-    return res.status(201).json({
+    return reply.code(201).send({
       success: true,
       data: {
         user,
@@ -96,7 +86,7 @@ export const register = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Registration error:", error);
-    return res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: {
         code: "SERVER_ERROR",
@@ -107,13 +97,13 @@ export const register = async (req: Request, res: Response) => {
 };
 
 // Login User
-export const login = async (req: Request, res: Response) => {
+export const login = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = (request.body as any);
 
-    // Validate input
+    // TODO: Add Fastify schema validation here
     if (!email || !password) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: {
           code: "VALIDATION_ERROR",
@@ -128,7 +118,7 @@ export const login = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(401).json({
+      return reply.code(401).send({
         success: false,
         error: {
           code: "INVALID_CREDENTIALS",
@@ -140,7 +130,7 @@ export const login = async (req: Request, res: Response) => {
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({
+      return reply.code(401).send({
         success: false,
         error: {
           code: "INVALID_CREDENTIALS",
@@ -155,7 +145,7 @@ export const login = async (req: Request, res: Response) => {
     // Return user data (excluding password)
     const { password: _, ...userData } = user;
 
-    return res.json({
+    return reply.send({
       success: true,
       data: {
         user: userData,
@@ -164,7 +154,7 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: {
         code: "SERVER_ERROR",
@@ -175,12 +165,12 @@ export const login = async (req: Request, res: Response) => {
 };
 
 // Refresh Token
-export const refreshToken = async (req: Request, res: Response) => {
+export const refreshToken = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = (request.body as any);
 
     if (!refreshToken) {
-      return res.status(400).json({
+      return reply.code(400).send({
         success: false,
         error: {
           code: "NO_TOKEN",
@@ -208,7 +198,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
 
       if (!user) {
-        return res.status(401).json({
+        return reply.code(401).send({
           success: false,
           error: {
             code: "INVALID_TOKEN",
@@ -220,7 +210,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       // Generate new tokens
       const tokens = generateTokens(user.id);
 
-      return res.json({
+      return reply.send({
         success: true,
         data: {
           user,
@@ -229,7 +219,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        return res.status(401).json({
+        return reply.code(401).send({
           success: false,
           error: {
             code: "TOKEN_EXPIRED",
@@ -238,7 +228,7 @@ export const refreshToken = async (req: Request, res: Response) => {
         });
       }
 
-      return res.status(401).json({
+      return reply.code(401).send({
         success: false,
         error: {
           code: "INVALID_TOKEN",
@@ -248,7 +238,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.error("Token refresh error:", error);
-    return res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: {
         code: "SERVER_ERROR",
@@ -259,11 +249,11 @@ export const refreshToken = async (req: Request, res: Response) => {
 };
 
 // Logout User
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     // Since we're using JWT, we don't need to do anything server-side
     // The client should remove the tokens
-    return res.json({
+    return reply.send({
       success: true,
       data: {
         message: "Logged out successfully",
@@ -271,7 +261,7 @@ export const logout = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error("Logout error:", error);
-    return res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: {
         code: "SERVER_ERROR",
@@ -282,10 +272,11 @@ export const logout = async (req: Request, res: Response) => {
 };
 
 // Get Authenticated User Info
-export const getMe = async (req: Request, res: Response) => {
+export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({
+    // @ts-ignore: Assume user is attached by Fastify auth decorator
+    if (!request.user) {
+      return reply.code(401).send({
         success: false,
         error: {
           code: "UNAUTHORIZED",
@@ -294,8 +285,9 @@ export const getMe = async (req: Request, res: Response) => {
       });
     }
 
+    // @ts-ignore: Assume user is attached by Fastify auth decorator
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: request.user.id },
       select: {
         id: true,
         email: true,
@@ -308,7 +300,7 @@ export const getMe = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({
+      return reply.code(404).send({
         success: false,
         error: {
           code: "NOT_FOUND",
@@ -317,13 +309,13 @@ export const getMe = async (req: Request, res: Response) => {
       });
     }
 
-    return res.json({
+    return reply.send({
       success: true,
       data: { user },
     });
   } catch (error) {
     console.error("Get user info error:", error);
-    return res.status(500).json({
+    return reply.code(500).send({
       success: false,
       error: {
         code: "SERVER_ERROR",

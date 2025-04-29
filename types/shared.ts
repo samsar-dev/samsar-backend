@@ -1,23 +1,7 @@
-import { Request } from "express";
 import { ListingStatus } from "@prisma/client";
 
-// Request types
-export interface AuthRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    role: string;
-  };
-  files?: Express.Multer.File[];
-  file?: Express.Multer.File;
-  processedImages?: ProcessedImage[];
-}
-
-export interface ProcessedImage {
-  url: string;
-  order: number;
-}
+// Shared types that don't fit into a specific category
+export * from './auth.js';
 
 // Listing types
 export interface ListingCreateInput {

@@ -1,4 +1,3 @@
-import { Request, Response } from "express";
 import {
   ListingStatus,
   ListingAction,
@@ -11,9 +10,32 @@ import {
 } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
+import { FastifyRequest, FastifyReply } from "fastify";
 import fs from "fs";
-import { AuthRequest } from "../middleware/auth.middleware";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
+
+// Extend Fastify request with custom properties
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: {
+      id: string;
+      username: string;
+      email: string;
+      role: 'USER' | 'ADMIN';
+    };
+    processedImages?: Array<{
+      url: string;
+      order: number;
+    }>;
+  }
+}
+
+interface AuthenticatedUser {
+  id: string;
+  username: string;
+  email: string;
+  role: 'USER' | 'ADMIN';
+}
 
 interface ListingResponse {
   id: string;
@@ -152,6 +174,39 @@ type VehicleDetailsWithRelations = Prisma.VehicleDetailsGetPayload<{
   };
 }>;
 
+// Helper type for request parameters
+type ListingParams = {
+  id: string;
+};
+
+// Helper type for request body
+type ListingCreateBody = {
+  title: string;
+  description: string;
+  price: number;
+  mainCategory: string;
+  subCategory: string;
+  location: string;
+  condition?: string;
+  details?: {
+    vehicles?: Partial<{
+      vehicleType: VehicleType;
+      make: string;
+      model: string;
+      year: number;
+      mileage?: number;
+      fuelType?: FuelType;
+      transmissionType?: TransmissionType;
+      color?: string;
+      condition?: Condition;
+    }>;
+    realEstate?: Record<string, unknown>;
+  };
+  listingAction?: ListingAction;
+  attributes?: Array<{ name: string; value: string }>;
+  features?: Array<{ name: string; value: boolean }>;
+};
+
 const formatListingResponse = (
   listing: ListingWithRelations,
 ): ListingResponse => {
@@ -272,9 +327,12 @@ const validateListingData = (data: any): string[] => {
   return errors;
 };
 
-export const createListing = async (req: AuthRequest, res: Response) => {
+export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
   const prismaClient = prisma;
   try {
+    // @ts-ignore: Assume user is attached by Fastify auth decorator
+    const userId = (req.user as any).id;
+
     const {
       title,
       description,
@@ -283,11 +341,11 @@ export const createListing = async (req: AuthRequest, res: Response) => {
       subCategory,
       location,
       condition,
-      attributes,
-      features,
       details,
       listingAction,
-    } = req.body;
+      attributes,
+      features,
+    } = req.body as ListingCreateBody;
 
     // Parse details if it's a string
     const parsedDetails =
@@ -295,10 +353,24 @@ export const createListing = async (req: AuthRequest, res: Response) => {
 
     const errors = validateListingData(req.body);
     if (errors.length > 0) {
-      return res.status(400).json({
+      return res.code(400).send({
         success: false,
         error: "Validation failed",
         errors,
+        status: 400,
+        data: null,
+      });
+    }
+
+    // Ensure price is a valid number
+    const listingPrice = typeof price === 'string' 
+      ? parseFloat(price) 
+      : price;
+
+    if (isNaN(listingPrice)) {
+      return res.code(400).send({
+        success: false,
+        error: "Invalid price",
         status: 400,
         data: null,
       });
@@ -310,7 +382,7 @@ export const createListing = async (req: AuthRequest, res: Response) => {
       const listingData: Prisma.ListingCreateInput = {
         title,
         description,
-        price: parseFloat(price),
+        price: listingPrice,
         mainCategory,
         subCategory,
         category: JSON.stringify({ mainCategory, subCategory }),
@@ -320,7 +392,7 @@ export const createListing = async (req: AuthRequest, res: Response) => {
         listingAction: listingAction || ListingAction.SELL,
         user: {
           connect: {
-            id: req.user.id,
+            id: userId,
           },
         },
         images: {
@@ -333,31 +405,38 @@ export const createListing = async (req: AuthRequest, res: Response) => {
         vehicleDetails: parsedDetails?.vehicles
           ? {
               create: {
-                vehicleType: parsedDetails.vehicles.vehicleType as VehicleType,
-                make: parsedDetails.vehicles.make,
-                model: parsedDetails.vehicles.model,
-                year: parseInt(parsedDetails.vehicles.year),
+                vehicleType: parsedDetails.vehicles.vehicleType,
+                make: parsedDetails.vehicles.make || undefined,
+                model: parsedDetails.vehicles.model || undefined,
+                year: parsedDetails.vehicles.year
+                  ? parseInt(parsedDetails.vehicles.year, 10)
+                  : undefined,
                 mileage: parsedDetails.vehicles.mileage
-                  ? parseInt(parsedDetails.vehicles.mileage)
+                  ? parseInt(parsedDetails.vehicles.mileage, 10)
                   : null,
-                fuelType: parsedDetails.vehicles.fuelType as FuelType | null,
-                transmissionType: parsedDetails.vehicles
-                  .transmissionType as TransmissionType | null,
+                fuelType: parsedDetails.vehicles.fuelType || null,
+                transmissionType: parsedDetails.vehicles.transmissionType || null,
                 color: parsedDetails.vehicles.color || null,
-                condition: parsedDetails.vehicles.condition as Condition | null,
-              },
+                condition: parsedDetails.vehicles.condition || null,
+              } as Prisma.VehicleDetailsCreateWithoutListingInput,
             }
           : undefined,
         realEstateDetails: parsedDetails?.realEstate
           ? {
               create: {
-                propertyType: parsedDetails.realEstate.propertyType,
-                size: parsedDetails.realEstate.size,
-                yearBuilt: parsedDetails.realEstate.yearBuilt,
-                bedrooms: parsedDetails.realEstate.bedrooms,
-                bathrooms: parsedDetails.realEstate.bathrooms,
-                condition: parsedDetails.realEstate.condition,
-              },
+                propertyType: parsedDetails.realEstate.propertyType || undefined,
+                size: parsedDetails.realEstate.size || undefined,
+                yearBuilt: parsedDetails.realEstate.yearBuilt
+                  ? String(parseInt(parsedDetails.realEstate.yearBuilt, 10))
+                  : undefined,
+                bedrooms: parsedDetails.realEstate.bedrooms
+                  ? String(parseInt(parsedDetails.realEstate.bedrooms, 10))
+                  : undefined,
+                bathrooms: parsedDetails.realEstate.bathrooms
+                  ? String(parseInt(parsedDetails.realEstate.bathrooms, 10))
+                  : undefined,
+                condition: parsedDetails.realEstate.condition || undefined,
+              } as Prisma.RealEstateDetailsCreateWithoutListingInput,
             }
           : undefined,
         attributes: attributes
@@ -429,14 +508,14 @@ export const createListing = async (req: AuthRequest, res: Response) => {
     const formattedListing = formatListingResponse(result);
 
     // Send response
-    res.status(201).json({
+    res.code(201).send({
       success: true,
       data: formattedListing,
       status: 201,
     });
   } catch (error) {
     console.error("Error creating listing:", error);
-    res.status(500).json({
+    res.code(500).send({
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to create listing",
@@ -453,7 +532,7 @@ const listingsCache = new Map<
 >();
 const CACHE_TTL = 60 * 1000; // 60 seconds cache TTL
 
-export const getListings = async (req: AuthRequest, res: Response) => {
+export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     console.log("Request query:", req.query);
 
@@ -470,41 +549,43 @@ export const getListings = async (req: AuthRequest, res: Response) => {
       if (ifNoneMatch === cachedResponse.etag && !isExpired) {
         // Return 304 Not Modified to tell the client to use its cached version
         console.log("Cache hit with matching ETag, returning 304");
-        return res.status(304).end();
+        return res.code(304).send();
       }
 
       // If cache is still valid but client didn't send matching ETag
       if (!isExpired) {
         console.log("Cache hit, returning cached data");
-        res.set("ETag", cachedResponse.etag);
-        res.set("Cache-Control", "private, max-age=60"); // Tell client to cache for 60 seconds
-        return res.json(cachedResponse.data);
+        res.header("ETag", cachedResponse.etag);
+        res.header("Cache-Control", "private, max-age=60"); // Tell client to cache for 60 seconds
+        return res.send(cachedResponse.data);
       }
 
       // Cache expired, will fetch new data
       console.log("Cache expired, fetching new data");
     }
 
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 12),
-    );
-    const search = (req.query.search as string) || "";
-    const mainCategory = (req.query.mainCategory as string) || "";
-    const minPrice = parseFloat(req.query.minPrice as string) || 0;
-    const maxPrice =
-      parseFloat(req.query.maxPrice as string) || Number.MAX_SAFE_INTEGER;
-    const sortBy = (req.query.sortBy as string) || "createdAt";
-    const sortOrder =
-      (req.query.sortOrder as string)?.toLowerCase() === "asc" ? "asc" : "desc";
+    const query = req.query as { 
+      page?: string; 
+      limit?: string; 
+      search?: string;
+      mainCategory?: string;
+      minPrice?: string;
+      maxPrice?: string;
+    };
+
+    const page = Math.max(1, parseInt(query.page || '1'));
+    const limit = Math.min(50, Math.max(1, parseInt(query.limit || '12')));
+    const search = query.search || '';
+    const mainCategory = query.mainCategory || '';
+    const minPrice = parseFloat(query.minPrice || '0');
+    const maxPrice = parseFloat(query.maxPrice || String(Number.MAX_SAFE_INTEGER));
 
     // Year filter
     const year =
-      req.query.year !== undefined &&
-      req.query.year !== null &&
-      req.query.year !== ""
-        ? Number(req.query.year)
+      ((req.query as any).year !== undefined &&
+      (req.query as any).year !== null &&
+      (req.query as any).year !== "")
+        ? Number((req.query as any).year)
         : undefined;
 
     const where: Prisma.ListingWhereInput = {
@@ -533,7 +614,7 @@ export const getListings = async (req: AuthRequest, res: Response) => {
     const [listings, total] = await Promise.all([
       prisma.listing.findMany({
         where,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
         include: {
@@ -585,47 +666,47 @@ export const getListings = async (req: AuthRequest, res: Response) => {
     // Prepare response data
     const responseData = {
       success: true,
-      data: {
-        listings: formattedListings,
-        total,
-        page,
-        limit,
+      data: formattedListings,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        pages: Math.ceil(total / limit),
       },
-      status: 200,
     };
 
-    // Generate ETag (simple hash of the JSON response)
-    const etag = `W/"${Buffer.from(JSON.stringify(responseData)).toString("base64").slice(0, 27)}"`;
+    // Generate ETag for caching
+    const etag = require('crypto').createHash('md5').update(JSON.stringify(responseData)).digest('hex');
 
-    // Store in cache
+    // Cache the response
     listingsCache.set(cacheKey, {
       data: responseData,
       etag,
       timestamp: Date.now(),
     });
 
-    // Set cache headers
-    res.set("ETag", etag);
-    res.set("Cache-Control", "private, max-age=60"); // Tell client to cache for 60 seconds
+    // Send response with ETag
+    res
+      .headers({ 'ETag': etag })
+      .send(responseData);
 
-    // Send response
-    res.json(responseData);
   } catch (error) {
-    console.error("Error getting listings:", error);
     console.error(
+      "Error getting listings:",
+      error instanceof Error ? error.message : "Unknown error",
       "Error stack:",
       error instanceof Error ? error.stack : "No stack trace",
     );
-    res.status(500).json({
+    res.code(500).send({
       success: false,
       message: "Error getting listings",
     });
   }
 };
 
-export const getListing = async (req: AuthRequest, res: Response) => {
+export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as ListingParams;
     const listing = await prisma.listing.findUnique({
       where: { id },
       include: {
@@ -646,7 +727,7 @@ export const getListing = async (req: AuthRequest, res: Response) => {
     });
 
     if (!listing) {
-      return res.status(404).json({
+      return res.code(404).send({
         success: false,
         message: "Listing not found",
       });
@@ -658,28 +739,28 @@ export const getListing = async (req: AuthRequest, res: Response) => {
         data: {
           userId: listing.userId,
           type: NotificationType.LISTING_INTEREST,
-          content: `${req.user.username} viewed your listing "${listing.title}"`,
+          content: `${(req.user as any).username} viewed your listing "${listing.title}"`,
           relatedListingId: listing.id,
         },
       });
     }
 
-    res.json({
+    res.send({
       success: true,
       data: formatListingResponse(listing as ListingWithRelations),
     });
   } catch (error) {
     console.error("Error getting listing:", error);
-    res.status(500).json({
+    res.code(500).send({
       success: false,
       message: "Error getting listing",
     });
   }
 };
 
-export const updateListing = async (req: AuthRequest, res: Response) => {
+export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as ListingParams;
     const {
       title,
       description,
@@ -690,15 +771,29 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
       condition,
       attributes,
       features,
-    } = req.body;
+    } = req.body as {
+      title: string;
+      description: string;
+      price: number | string;
+      mainCategory: string;
+      subCategory: string;
+      location: string;
+      condition?: string;
+      attributes?: Array<{ name: string; value: string }>;
+      features?: Array<{ name: string; value: boolean }>;
+    };
 
     const oldListing = await prisma.listing.findUnique({
       where: { id },
-      select: { price: true, title: true, userId: true },
+      select: { 
+        price: true, 
+        title: true, 
+        userId: true 
+      },
     });
 
     if (!oldListing) {
-      return res.status(404).json({
+      return res.code(404).send({
         success: false,
         error: "Listing not found",
         status: 404,
@@ -706,17 +801,22 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Check if price has changed
-    if (price && price !== oldListing.price) {
-      await handleListingPriceUpdate(id, oldListing.price, price);
-    }
+    // Ensure price is a number and handle potential string input
+    const newPrice = typeof price === 'string' 
+      ? parseFloat(price) 
+      : price;
+
+    // Check if price has changed and is a valid number
+    const isPriceChanged = 
+      !isNaN(newPrice) && 
+      oldListing.price !== newPrice;
 
     const listing = await prisma.listing.update({
       where: { id },
       data: {
         title,
         description,
-        price: parseFloat(price),
+        price: newPrice,
         mainCategory,
         subCategory,
         location,
@@ -759,13 +859,13 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
     });
 
     // Handle price update notifications
-    if (price && oldListing.price !== parseFloat(price)) {
+    if (isPriceChanged) {
       // Notify the listing owner
       await prisma.notification.create({
         data: {
           userId: listing.userId,
           type: NotificationType.PRICE_UPDATE,
-          content: `The price of your listing "${oldListing.title}" has been updated from ${oldListing.price} to ${price}.`,
+          content: `The price of your listing "${oldListing.title}" has been updated from ${oldListing.price} to ${newPrice}.`,
           relatedListingId: listing.id,
         },
       });
@@ -774,18 +874,18 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
       await handleListingPriceUpdate(
         listing.id,
         oldListing.price,
-        parseFloat(price),
+        newPrice,
       );
     }
 
-    res.json({
+    res.send({
       success: true,
       data: formatListingResponse(listing as ListingWithRelations),
       status: 200,
     });
   } catch (error) {
     console.error("Error updating listing:", error);
-    res.status(500).json({
+    res.code(500).send({
       success: false,
       error: error instanceof Error ? error.message : "Error updating listing",
       status: 500,
@@ -794,23 +894,23 @@ export const updateListing = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const deleteListing = async (req: AuthRequest, res: Response) => {
+export const deleteListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params as ListingParams;
     const listing = await prisma.listing.findUnique({
       where: { id },
       include: { images: true },
     });
 
     if (!listing) {
-      return res.status(404).json({
+      return res.code(404).send({
         success: false,
         message: "Listing not found",
       });
     }
 
-    if (listing.userId !== req.user.id) {
-      return res.status(403).json({
+    if ((req.user as any).id !== listing.userId) {
+      return res.code(403).send({
         success: false,
         message: "Not authorized to delete this listing",
       });
@@ -823,22 +923,30 @@ export const deleteListing = async (req: AuthRequest, res: Response) => {
 
     await prisma.listing.delete({ where: { id } });
 
-    res.json({
+    res.send({
       success: true,
       message: "Listing deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting listing:", error);
-    res.status(500).json({
+    res.code(500).send({
       success: false,
       message: "Error deleting listing",
     });
   }
 };
 
-export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
+export const toggleSaveListing = async (req: FastifyRequest, res: FastifyReply) => {
+  // Ensure user is authenticated
+  if (!req.user) {
+    return res.code(401).send({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
   try {
-    const { id } = req.params;
+    const { id } = req.params as ListingParams;
     const listing = await prisma.listing.findUnique({
       where: { id },
       include: {
@@ -865,7 +973,7 @@ export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
     });
 
     if (!listing) {
-      return res.status(404).json({
+      return res.code(404).send({
         success: false,
         message: "Listing not found",
       });
@@ -874,7 +982,7 @@ export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
     const existingFavorite = await prisma.favorite.findFirst({
       where: {
         listingId: id,
-        userId: req.user.id,
+        userId: req.user.id,  // Type-safe access
       },
     });
 
@@ -942,13 +1050,13 @@ export const toggleSaveListing = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    res.send({
       success: true,
       data: formatListingResponse(updatedListing as ListingWithRelations),
     });
   } catch (error) {
     console.error("Error toggling save listing:", error);
-    res.status(500).json({
+    res.code(500).send({
       success: false,
       message: "Error toggling save listing",
     });

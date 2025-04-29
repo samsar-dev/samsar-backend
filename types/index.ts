@@ -1,21 +1,11 @@
-import { Request } from "express";
 import { Prisma } from "@prisma/client";
 
-// Re-export all shared types
-export * from "./shared.js";
+// Central type exports
+export * from './auth.js';
+export * from './shared.js';
 
 // Prisma-specific types
 export type InputJsonValue = Prisma.InputJsonValue;
-
-// Auth types
-export interface AuthRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    role: string;
-  };
-}
 
 // User preferences types
 export interface UserPreferences {

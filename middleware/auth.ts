@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from "express";
+import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
-import rateLimit from "express-rate-limit";
 import prisma from "../src/lib/prismaClient.js";
 import { env } from "../config/env.js";
+import { AuthRequest, User } from "../types/auth.js";
 
 // Add JWT payload type
 interface JWTPayload {
@@ -10,68 +10,55 @@ interface JWTPayload {
   exp: number;
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: string;
-      };
-    }
+// Extend FastifyRequest with optional user property
+declare module 'fastify' {
+  interface FastifyRequest {
+    getUserInfo?(): User | undefined;
+    setUserInfo?(user: User): void;
   }
 }
 
-// Rate limiters
-export const loginLimiter = rateLimit({
-  windowMs: env.NODE_ENV === "development" ? 1000 : 15 * 60 * 1000,
-  max: env.NODE_ENV === "development" ? 100 : 5,
-  message: (req, res, next, options) => {
-    // Calculate seconds until rate limit resets
-    const retryAfterSeconds = Math.ceil(options.windowMs / 1000);
-    res.set("Retry-After", retryAfterSeconds.toString());
-    return {
-      success: false,
-      error: {
-        code: "RATE_LIMIT",
-        message:
-          env.NODE_ENV === "development"
-            ? `Rate limit hit (development mode)`
-            : `Too many login attempts, please try again after ${Math.floor(options.windowMs / 60000)} minutes`,
-      },
-    };
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Type guard for AuthRequest with more precise type checking
+function hasUser(request: FastifyRequest): request is FastifyRequest & { getUserInfo(): User } {
+  return request.getUserInfo !== undefined 
+    && typeof request.getUserInfo === 'function';
+}
 
-export const uploadLimiter = rateLimit({
-  windowMs: env.NODE_ENV === "development" ? 1000 : 60 * 60 * 1000,
-  max: env.NODE_ENV === "development" ? 100 : 10,
-  message: {
+// Rate limiter options for Fastify
+export const loginLimiterConfig = {
+  max: env.NODE_ENV === "development" ? 100 : 5,
+  timeWindow: env.NODE_ENV === "development" ? 1000 : 15 * 60 * 1000,
+  errorResponseBuilder: () => ({
     success: false,
     error: {
       code: "RATE_LIMIT",
       message:
         env.NODE_ENV === "development"
           ? "Rate limit hit (development mode)"
-          : "Upload limit reached, please try again later",
+          : "Too many login attempts, please try again later",
     },
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+  }),
+};
 
-// Auth middleware
+// Auth middleware for Fastify
 export const authenticate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+  request: FastifyRequest, 
+  reply: FastifyReply
 ) => {
+  // Add user info methods if not already present
+  if (!request.getUserInfo) {
+    let userInfo: User | undefined;
+    
+    request.getUserInfo = () => userInfo;
+    request.setUserInfo = (user: User) => {
+      userInfo = user;
+    };
+  }
+
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
+      return reply.status(401).send({
         success: false,
         error: {
           code: "UNAUTHORIZED",
@@ -92,11 +79,16 @@ export const authenticate = async (
 
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, email: true, role: true },
+        select: { 
+          id: true, 
+          email: true, 
+          username: true,
+          role: true 
+        },
       });
 
       if (!user) {
-        return res.status(401).json({
+        return reply.status(401).send({
           success: false,
           error: {
             code: "UNAUTHORIZED",
@@ -105,11 +97,19 @@ export const authenticate = async (
         });
       }
 
-      req.user = user;
-      next();
+      // Explicitly type the user object
+      const authUser: User = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role
+      };
+
+      // Use setUserInfo method to attach user
+      request.setUserInfo?.(authUser);
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        return res.status(401).json({
+        return reply.status(401).send({
           success: false,
           error: {
             code: "TOKEN_EXPIRED",
@@ -118,7 +118,7 @@ export const authenticate = async (
         });
       }
 
-      return res.status(401).json({
+      return reply.status(401).send({
         success: false,
         error: {
           code: "INVALID_TOKEN",
@@ -128,7 +128,7 @@ export const authenticate = async (
     }
   } catch (error) {
     console.error("Auth middleware error:", error);
-    return res.status(500).json({
+    return reply.status(500).send({
       success: false,
       error: {
         code: "SERVER_ERROR",
@@ -138,10 +138,14 @@ export const authenticate = async (
   }
 };
 
-// Role middleware
-export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.user) {
-    return res.status(401).json({
+// Role middleware for Fastify
+export const isAdmin = async (
+  request: FastifyRequest, 
+  reply: FastifyReply
+) => {
+  // Ensure request has user property with correct type
+  if (!hasUser(request)) {
+    return reply.status(401).send({
       success: false,
       error: {
         code: "UNAUTHORIZED",
@@ -150,8 +154,9 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
     });
   }
 
-  if (req.user.role !== "ADMIN") {
-    return res.status(403).json({
+  const user = request.getUserInfo();
+  if (!user || user.role !== "ADMIN") {
+    return reply.status(403).send({
       success: false,
       error: {
         code: "FORBIDDEN",
@@ -159,19 +164,17 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
       },
     });
   }
-
-  next();
 };
 
-// Listing ownership middleware
+// Listing ownership middleware for Fastify
 export const isListingOwner = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+  request: FastifyRequest, 
+  reply: FastifyReply
 ) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({
+    // Ensure request has user property with correct type
+    if (!hasUser(request)) {
+      return reply.status(401).send({
         success: false,
         error: {
           code: "UNAUTHORIZED",
@@ -180,9 +183,24 @@ export const isListingOwner = async (
       });
     }
 
-    const listingId = req.params.id;
+    const user = request.getUserInfo();
+    if (!user) {
+      return reply.status(401).send({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        },
+      });
+    }
+
+    // Safely get listing ID with type assertion and default
+    const listingId = request.params && typeof request.params === 'object' 
+      ? (request.params as Record<string, string>).id 
+      : undefined;
+
     if (!listingId) {
-      return res.status(400).json({
+      return reply.status(400).send({
         success: false,
         error: {
           code: "BAD_REQUEST",
@@ -197,7 +215,7 @@ export const isListingOwner = async (
     });
 
     if (!listing) {
-      return res.status(404).json({
+      return reply.status(404).send({
         success: false,
         error: {
           code: "NOT_FOUND",
@@ -206,8 +224,8 @@ export const isListingOwner = async (
       });
     }
 
-    if (listing.userId !== req.user.id && req.user.role !== "ADMIN") {
-      return res.status(403).json({
+    if (listing.userId !== user.id && user.role !== "ADMIN") {
+      return reply.status(403).send({
         success: false,
         error: {
           code: "FORBIDDEN",
@@ -215,11 +233,9 @@ export const isListingOwner = async (
         },
       });
     }
-
-    next();
   } catch (error) {
     console.error("isListingOwner middleware error:", error);
-    return res.status(500).json({
+    return reply.status(500).send({
       success: false,
       error: {
         code: "SERVER_ERROR",

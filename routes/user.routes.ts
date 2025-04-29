@@ -1,4 +1,5 @@
-import express from "express";
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { NextFunction } from "express";
 import { authenticate } from "../middleware/auth.js";
 import {
   updateProfile,
@@ -13,80 +14,70 @@ import {
   processImage,
   uploadToR2,
 } from "../middleware/upload.middleware.js";
+import { MultipartAuthRequest } from "../types/auth.js";
 
-// Define AuthRequest type for type safety
-interface AuthRequest extends express.Request {
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    role: string;
+export default async function (fastify: FastifyInstance) {
+  // Create Fastify-compatible handlers
+  const createFastifyHandler = (controller: any) => {
+    return async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        await controller(request, reply);
+      } catch (error) {
+        reply.code(500).send({
+          success: false,
+          error: error instanceof Error ? error.message : "An unknown error occurred",
+        });
+      }
+    };
   };
-  file?: Express.Multer.File;
-}
 
-const router = express.Router();
-
-// Type-safe request handler wrapper
-const asyncHandler = <T>(
-  fn: (
-    req: AuthRequest,
-    res: express.Response,
-    next: express.NextFunction,
-  ) => Promise<T>,
-) => {
-  return async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ): Promise<void> => {
+  // Middleware to process profile picture
+  const processProfilePicture = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      await fn(req as AuthRequest, res, next);
+      const authReq = request as unknown as MultipartAuthRequest;
+      if (authReq.file) {
+        // Upload processed image to R2
+        const body = authReq.body as any;
+        body.profilePicture = await uploadToR2(authReq.file as any, "avatar");
+      }
     } catch (error) {
-      next(error);
+      reply.code(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to process profile picture"
+      });
     }
   };
-};
 
-// Middleware to process profile picture
-const processProfilePicture = asyncHandler(
-  async (
-    req: AuthRequest,
-    res: express.Response,
-    next: express.NextFunction,
-  ): Promise<void> => {
-    if (req.file) {
-      // Upload processed image to R2
-      req.body.profilePicture = await uploadToR2(req.file, "avatar");
-    }
-    next();
-  },
-);
+  // Get user public details
+  fastify.get("/public-profile/:id", createFastifyHandler(getUserPublicDetails));
 
-// ✅ Get user public details
-router.get("/public-profile/:id", asyncHandler(getUserPublicDetails));
+  // Apply authentication to all routes below
+  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Authenticate using Fastify request/reply (adapt your middleware if needed)
+    await authenticate(request, reply);
+  });
 
-// ✅ Ensure all routes require authentication
-router.use(authenticate);
+  // Get user profile
+  fastify.get("/profile", createFastifyHandler(getUserProfile));
 
-// ✅ Get user profile
-router.get("/profile", asyncHandler(getUserProfile));
+  // Update profile (optional profile picture upload)
+  // Note: Fastify file upload handling will need to be configured separately
+  fastify.put(
+    "/profile",
+    {
+      preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
+        await processProfilePicture(request, reply);
+      },
+    },
+    createFastifyHandler(updateProfile)
+  );
 
-// ✅ Update profile (optional profile picture upload)
-router.put(
-  "/profile",
-  upload.single("profilePicture"),
-  processProfilePicture,
-  asyncHandler(updateProfile),
-);
+  // Get user settings
+  fastify.get("/settings", createFastifyHandler(getUserSettings));
 
-// ✅ Get user settings
-router.get("/settings", asyncHandler(getUserSettings));
+  // Update settings
+  fastify.post("/settings", createFastifyHandler(updateUserSettings));
 
-// ✅ Update settings
-router.post("/settings", asyncHandler(updateUserSettings));
-
-// Get user's listings
-router.get("/listings", asyncHandler(getUserListings));
-
-export default router;
+  // Get user's listings
+  fastify.get("/listings", createFastifyHandler(getUserListings));
+}

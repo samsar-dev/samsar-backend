@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { FastifyRequest, FastifyReply } from "fastify";
 import prisma from "../src/lib/prismaClient.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
@@ -9,6 +9,7 @@ import {
   UserPreferences,
   InputJsonValue,
 } from "../types/index.js";
+import { MultipartFile } from "@fastify/multipart";
 
 interface UpdateData {
   email?: string;
@@ -32,13 +33,18 @@ type UserWithPreferences = User & {
   preferences: UserPreferences | null;
 };
 
+// Define route parameters type
+interface UserPublicDetailsParams {
+  id: string;
+}
+
 /**
- * ✅ Get the user's profile
+ * Get the user's profile
  */
-export const getUserProfile = async (req: AuthRequest, res: Response) => {
+export const getUserProfile = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: (request.user as any).id },
       include: {
         listings: {
           include: {
@@ -50,7 +56,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({
+      return reply.status(404).send({
         success: false,
         error: "User not found",
         status: 404,
@@ -58,14 +64,14 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(200).json({
+    reply.status(200).send({
       success: true,
       data: user,
       status: 200,
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    res.status(500).json({
+    reply.status(500).send({
       success: false,
       error: "Error fetching user profile",
       status: 500,
@@ -73,12 +79,16 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
 /**
- * ✅ Get the user's profile
+ * Get the user's public profile
  */
-export const getUserPublicDetails = async (req: AuthRequest, res: Response) => {
+export const getUserPublicDetails = async (
+  request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
+  reply: FastifyReply
+) => {
   try {
-    const userId = req.params.id;
+    const userId = request.params.id;
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -92,7 +102,7 @@ export const getUserPublicDetails = async (req: AuthRequest, res: Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({
+      return reply.status(404).send({
         success: false,
         error: "User not found",
         status: 404,
@@ -100,14 +110,14 @@ export const getUserPublicDetails = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(200).json({
+    reply.status(200).send({
       success: true,
       data: user,
       status: 200,
     });
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    res.status(500).json({
+    reply.status(500).send({
       success: false,
       error: "Error fetching user profile",
       status: 500,
@@ -117,13 +127,13 @@ export const getUserPublicDetails = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * ✅ Update user profile
+ * Update user profile
  */
-export const updateProfile = async (req: AuthRequest, res: Response) => {
+export const updateProfile = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: (request.user as any).id } });
     if (!user) {
-      return res.status(404).json({
+      return reply.status(404).send({
         success: false,
         error: "User not found",
         status: 404,
@@ -143,10 +153,10 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       street,
       city,
       postalCode,
-    } = req.body;
+    } = request.body as any;
 
     if (email && !validator.isEmail(email)) {
-      return res.status(400).json({
+      return reply.status(400).send({
         success: false,
         error: "Invalid email format",
         status: 400,
@@ -157,7 +167,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (email && email !== user.email) {
       const existing = await prisma.user.findUnique({ where: { email } });
       if (existing) {
-        return res.status(400).json({
+        return reply.status(400).send({
           success: false,
           error: "Email already in use",
           status: 400,
@@ -177,7 +187,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (password) {
       // Verify current password first
       if (!currentPassword) {
-        return res.status(400).json({
+        return reply.status(400).send({
           success: false,
           error: "Current password is required",
           status: 400,
@@ -191,7 +201,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
         user.password,
       );
       if (!isPasswordValid) {
-        return res.status(401).json({
+        return reply.status(401).send({
           success: false,
           error: "Current password is incorrect",
           status: 401,
@@ -201,7 +211,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 
       // Validate new password requirements
       if (password.length < 8) {
-        return res.status(400).json({
+        return reply.status(400).send({
           success: false,
           error: "Password must be at least 8 characters long",
           status: 400,
@@ -209,7 +219,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
         });
       }
       if (!/[A-Z]/.test(password)) {
-        return res.status(400).json({
+        return reply.status(400).send({
           success: false,
           error: "Password must contain at least one uppercase letter",
           status: 400,
@@ -217,7 +227,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
         });
       }
       if (!/[a-z]/.test(password)) {
-        return res.status(400).json({
+        return reply.status(400).send({
           success: false,
           error: "Password must contain at least one lowercase letter",
           status: 400,
@@ -225,7 +235,7 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
         });
       }
       if (!/[0-9]/.test(password)) {
-        return res.status(400).json({
+        return reply.status(400).send({
           success: false,
           error: "Password must contain at least one number",
           status: 400,
@@ -236,13 +246,13 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       updates.password = await bcrypt.hash(password, salt);
     }
 
-    if (req.file) {
+    if (request.file) {
       try {
-        const uploadResult = await uploadToR2(req.file, "profilePictures");
+        const uploadResult = await uploadToR2(request.file as any, "profilePictures");
         const avatarUrl = uploadResult.url;
         updates.profilePicture = avatarUrl;
       } catch (error) {
-        return res.status(500).json({
+        return reply.status(500).send({
           success: false,
           error: "Failed to upload profile picture",
           status: 500,
@@ -252,18 +262,18 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: req.user.id },
+      where: { id: (request.user as any).id },
       data: updates,
     });
 
-    res.status(200).json({
+    reply.status(200).send({
       success: true,
       data: updatedUser,
       status: 200,
     });
   } catch (error) {
     console.error("Update error:", error);
-    res.status(500).json({
+    reply.status(500).send({
       success: false,
       error: "Error updating profile",
       status: 500,
@@ -273,26 +283,26 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * ✅ Get listings of current user
+ * Get listings of current user
  */
-export const getUserListings = async (req: AuthRequest, res: Response) => {
+export const getUserListings = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const listings = await prisma.listing.findMany({
-      where: { userId: req.user.id },
+      where: { userId: (request.user as any).id },
       include: {
         images: true,
         favorites: true,
       },
     });
 
-    res.status(200).json({
+    reply.status(200).send({
       success: true,
       data: { listings },
       status: 200,
     });
   } catch (error) {
     console.error("Listings fetch error:", error);
-    res.status(500).json({
+    reply.status(500).send({
       success: false,
       error: "Error fetching user listings",
       status: 500,
@@ -302,15 +312,15 @@ export const getUserListings = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * ✅ Delete user and related data
+ * Delete user and related data
  */
-export const deleteUser = async (req: AuthRequest, res: Response) => {
+export const deleteUser = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const user = await prisma.user.findUnique({ where: { id: (request.user as any).id } });
     if (!user)
-      return res
+      return reply
         .status(404)
-        .json({ success: false, error: "User not found", status: 404 });
+        .send({ success: false, error: "User not found", status: 404 });
 
     // Delete favorites, listings, etc. before user
     await prisma.favorite.deleteMany({ where: { userId: user.id } });
@@ -318,30 +328,30 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 
     await prisma.user.delete({ where: { id: user.id } });
 
-    res.status(200).json({
+    reply.status(200).send({
       success: true,
       data: { message: "Account and listings deleted successfully" },
       status: 200,
     });
   } catch (error) {
     console.error("Delete error:", error);
-    res
+    reply
       .status(500)
-      .json({ success: false, error: "Error deleting user", status: 500 });
+      .send({ success: false, error: "Error deleting user", status: 500 });
   }
 };
 
 /**
- * ✅ Get user settings
+ * Get user settings
  */
-export const getUserSettings = async (req: AuthRequest, res: Response) => {
+export const getUserSettings = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const user = (await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: (request.user as any).id },
     })) as UserWithPreferences;
 
     if (!user) {
-      return res.status(404).json({
+      return reply.status(404).send({
         success: false,
         error: "User not found",
         status: 404,
@@ -373,14 +383,14 @@ export const getUserSettings = async (req: AuthRequest, res: Response) => {
     // Use the stored preferences or default ones
     const userPreferences = user.preferences || defaultPreferences;
 
-    res.status(200).json({
+    reply.status(200).send({
       success: true,
       data: { preferences: userPreferences },
       status: 200,
     });
   } catch (error) {
     console.error("Error fetching user settings:", error);
-    res.status(500).json({
+    reply.status(500).send({
       success: false,
       error: "Error fetching user settings",
       status: 500,
@@ -390,15 +400,15 @@ export const getUserSettings = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * ✅ Update user settings
+ * Update user settings
  */
-export const updateUserSettings = async (req: AuthRequest, res: Response) => {
+export const updateUserSettings = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { preferences } = req.body;
+    const { preferences } = request.body as any;
 
     // Validate preferences structure
     if (!preferences || typeof preferences !== "object") {
-      return res.status(400).json({
+      return reply.status(400).send({
         success: false,
         error: "Invalid preferences format",
         status: 400,
@@ -441,20 +451,20 @@ export const updateUserSettings = async (req: AuthRequest, res: Response) => {
     } as UserPreferences;
 
     const updatedUser = await prisma.user.update({
-      where: { id: req.user.id },
+      where: { id: (request.user as any).id },
       data: {
         preferences: updatedPreferences,
       },
     });
 
-    res.status(200).json({
+    reply.status(200).send({
       success: true,
       data: updatedUser,
       status: 200,
     });
   } catch (error) {
     console.error("Settings update error:", error);
-    res.status(500).json({
+    reply.status(500).send({
       success: false,
       error: "Error updating user settings",
       status: 500,
