@@ -10,7 +10,7 @@ interface JWTUser {
   email?: string;
   username?: string;
   role?: "USER" | "ADMIN";
-  type: 'access' | 'refresh';
+  type: "access" | "refresh";
   iat: number;
   exp: number;
 }
@@ -20,41 +20,56 @@ interface AuthTokens {
   refreshToken: string;
 }
 
-const generateTokens = (user: { id: string; email: string; username: string; role: "USER" | "ADMIN" }): AuthTokens => {
+const generateTokens = (user: {
+  id: string;
+  email: string;
+  username: string;
+  role: "USER" | "ADMIN";
+}): AuthTokens => {
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     throw new Error("JWT_SECRET is not configured");
   }
 
   // Get current timestamp
-  const now = Math.floor(Date.now() / 1000);
+  const CurrentDate = new Date();
+  const now = Math.floor(CurrentDate.getTime() / 1000);
 
-  const accessToken = jwt.sign({ 
-    sub: user.id,
-    email: user.email,
-    username: user.username,
-    role: user.role,
-    type: 'access',
-    iat: now,
-    exp: now + 900 // 15 minutes in seconds
-  }, jwtSecret);
+  const accessToken = jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      type: "access",
+      iat: now,
+      exp: now + 60 * 15, // 15 minutes in seconds
+    },
+    jwtSecret
+  );
+
+  const refreshToken = jwt.sign(
+    {
+      sub: user.id,
+      type: "refresh",
+      iat: now,
+      exp: now + 60 * 60 * 24 * 7, // 7 days in seconds
+    },
+    jwtSecret
+  );
   
-  const refreshToken = jwt.sign({ 
-    sub: user.id,
-    type: 'refresh',
-    iat: now,
-    exp: now + 604800 // 7 days in seconds
-  }, jwtSecret);
-
   return { accessToken, refreshToken };
 };
 
 // Register a New User
-export const register = async (request: FastifyRequest, reply: FastifyReply) => {
+export const register = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
   try {
     // TODO: Add Fastify schema validation here
     // If validation fails, reply.code(400).send({ ... })
-    const { email, password, name } = (request.body as any);
+    const { email, password, name } = request.body as any;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -99,12 +114,12 @@ export const register = async (request: FastifyRequest, reply: FastifyReply) => 
       id: user.id,
       email: user.email,
       username: user.username,
-      role: user.role
+      role: user.role,
     });
 
     // Update user with the correct refresh token
     const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    
+
     // Using raw SQL to update the user with the refresh token
     // This is a workaround for the Prisma type issues
     await prisma.$executeRaw`
@@ -135,7 +150,10 @@ export const register = async (request: FastifyRequest, reply: FastifyReply) => 
 
 // Login User
 export const login = async (request: FastifyRequest, reply: FastifyReply) => {
-  const { email, password } = request.body as { email: string; password: string };
+  const { email, password } = request.body as {
+    email: string;
+    password: string;
+  };
 
   try {
     const user = await prisma.user.findUnique({
@@ -177,12 +195,12 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       id: user.id,
       email: user.email,
       username: user.username,
-      role: user.role
+      role: user.role,
     });
 
     // Store refresh token in user using raw SQL
     const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    
+
     await prisma.$executeRaw`
       UPDATE "User" 
       SET "refreshToken" = ${tokens.refreshToken}, 
@@ -191,18 +209,18 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     `;
 
     return reply
-      .setCookie('jwt', tokens.accessToken, {
+      .setCookie("jwt", tokens.accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
       })
       .send({
         success: true,
         data: {
           tokens: {
             accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken
+            refreshToken: tokens.refreshToken,
           },
           user: {
             id: user.id,
@@ -215,7 +233,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         },
       });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     return reply.code(500).send({
       success: false,
       error: {
@@ -240,9 +258,9 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
         },
       });
     }
-    
+
     const userId = user.id;
-    
+
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -274,7 +292,7 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
       data: existingUser,
     });
   } catch (error) {
-    console.error('Get me error:', error);
+    console.error("Get me error:", error);
     return reply.code(500).send({
       success: false,
       error: {
@@ -289,10 +307,13 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
 export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const { refreshToken } = request.body as { refreshToken: string };
-    
+
     // Verify the refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET as string) as JWTUser;
-    
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_SECRET as string
+    ) as JWTUser;
+
     // Find the user with matching refresh token
     const user = await prisma.user.findUnique({
       where: { id: decoded.sub },
@@ -384,7 +405,7 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
     `;
 
     // Clear the JWT cookie
-    reply.clearCookie('jwt', { path: '/' });
+    reply.clearCookie("jwt", { path: "/" });
 
     return reply.send({
       success: true,
