@@ -4,7 +4,7 @@ import {
   register,
   logout,
   getMe,
-  refreshToken,
+  refresh,
 } from "../controllers/auth.controller.js";
 import {
   validateRegistration,
@@ -44,7 +44,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   };
   fastify.post("/login", loginRouteOptions);
 
-  fastify.post("/refresh", handler(refreshToken));
+  fastify.post("/refresh", handler(refresh));
 
   // Protected routes
   const logoutRouteOptions: RouteOptions = {

@@ -2,26 +2,20 @@ import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
 import { env } from "../config/env.js";
-import { AuthRequest, User } from "../types/auth.js";
+import { AuthRequest, User, UserPayload } from "../types/auth.js";
 
 // Add JWT payload type
 interface JWTPayload {
   id: string;
+  email: string;
+  username: string;
+  role: "USER" | "ADMIN";
   exp: number;
 }
 
-// Extend FastifyRequest with optional user property
-declare module 'fastify' {
-  interface FastifyRequest {
-    getUserInfo?(): User | undefined;
-    setUserInfo?(user: User): void;
-  }
-}
-
 // Type guard for AuthRequest with more precise type checking
-function hasUser(request: FastifyRequest): request is FastifyRequest & { getUserInfo(): User } {
-  return request.getUserInfo !== undefined 
-    && typeof request.getUserInfo === 'function';
+function hasUser(request: FastifyRequest): request is FastifyRequest & { user: UserPayload } {
+  return request.user !== undefined;
 }
 
 // Rate limiter options for Fastify
@@ -45,20 +39,20 @@ export const authenticate = async (
   request: FastifyRequest, 
   reply: FastifyReply
 ) => {
-  // Add user info methods if not already present
-  if (!request.getUserInfo) {
-    let userInfo: User | undefined;
-    
-    request.getUserInfo = () => userInfo;
-    request.setUserInfo = (user: User) => {
-      userInfo = user;
-    };
-  }
-
   try {
-    const authHeader = request.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return reply.status(401).send({
+    // Check for token in cookies first
+    let token = request.cookies.jwt;
+    
+    // If no token in cookies, check Authorization header
+    if (!token) {
+      const authHeader = request.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      }
+    }
+    
+    if (!token) {
+      return reply.code(401).send({
         success: false,
         error: {
           code: "UNAUTHORIZED",
@@ -67,72 +61,54 @@ export const authenticate = async (
       });
     }
 
-    const token = authHeader.split(" ")[1];
-    const jwtSecret = env.JWT_SECRET;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JWTPayload;
+    
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        name: true,
+        profilePicture: true,
+        bio: true,
+        location: true,
+        city: true,
+        dateOfBirth: true,
+        postalCode: true,
+        street: true,
+        preferences: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-    if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
-    }
-
-    try {
-      const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
-
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-        select: { 
-          id: true, 
-          email: true, 
-          username: true,
-          role: true 
-        },
-      });
-
-      if (!user) {
-        return reply.status(401).send({
-          success: false,
-          error: {
-            code: "UNAUTHORIZED",
-            message: "User not found",
-          },
-        });
-      }
-
-      // Explicitly type the user object
-      const authUser: User = {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role
-      };
-
-      // Use setUserInfo method to attach user
-      request.setUserInfo?.(authUser);
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        return reply.status(401).send({
-          success: false,
-          error: {
-            code: "TOKEN_EXPIRED",
-            message: "Token has expired",
-          },
-        });
-      }
-
-      return reply.status(401).send({
+    if (!user) {
+      return reply.code(401).send({
         success: false,
         error: {
-          code: "INVALID_TOKEN",
-          message: "Invalid token",
+          code: "UNAUTHORIZED",
+          message: "User not found",
         },
       });
     }
+
+    // Set UserPayload for controllers that use req.user
+    request.user = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    };
   } catch (error) {
-    console.error("Auth middleware error:", error);
-    return reply.status(500).send({
+    console.error('Authentication error:', error);
+    return reply.code(401).send({
       success: false,
       error: {
-        code: "SERVER_ERROR",
-        message: "Internal server error",
+        code: "UNAUTHORIZED",
+        message: "Invalid token",
       },
     });
   }
@@ -154,7 +130,7 @@ export const isAdmin = async (
     });
   }
 
-  const user = request.getUserInfo();
+  const user = request.user;
   if (!user || user.role !== "ADMIN") {
     return reply.status(403).send({
       success: false,
@@ -183,16 +159,7 @@ export const isListingOwner = async (
       });
     }
 
-    const user = request.getUserInfo();
-    if (!user) {
-      return reply.status(401).send({
-        success: false,
-        error: {
-          code: "UNAUTHORIZED",
-          message: "Authentication required",
-        },
-      });
-    }
+    const user = request.user;
 
     // Safely get listing ID with type assertion and default
     const listingId = request.params && typeof request.params === 'object' 

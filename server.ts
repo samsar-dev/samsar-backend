@@ -73,6 +73,15 @@ await fastify.register(multipart, {
   }
 } as FastifyMultipartBaseOptions);  // Add multipart file upload support
 
+// JWT
+await fastify.register(import('@fastify/jwt'), {
+  secret: process.env.JWT_SECRET || 'your-secret-key',
+  cookie: {
+    cookieName: 'jwt',
+    signed: false
+  }
+});
+
 // Rate Limiting
 await fastify.register(rateLimit, {
   global: false,

@@ -2,30 +2,49 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import jwt, { SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import prisma from "../src/lib/prismaClient.js";
-// NOTE: Use Fastify's built-in schema validation or a plugin instead of express-validator
 import { env } from "../config/env.js";
+
+// Define JWT user interface
+interface JWTUser {
+  sub: string;
+  email?: string;
+  username?: string;
+  role?: "USER" | "ADMIN";
+  type: 'access' | 'refresh';
+  iat: number;
+  exp: number;
+}
 
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
 
-const generateTokens = (userId: string): AuthTokens => {
-  const jwtSecret = env.JWT_SECRET;
+const generateTokens = (user: { id: string; email: string; username: string; role: "USER" | "ADMIN" }): AuthTokens => {
+  const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     throw new Error("JWT_SECRET is not configured");
   }
 
-  const accessTokenOptions: SignOptions = {
-    expiresIn: "15m",
-  };
+  // Get current timestamp
+  const now = Math.floor(Date.now() / 1000);
 
-  const refreshTokenOptions: SignOptions = {
-    expiresIn: "7d",
-  };
-
-  const accessToken = jwt.sign({ id: userId }, jwtSecret, accessTokenOptions);
-  const refreshToken = jwt.sign({ id: userId }, jwtSecret, refreshTokenOptions);
+  const accessToken = jwt.sign({ 
+    sub: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    type: 'access',
+    iat: now,
+    exp: now + 900 // 15 minutes in seconds
+  }, jwtSecret);
+  
+  const refreshToken = jwt.sign({ 
+    sub: user.id,
+    type: 'refresh',
+    iat: now,
+    exp: now + 604800 // 7 days in seconds
+  }, jwtSecret);
 
   return { accessToken, refreshToken };
 };
@@ -68,14 +87,32 @@ export const register = async (request: FastifyRequest, reply: FastifyReply) => 
       select: {
         id: true,
         email: true,
+        username: true,
         name: true,
         role: true,
         createdAt: true,
       },
     });
 
-    // Generate tokens
-    const tokens = generateTokens(user.id);
+    // Generate tokens with the actual user ID
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role
+    });
+
+    // Update user with the correct refresh token
+    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    
+    // Using raw SQL to update the user with the refresh token
+    // This is a workaround for the Prisma type issues
+    await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "refreshToken" = ${tokens.refreshToken}, 
+          "refreshTokenExpiresAt" = ${expiryDate}
+      WHERE id = ${user.id}
+    `;
 
     return reply.code(201).send({
       success: true,
@@ -98,23 +135,20 @@ export const register = async (request: FastifyRequest, reply: FastifyReply) => 
 
 // Login User
 export const login = async (request: FastifyRequest, reply: FastifyReply) => {
+  const { email, password } = request.body as { email: string; password: string };
+
   try {
-    const { email, password } = (request.body as any);
-
-    // TODO: Add Fastify schema validation here
-    if (!email || !password) {
-      return reply.code(400).send({
-        success: false,
-        error: {
-          code: "VALIDATION_ERROR",
-          message: "Email and password are required",
-        },
-      });
-    }
-
-    // Find user
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        username: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     if (!user) {
@@ -122,112 +156,157 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         success: false,
         error: {
           code: "INVALID_CREDENTIALS",
-          message: "Invalid credentials",
+          message: "Invalid email or password",
         },
       });
     }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return reply.code(401).send({
         success: false,
         error: {
           code: "INVALID_CREDENTIALS",
-          message: "Invalid credentials",
+          message: "Invalid email or password",
         },
       });
     }
 
-    // Generate tokens
-    const tokens = generateTokens(user.id);
-
-    // Return user data (excluding password)
-    const { password: _, ...userData } = user;
-
-    return reply.send({
-      success: true,
-      data: {
-        user: userData,
-        tokens,
-      },
+    // Generate JWT tokens
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role
     });
+
+    // Store refresh token in user using raw SQL
+    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    
+    await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "refreshToken" = ${tokens.refreshToken}, 
+          "refreshTokenExpiresAt" = ${expiryDate}
+      WHERE id = ${user.id}
+    `;
+
+    return reply
+      .setCookie('jwt', tokens.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      })
+      .send({
+        success: true,
+        data: {
+          tokens: {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken
+          },
+          user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+          },
+        },
+      });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error('Login error:', error);
     return reply.code(500).send({
       success: false,
       error: {
-        code: "SERVER_ERROR",
-        message: "Failed to login",
+        code: "INTERNAL_ERROR",
+        message: "An error occurred during login",
+      },
+    });
+  }
+};
+
+// Get Authenticated User Info
+export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    // Get the user from the request
+    const user = request.user;
+    if (!user) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        },
+      });
+    }
+    
+    const userId = user.id;
+    
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        name: true,
+        profilePicture: true,
+        bio: true,
+        location: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!existingUser) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "User not found",
+        },
+      });
+    }
+
+    return reply.send({
+      success: true,
+      data: existingUser,
+    });
+  } catch (error) {
+    console.error('Get me error:', error);
+    return reply.code(500).send({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "An error occurred fetching user profile",
       },
     });
   }
 };
 
 // Refresh Token
-export const refreshToken = async (request: FastifyRequest, reply: FastifyReply) => {
+export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    const { refreshToken } = (request.body as any);
+    const { refreshToken } = request.body as { refreshToken: string };
+    
+    // Verify the refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET as string) as JWTUser;
+    
+    // Find the user with matching refresh token
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.sub },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        refreshToken: true,
+        refreshTokenExpiresAt: true,
+      },
+    });
 
-    if (!refreshToken) {
-      return reply.code(400).send({
-        success: false,
-        error: {
-          code: "NO_TOKEN",
-          message: "Refresh token is required",
-        },
-      });
-    }
-
-    const jwtSecret = env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
-    }
-
-    try {
-      const decoded = jwt.verify(refreshToken, jwtSecret) as { id: string };
-
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-        },
-      });
-
-      if (!user) {
-        return reply.code(401).send({
-          success: false,
-          error: {
-            code: "INVALID_TOKEN",
-            message: "Invalid refresh token",
-          },
-        });
-      }
-
-      // Generate new tokens
-      const tokens = generateTokens(user.id);
-
-      return reply.send({
-        success: true,
-        data: {
-          user,
-          tokens,
-        },
-      });
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        return reply.code(401).send({
-          success: false,
-          error: {
-            code: "TOKEN_EXPIRED",
-            message: "Refresh token has expired",
-          },
-        });
-      }
-
+    if (!user || user.refreshToken !== refreshToken) {
       return reply.code(401).send({
         success: false,
         error: {
@@ -236,27 +315,81 @@ export const refreshToken = async (request: FastifyRequest, reply: FastifyReply)
         },
       });
     }
+
+    // Check if refresh token has expired
+    if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "TOKEN_EXPIRED",
+          message: "Refresh token has expired",
+        },
+      });
+    }
+
+    // Generate new tokens
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    });
+
+    // Update user with new refresh token
+    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "refreshToken" = ${tokens.refreshToken}, 
+          "refreshTokenExpiresAt" = ${expiryDate}
+      WHERE id = ${user.id}
+    `;
+
+    return reply.send({
+      success: true,
+      data: {
+        tokens,
+      },
+    });
   } catch (error) {
-    console.error("Token refresh error:", error);
-    return reply.code(500).send({
+    console.error("Refresh error:", error);
+    return reply.code(401).send({
       success: false,
       error: {
-        code: "SERVER_ERROR",
-        message: "Failed to refresh token",
+        code: "INVALID_TOKEN",
+        message: "Invalid refresh token",
       },
     });
   }
 };
 
-// Logout User
+// Logout
 export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    // Since we're using JWT, we don't need to do anything server-side
-    // The client should remove the tokens
+    if (!request.user) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "User not authenticated",
+        },
+      });
+    }
+
+    // Clear refresh token
+    await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "refreshToken" = null, 
+          "refreshTokenExpiresAt" = null
+      WHERE id = ${request.user.id}
+    `;
+
+    // Clear the JWT cookie
+    reply.clearCookie('jwt', { path: '/' });
+
     return reply.send({
       success: true,
       data: {
-        message: "Logged out successfully",
+        message: "Successfully logged out",
       },
     });
   } catch (error) {
@@ -266,60 +399,6 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
       error: {
         code: "SERVER_ERROR",
         message: "Failed to logout",
-      },
-    });
-  }
-};
-
-// Get Authenticated User Info
-export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
-  try {
-    // @ts-ignore: Assume user is attached by Fastify auth decorator
-    if (!request.user) {
-      return reply.code(401).send({
-        success: false,
-        error: {
-          code: "UNAUTHORIZED",
-          message: "Not authenticated",
-        },
-      });
-    }
-
-    // @ts-ignore: Assume user is attached by Fastify auth decorator
-    const user = await prisma.user.findUnique({
-      where: { id: request.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-        profilePicture: true,
-      },
-    });
-
-    if (!user) {
-      return reply.code(404).send({
-        success: false,
-        error: {
-          code: "NOT_FOUND",
-          message: "User not found",
-        },
-      });
-    }
-
-    return reply.send({
-      success: true,
-      data: { user },
-    });
-  } catch (error) {
-    console.error("Get user info error:", error);
-    return reply.code(500).send({
-      success: false,
-      error: {
-        code: "SERVER_ERROR",
-        message: "Failed to get user info",
       },
     });
   }

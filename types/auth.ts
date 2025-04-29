@@ -1,15 +1,16 @@
 import { FastifyRequest } from "fastify";
 import { MultipartFile } from "@fastify/multipart";
 
-// ✅ Core user payload decoded from JWT
+// Core user payload decoded from JWT
 export interface UserPayload {
   id: string;
   email: string;
   username: string;
   role: "USER" | "ADMIN";
+  exp: number; // expires at
 }
 
-// ✅ Used for routes with JSON body (non-file routes)
+// Used for routes with JSON body (non-file routes)
 export type AuthRequest<
   Body = unknown,
   Query = unknown,
@@ -23,22 +24,35 @@ export type AuthRequest<
   processedImages?: Array<{ url: string; order: number }>;
 };
 
-// ✅ Used for multipart/form-data routes (e.g., file/image uploads)
+// Used for multipart/form-data routes (e.g., file/image uploads)
 // DO NOT override `.file` or `.files`, they are methods, not props
 export type MultipartAuthRequest = FastifyRequest & {
   user: UserPayload;
   processedImages?: Array<{ url: string; order: number }>;
 };
 
-// ✅ Optional shared User type
+// Optional shared User type
 export interface User {
   id: string;
   email: string;
   username: string;
-  role: string;
+  role: "USER" | "ADMIN";
+  refreshToken?: string;
+  refreshTokenExpiresAt?: Date;
+  name?: string;
+  profilePicture?: string;
+  bio?: string;
+  location?: string;
+  city?: string;
+  dateOfBirth?: string;
+  postalCode?: string;
+  street?: string;
+  preferences?: any;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-// ✅ Optional raw file helper (for buffer-based uploads)
+// Optional raw file helper (for buffer-based uploads)
 export interface FastifyFile {
   filename: string;
   mimetype: string;
@@ -48,7 +62,7 @@ export interface FastifyFile {
   tempFilePath?: string;
 }
 
-// ✅ Type guard (safe casting)
+// Type guard (safe casting)
 export function isAuthRequest(req: FastifyRequest): req is AuthRequest {
   return (
     "user" in req &&
@@ -69,7 +83,7 @@ export function castToAuthRequest(req: FastifyRequest): AuthRequest {
   return req as AuthRequest;
 }
 
-// ✅ Route-specific types
+// Route-specific types
 export interface CreateConversationBody {
   participantIds: string[];
   initialMessage?: string;

@@ -20,14 +20,20 @@ const createFastifyHandler = (controller: any): FastifyHandler => {
 export default async function (fastify: FastifyInstance) {
   // All notification routes should be protected
   fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Authenticate using Fastify request/reply
-    await authenticate(request, reply);
-    const user = request.getUserInfo?.();
-    if (!user) {
-      reply.code(401).send({ success: false, error: "Unauthorized: User not found" });
-      return;
+    try {
+      // Authenticate using Fastify request/reply
+      await authenticate(request, reply);
+      if (!request.user) {
+        reply.code(401).send({ success: false, error: "Unauthorized: User not found" });
+        return reply;
+      }
+    } catch (error) {
+      // If an error occurs during authentication, send a response and return
+      if (!reply.sent) {
+        reply.code(401).send({ success: false, error: "Authentication failed" });
+      }
+      return reply;
     }
-    request.user = user;
   });
 
   fastify.get("/", createFastifyHandler(getNotifications));
