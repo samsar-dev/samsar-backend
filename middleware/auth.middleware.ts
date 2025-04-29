@@ -9,8 +9,10 @@ export const authenticate = async (
   reply: FastifyReply,
 ): Promise<void> => {
   try {
-    // Allow public access to listings if publicAccess parameter is true
-    if (request.url.includes('/listings') && (request.query as any)?.publicAccess === 'true') {
+    // Allow public access to GET requests on listings if publicAccess parameter is true
+    if (request.url.includes('/listings') && 
+        request.method === 'GET' && 
+        (request.query as any)?.publicAccess === 'true') {
       return;
     }
 
@@ -34,8 +36,8 @@ export const authenticate = async (
     }
 
     if (!token) {
-      // For non-listings routes, require authentication
-      if (!request.url.includes('/listings')) {
+      // For non-listings routes or listing mutations, require authentication
+      if (!request.url.includes('/listings') || request.method !== 'GET') {
         reply.code(401).send({
           success: false,
           error: "Please authenticate",
@@ -44,7 +46,7 @@ export const authenticate = async (
         });
         return;
       }
-      return; // Allow public access to listings without token
+      return; // Allow public access to GET listings without token
     }
 
     try {
@@ -75,7 +77,7 @@ export const authenticate = async (
   } catch (error) {
     console.error("Auth middleware error:", error);
     // Only return 401 if this is not a public listings request
-    if (!request.url.includes('/listings') || (request.query as any)?.publicAccess !== 'true') {
+    if (!request.url.includes('/listings') || (request.query as any)?.publicAccess !== 'true' || request.method !== 'GET') {
       reply.code(401).send({
         success: false,
         error: error instanceof Error ? error.message : "Please authenticate",

@@ -101,6 +101,7 @@ export const authenticate = async (
       email: user.email,
       username: user.username,
       role: user.role,
+      exp: decoded.exp,
     };
   } catch (error) {
     console.error('Authentication error:', error);
