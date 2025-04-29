@@ -14,7 +14,9 @@ interface JWTPayload {
 }
 
 // Type guard for AuthRequest with more precise type checking
-function hasUser(request: FastifyRequest): request is FastifyRequest & { user: UserPayload } {
+function hasUser(
+  request: FastifyRequest
+): request is FastifyRequest & { user: UserPayload } {
   return request.user !== undefined;
 }
 
@@ -36,21 +38,21 @@ export const loginLimiterConfig = {
 
 // Auth middleware for Fastify
 export const authenticate = async (
-  request: FastifyRequest, 
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
   try {
     // Check for token in cookies first
     let token = request.cookies.jwt;
-    
+
     // If no token in cookies, check Authorization header
     if (!token) {
       const authHeader = request.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
+      if (authHeader && authHeader.startsWith("Bearer ")) {
         token = authHeader.substring(7); // Remove 'Bearer ' prefix
       }
     }
-    
+
     if (!token) {
       return reply.code(401).send({
         success: false,
@@ -61,11 +63,14 @@ export const authenticate = async (
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JWTPayload;
-    
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "your-secret-key"
+    ) as JWTPayload;
+
     // Get user from database
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+      where: { email: decoded.email },
       select: {
         id: true,
         email: true,
@@ -104,7 +109,7 @@ export const authenticate = async (
       exp: decoded.exp,
     };
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error("Authentication error:", error);
     return reply.code(401).send({
       success: false,
       error: {
@@ -116,10 +121,7 @@ export const authenticate = async (
 };
 
 // Role middleware for Fastify
-export const isAdmin = async (
-  request: FastifyRequest, 
-  reply: FastifyReply
-) => {
+export const isAdmin = async (request: FastifyRequest, reply: FastifyReply) => {
   // Ensure request has user property with correct type
   if (!hasUser(request)) {
     return reply.status(401).send({
@@ -145,7 +147,7 @@ export const isAdmin = async (
 
 // Listing ownership middleware for Fastify
 export const isListingOwner = async (
-  request: FastifyRequest, 
+  request: FastifyRequest,
   reply: FastifyReply
 ) => {
   try {
@@ -163,9 +165,10 @@ export const isListingOwner = async (
     const user = request.user;
 
     // Safely get listing ID with type assertion and default
-    const listingId = request.params && typeof request.params === 'object' 
-      ? (request.params as Record<string, string>).id 
-      : undefined;
+    const listingId =
+      request.params && typeof request.params === "object"
+        ? (request.params as Record<string, string>).id
+        : undefined;
 
     if (!listingId) {
       return reply.status(400).send({
