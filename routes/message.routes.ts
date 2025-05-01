@@ -11,7 +11,10 @@ import {
 } from "../controllers/message.controller.js";
 
 // Define Fastify handler types
-type FastifyHandler = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+type FastifyHandler = (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => Promise<void>;
 
 // Create Fastify-compatible handlers
 const createFastifyHandler = (controller: any): FastifyHandler => {
@@ -23,39 +26,27 @@ const createFastifyHandler = (controller: any): FastifyHandler => {
 
 export default async function (fastify: FastifyInstance) {
   // Apply authentication to all routes
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Authenticate using Fastify request/reply (adapt your middleware if needed)
-    await authenticate(request, reply);
-  });
+  fastify.addHook(
+    "preHandler",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // Authenticate using Fastify request/reply (adapt your middleware if needed)
+      await authenticate(request, reply);
+    },
+  );
 
   // Conversations routes
-  fastify.get(
-    "/conversations",
-    createFastifyHandler(getConversations)
-  );
-  fastify.post(
-    "/conversations",
-    createFastifyHandler(createConversation)
-  );
+  fastify.get("/conversations", createFastifyHandler(getConversations));
+  fastify.post("/conversations", createFastifyHandler(createConversation));
   fastify.delete(
     "/conversations/:conversationId",
-    createFastifyHandler(deleteConversation)
+    createFastifyHandler(deleteConversation),
   );
 
   // Messages routes
   fastify.post("/", createFastifyHandler(sendMessage));
-  fastify.get(
-    "/:conversationId",
-    createFastifyHandler(getMessages)
-  );
-  fastify.delete(
-    "/:messageId",
-    createFastifyHandler(deleteMessage)
-  );
+  fastify.get("/:conversationId", createFastifyHandler(getMessages));
+  fastify.delete("/:messageId", createFastifyHandler(deleteMessage));
 
   // Listing message routes
-  fastify.post(
-    "/listings/messages",
-    createFastifyHandler(sendMessage)
-  );
+  fastify.post("/listings/messages", createFastifyHandler(sendMessage));
 }

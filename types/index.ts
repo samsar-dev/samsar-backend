@@ -1,8 +1,8 @@
 import { Prisma } from "@prisma/client";
 
 // Central type exports
-export * from './auth.js';
-export * from './shared.js';
+export * from "./auth.js";
+export * from "./shared.js";
 
 // Prisma-specific types
 export type InputJsonValue = Prisma.InputJsonValue;

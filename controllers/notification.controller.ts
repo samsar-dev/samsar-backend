@@ -46,7 +46,10 @@ export const createNotification = async (
   }
 };
 
-export const getNotifications = async (req: FastifyRequest, reply: FastifyReply) => {
+export const getNotifications = async (
+  req: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     if (!req.user) {
       return reply.code(401).send({ error: "Unauthorized" });
@@ -135,7 +138,10 @@ export const markAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
   }
 };
 
-export const markAllAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
+export const markAllAsRead = async (
+  req: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     if (!req.user) {
       return reply.code(401).send({ error: "Unauthorized" });
@@ -164,7 +170,10 @@ export const markAllAsRead = async (req: FastifyRequest, reply: FastifyReply) =>
   }
 };
 
-export const deleteNotification = async (req: FastifyRequest, reply: FastifyReply) => {
+export const deleteNotification = async (
+  req: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     if (!req.user) {
       return reply.code(401).send({ error: "Unauthorized" });
@@ -195,7 +204,10 @@ export const deleteNotification = async (req: FastifyRequest, reply: FastifyRepl
   }
 };
 
-export const clearAllNotifications = async (req: FastifyRequest, reply: FastifyReply) => {
+export const clearAllNotifications = async (
+  req: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     if (!req.user) {
       return reply.code(401).send({ error: "Unauthorized" });

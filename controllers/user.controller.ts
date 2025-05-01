@@ -41,7 +41,10 @@ interface UserPublicDetailsParams {
 /**
  * Get the user's profile
  */
-export const getUserProfile = async (request: FastifyRequest, reply: FastifyReply) => {
+export const getUserProfile = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: (request.user as any).id },
@@ -85,7 +88,7 @@ export const getUserProfile = async (request: FastifyRequest, reply: FastifyRepl
  */
 export const getUserPublicDetails = async (
   request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const userId = request.params.id;
@@ -129,9 +132,14 @@ export const getUserPublicDetails = async (
 /**
  * Update user profile
  */
-export const updateProfile = async (request: FastifyRequest, reply: FastifyReply) => {
+export const updateProfile = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: (request.user as any).id } });
+    const user = await prisma.user.findUnique({
+      where: { id: (request.user as any).id },
+    });
     if (!user) {
       return reply.status(404).send({
         success: false,
@@ -248,7 +256,10 @@ export const updateProfile = async (request: FastifyRequest, reply: FastifyReply
 
     if (request.file) {
       try {
-        const uploadResult = await uploadToR2(request.file as any, "profilePictures");
+        const uploadResult = await uploadToR2(
+          request.file as any,
+          "profilePictures",
+        );
         const avatarUrl = uploadResult.url;
         updates.profilePicture = avatarUrl;
       } catch (error) {
@@ -285,7 +296,10 @@ export const updateProfile = async (request: FastifyRequest, reply: FastifyReply
 /**
  * Get listings of current user
  */
-export const getUserListings = async (request: FastifyRequest, reply: FastifyReply) => {
+export const getUserListings = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     const listings = await prisma.listing.findMany({
       where: { userId: (request.user as any).id },
@@ -314,9 +328,14 @@ export const getUserListings = async (request: FastifyRequest, reply: FastifyRep
 /**
  * Delete user and related data
  */
-export const deleteUser = async (request: FastifyRequest, reply: FastifyReply) => {
+export const deleteUser = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: (request.user as any).id } });
+    const user = await prisma.user.findUnique({
+      where: { id: (request.user as any).id },
+    });
     if (!user)
       return reply
         .status(404)
@@ -344,7 +363,10 @@ export const deleteUser = async (request: FastifyRequest, reply: FastifyReply) =
 /**
  * Get user settings
  */
-export const getUserSettings = async (request: FastifyRequest, reply: FastifyReply) => {
+export const getUserSettings = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     const user = (await prisma.user.findUnique({
       where: { id: (request.user as any).id },
@@ -402,7 +424,10 @@ export const getUserSettings = async (request: FastifyRequest, reply: FastifyRep
 /**
  * Update user settings
  */
-export const updateUserSettings = async (request: FastifyRequest, reply: FastifyReply) => {
+export const updateUserSettings = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     const { preferences } = request.body as any;
 

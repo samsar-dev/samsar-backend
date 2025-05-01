@@ -16,7 +16,7 @@ import { handleListingPriceUpdate } from "../src/services/notification.service.j
 import { UserPayload } from "../types/auth.js";
 
 // Extend Fastify request with custom properties
-declare module 'fastify' {
+declare module "fastify" {
   interface FastifyRequest {
     user?: UserPayload;
     processedImages?: Array<{
@@ -30,7 +30,7 @@ interface AuthenticatedUser {
   id: string;
   username: string;
   email: string;
-  role: 'USER' | 'ADMIN';
+  role: "USER" | "ADMIN";
 }
 
 interface ListingResponse {
@@ -359,9 +359,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     }
 
     // Ensure price is a valid number
-    const listingPrice = typeof price === 'string' 
-      ? parseFloat(price) 
-      : price;
+    const listingPrice = typeof price === "string" ? parseFloat(price) : price;
 
     if (isNaN(listingPrice)) {
       return res.code(400).send({
@@ -411,7 +409,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
                   ? parseInt(parsedDetails.vehicles.mileage, 10)
                   : null,
                 fuelType: parsedDetails.vehicles.fuelType || null,
-                transmissionType: parsedDetails.vehicles.transmissionType || null,
+                transmissionType:
+                  parsedDetails.vehicles.transmissionType || null,
                 color: parsedDetails.vehicles.color || null,
                 condition: parsedDetails.vehicles.condition || null,
               } as Prisma.VehicleDetailsCreateWithoutListingInput,
@@ -420,7 +419,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         realEstateDetails: parsedDetails?.realEstate
           ? {
               create: {
-                propertyType: parsedDetails.realEstate.propertyType || undefined,
+                propertyType:
+                  parsedDetails.realEstate.propertyType || undefined,
                 size: parsedDetails.realEstate.size || undefined,
                 yearBuilt: parsedDetails.realEstate.yearBuilt
                   ? String(parseInt(parsedDetails.realEstate.yearBuilt, 10))
@@ -560,27 +560,29 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
       console.log("Cache expired, fetching new data");
     }
 
-    const query = req.query as { 
-      page?: string; 
-      limit?: string; 
+    const query = req.query as {
+      page?: string;
+      limit?: string;
       search?: string;
       mainCategory?: string;
       minPrice?: string;
       maxPrice?: string;
     };
 
-    const page = Math.max(1, parseInt(query.page || '1'));
-    const limit = Math.min(50, Math.max(1, parseInt(query.limit || '12')));
-    const search = query.search || '';
-    const mainCategory = query.mainCategory || '';
-    const minPrice = parseFloat(query.minPrice || '0');
-    const maxPrice = parseFloat(query.maxPrice || String(Number.MAX_SAFE_INTEGER));
+    const page = Math.max(1, parseInt(query.page || "1"));
+    const limit = Math.min(50, Math.max(1, parseInt(query.limit || "12")));
+    const search = query.search || "";
+    const mainCategory = query.mainCategory || "";
+    const minPrice = parseFloat(query.minPrice || "0");
+    const maxPrice = parseFloat(
+      query.maxPrice || String(Number.MAX_SAFE_INTEGER),
+    );
 
     // Year filter
     const year =
-      ((req.query as any).year !== undefined &&
+      (req.query as any).year !== undefined &&
       (req.query as any).year !== null &&
-      (req.query as any).year !== "")
+      (req.query as any).year !== ""
         ? Number((req.query as any).year)
         : undefined;
 
@@ -672,7 +674,10 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
     };
 
     // Generate ETag for caching
-    const etag = require('crypto').createHash('md5').update(JSON.stringify(responseData)).digest('hex');
+    const etag = require("crypto")
+      .createHash("md5")
+      .update(JSON.stringify(responseData))
+      .digest("hex");
 
     // Cache the response
     listingsCache.set(cacheKey, {
@@ -682,10 +687,7 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
     });
 
     // Send response with ETag
-    res
-      .headers({ 'ETag': etag })
-      .send(responseData);
-
+    res.headers({ ETag: etag }).send(responseData);
   } catch (error) {
     console.error(
       "Error getting listings:",
@@ -781,10 +783,10 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     const oldListing = await prisma.listing.findUnique({
       where: { id },
-      select: { 
-        price: true, 
-        title: true, 
-        userId: true 
+      select: {
+        price: true,
+        title: true,
+        userId: true,
       },
     });
 
@@ -798,14 +800,10 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     }
 
     // Ensure price is a number and handle potential string input
-    const newPrice = typeof price === 'string' 
-      ? parseFloat(price) 
-      : price;
+    const newPrice = typeof price === "string" ? parseFloat(price) : price;
 
     // Check if price has changed and is a valid number
-    const isPriceChanged = 
-      !isNaN(newPrice) && 
-      oldListing.price !== newPrice;
+    const isPriceChanged = !isNaN(newPrice) && oldListing.price !== newPrice;
 
     const listing = await prisma.listing.update({
       where: { id },
@@ -867,11 +865,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       });
 
       // Notify users who have favorited the listing
-      await handleListingPriceUpdate(
-        listing.id,
-        oldListing.price,
-        newPrice,
-      );
+      await handleListingPriceUpdate(listing.id, oldListing.price, newPrice);
     }
 
     res.send({
@@ -932,7 +926,10 @@ export const deleteListing = async (req: FastifyRequest, res: FastifyReply) => {
   }
 };
 
-export const toggleSaveListing = async (req: FastifyRequest, res: FastifyReply) => {
+export const toggleSaveListing = async (
+  req: FastifyRequest,
+  res: FastifyReply,
+) => {
   // Ensure user is authenticated
   if (!req.user) {
     return res.code(401).send({
@@ -978,7 +975,7 @@ export const toggleSaveListing = async (req: FastifyRequest, res: FastifyReply) 
     const existingFavorite = await prisma.favorite.findFirst({
       where: {
         listingId: id,
-        userId: req.user.id,  // Type-safe access
+        userId: req.user.id, // Type-safe access
       },
     });
 

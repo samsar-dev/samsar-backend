@@ -1,4 +1,9 @@
-import { FastifyInstance, FastifyRequest, FastifyReply, RouteOptions } from "fastify";
+import {
+  FastifyInstance,
+  FastifyRequest,
+  FastifyReply,
+  RouteOptions,
+} from "fastify";
 import {
   login,
   register,
@@ -33,7 +38,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     preHandler: validate,
     method: "POST",
     url: "/register",
-    handler: handler(register)
+    handler: handler(register),
   };
   fastify.post("/register", registerRouteOptions);
 
@@ -41,7 +46,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   const loginRouteOptions: RouteOptions = {
     method: "POST",
     url: "/login",
-    handler: handler(login)
+    handler: handler(login),
   };
   fastify.post("/login", loginRouteOptions);
 
@@ -51,7 +56,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   const verifyTokenRouteOptions: RouteOptions = {
     method: "GET",
     url: "/verify-token",
-    handler: handler(verifyToken)
+    handler: handler(verifyToken),
   };
   fastify.get("/verify-token", verifyTokenRouteOptions);
 
@@ -60,7 +65,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     method: "POST",
     url: "/logout",
     preHandler: [authenticate],
-    handler: handler(logout)
+    handler: handler(logout),
   };
   fastify.post("/logout", logoutRouteOptions);
 
@@ -68,7 +73,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     method: "GET",
     url: "/me",
     preHandler: [authenticate],
-    handler: handler(getMe)
+    handler: handler(getMe),
   };
   fastify.get("/me", getMeRouteOptions);
 }

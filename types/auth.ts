@@ -14,7 +14,7 @@ export interface UserPayload {
 export type AuthRequest<
   Body = unknown,
   Query = unknown,
-  Params = unknown
+  Params = unknown,
 > = FastifyRequest<{
   Body: Body;
   Querystring: Query;

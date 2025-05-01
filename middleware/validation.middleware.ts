@@ -11,7 +11,7 @@ export const validateRegistration: ValidationChain[] = [
     .withMessage("Password must be at least 8 characters long")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/)
     .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number",
     ),
   body("name")
     .trim()
@@ -28,18 +28,19 @@ export const validateListing: ValidationChain[] = [
     .trim()
     .isLength({ min: 10 })
     .withMessage("Description must be at least 10 characters long"),
-  body("price")
-    .isNumeric()
-    .withMessage("Price must be a number"),
-  body("category")
-    .trim()
-    .notEmpty()
-    .withMessage("Category is required"),
+  body("price").isNumeric().withMessage("Price must be a number"),
+  body("category").trim().notEmpty().withMessage("Category is required"),
 ];
 
-export const validate = async (request: FastifyRequest, reply: FastifyReply, done: (error?: Error) => void) => {
+export const validate = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+  done: (error?: Error) => void,
+) => {
   // Run validation chains
-  await Promise.all(validateRegistration.map(validation => validation.run(request as any)));
+  await Promise.all(
+    validateRegistration.map((validation) => validation.run(request as any)),
+  );
 
   // Check for validation errors
   const errors = validationResult(request as any);

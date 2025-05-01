@@ -65,18 +65,20 @@ export const processImagesMiddleware = async (
 
     // Process all parts (files and fields)
     const parts = await request.parts();
-    
+
     for await (const part of parts) {
-      if (part.type === 'file' && isImage(part.mimetype)) {
+      if (part.type === "file" && isImage(part.mimetype)) {
         // Process image file
-        console.log(`Processing image file: ${part.filename}, field: ${part.fieldname}`);
+        console.log(
+          `Processing image file: ${part.filename}, field: ${part.fieldname}`,
+        );
         const buffer = await part.toBuffer();
         const processedBuffer = await processImage(buffer);
 
         // Create a temporary file for the processed image
         const tempFilename = `processed-${crypto.randomUUID()}.webp`;
-        const tempFilePath = path.join(process.cwd(), 'temp', tempFilename);
-        
+        const tempFilePath = path.join(process.cwd(), "temp", tempFilename);
+
         // Ensure temp directory exists
         const tempDir = path.dirname(tempFilePath);
         if (!fs.existsSync(tempDir)) {
@@ -98,22 +100,26 @@ export const processImagesMiddleware = async (
           path: tempFilePath,
         };
 
-        const { url } = await uploadToCloudflare(fileForUpload as any, "listings");
+        const { url } = await uploadToCloudflare(
+          fileForUpload as any,
+          "listings",
+        );
 
         // Clean up temp file
         fs.unlinkSync(tempFilePath);
 
         processedImages.push({ url, order: index++ });
         uploadedFiles.push(url);
-      } else if (part.type === 'field') {
+      } else if (part.type === "field") {
         // Process form field
         const value = await part.value;
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           try {
             // Try to parse as JSON if it looks like a JSON string
-            formData[part.fieldname] = value.startsWith('{') || value.startsWith('[') 
-              ? JSON.parse(value)
-              : value;
+            formData[part.fieldname] =
+              value.startsWith("{") || value.startsWith("[")
+                ? JSON.parse(value)
+                : value;
           } catch {
             // If parsing fails, use the raw value
             formData[part.fieldname] = value;
@@ -160,9 +166,9 @@ export const uploadMiddleware = async (
       const buffer = Buffer.concat(chunks);
 
       // Create a temporary file for the image
-      const tempFilename = `upload-${crypto.randomUUID()}${path.extname(part.filename || '')}`;
-      const tempFilePath = path.join(process.cwd(), 'temp', tempFilename);
-      
+      const tempFilename = `upload-${crypto.randomUUID()}${path.extname(part.filename || "")}`;
+      const tempFilePath = path.join(process.cwd(), "temp", tempFilename);
+
       // Ensure temp directory exists
       const tempDir = path.dirname(tempFilePath);
       if (!fs.existsSync(tempDir)) {
@@ -205,10 +211,14 @@ export { default as s3 } from "../config/cloudflareR2.js";
 
 // Placeholder for upload object to maintain compatibility
 export const upload = {
-  single: (fieldname: string) => async (request: FastifyRequest, reply: FastifyReply) => {
-    // Implement single file upload logic if needed
-  },
-  array: (fieldname: string, maxCount: number) => async (request: FastifyRequest, reply: FastifyReply) => {
-    // Implement array upload logic if needed
-  }
+  single:
+    (fieldname: string) =>
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // Implement single file upload logic if needed
+    },
+  array:
+    (fieldname: string, maxCount: number) =>
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // Implement array upload logic if needed
+    },
 };

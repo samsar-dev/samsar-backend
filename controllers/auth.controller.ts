@@ -48,7 +48,7 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 15, // 15 minutes in seconds
     },
-    jwtSecret
+    jwtSecret,
   );
 
   const refreshToken = jwt.sign(
@@ -58,16 +58,16 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 60 * 24 * 7, // 7 days in seconds
     },
-    jwtSecret
+    jwtSecret,
   );
-  
+
   return { accessToken, refreshToken };
 };
 
 // Register a New User
 export const register = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     // TODO: Add Fastify schema validation here
@@ -307,24 +307,30 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
 };
 
 // Refresh Token
-export const verifyToken = async (request: FastifyRequest, reply: FastifyReply) => {
+export const verifyToken = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
-    const token = request.headers.authorization?.split(' ')[1];
+    const token = request.headers.authorization?.split(" ")[1];
     if (!token) {
       return reply.code(401).send({
         success: false,
         error: {
           code: "TOKEN_MISSING",
-          message: "No token provided"
-        }
+          message: "No token provided",
+        },
       });
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JWTUser;
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET as string,
+      ) as JWTUser;
       const user = await prisma.user.findUnique({
         where: { id: decoded.sub },
-        select: { id: true }
+        select: { id: true },
       });
 
       if (!user) {
@@ -332,22 +338,22 @@ export const verifyToken = async (request: FastifyRequest, reply: FastifyReply) 
           success: false,
           error: {
             code: "INVALID_TOKEN",
-            message: "User not found"
-          }
+            message: "User not found",
+          },
         });
       }
 
       return reply.send({
         success: true,
-        data: { valid: true }
+        data: { valid: true },
       });
     } catch (error) {
       return reply.code(401).send({
         success: false,
         error: {
           code: "INVALID_TOKEN",
-          message: "Token is invalid or expired"
-        }
+          message: "Token is invalid or expired",
+        },
       });
     }
   } catch (error) {
@@ -356,8 +362,8 @@ export const verifyToken = async (request: FastifyRequest, reply: FastifyReply) 
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Internal server error"
-      }
+        message: "Internal server error",
+      },
     });
   }
 };
@@ -369,7 +375,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
     // Verify the refresh token
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_SECRET as string
+      process.env.JWT_SECRET as string,
     ) as JWTUser;
 
     // Find the user with matching refresh token

@@ -15,7 +15,7 @@ interface JWTPayload {
 
 // Type guard for AuthRequest with more precise type checking
 function hasUser(
-  request: FastifyRequest
+  request: FastifyRequest,
 ): request is FastifyRequest & { user: UserPayload } {
   return request.user !== undefined;
 }
@@ -39,7 +39,7 @@ export const loginLimiterConfig = {
 // Auth middleware for Fastify
 export const authenticate = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     // First check Authorization header
@@ -66,7 +66,7 @@ export const authenticate = async (
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "your-secret-key"
+      process.env.JWT_SECRET || "your-secret-key",
     ) as JWTPayload;
 
     // Get user from database
@@ -149,7 +149,7 @@ export const isAdmin = async (request: FastifyRequest, reply: FastifyReply) => {
 // Listing ownership middleware for Fastify
 export const isListingOwner = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     // Ensure request has user property with correct type

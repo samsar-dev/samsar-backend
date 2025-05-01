@@ -1,7 +1,7 @@
 import { ListingStatus } from "@prisma/client";
 
 // Shared types that don't fit into a specific category
-export * from './auth.js';
+export * from "./auth.js";
 
 // Listing types
 export interface ListingCreateInput {

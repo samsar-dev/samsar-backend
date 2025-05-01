@@ -6,8 +6,8 @@ import helmet from "@fastify/helmet";
 import compress from "@fastify/compress";
 import rateLimit from "@fastify/rate-limit";
 import cookie from "@fastify/cookie";
-import multipart, { FastifyMultipartBaseOptions } from '@fastify/multipart';
-import type { MultipartFile } from '@fastify/multipart';
+import multipart, { FastifyMultipartBaseOptions } from "@fastify/multipart";
+import type { MultipartFile } from "@fastify/multipart";
 import dotenv from "dotenv";
 import { Server as SocketIOServer } from "socket.io";
 import { createServer } from "node:http";
@@ -29,7 +29,7 @@ const httpServer = createServer();
 const fastify = Fastify({
   logger: process.env.NODE_ENV === "development",
   serverFactory: (handler) => {
-    httpServer.on('request', handler);
+    httpServer.on("request", handler);
     return httpServer;
   },
 });
@@ -58,28 +58,28 @@ fastify.decorate("io", io);
 await fastify.register(helmet);
 // Configure compression with specific settings
 await fastify.register(compress, {
-  global: false,  // Only compress responses that have the appropriate headers
-  encodings: ['gzip', 'deflate'],
-  customTypes: /^text\/|^application\/json|^application\/javascript/
+  global: false, // Only compress responses that have the appropriate headers
+  encodings: ["gzip", "deflate"],
+  customTypes: /^text\/|^application\/json|^application\/javascript/,
 });
 await fastify.register(cookie);
-await fastify.register(import('@fastify/formbody'));
+await fastify.register(import("@fastify/formbody"));
 await fastify.register(multipart, {
   attachFieldsToBody: false, // Changed from true to false to handle files manually
   limits: {
     fieldSize: 5 * 1024 * 1024, // 5MB
     files: 10,
-    fileSize: 10 * 1024 * 1024 // 10MB
-  }
-} as FastifyMultipartBaseOptions);  // Add multipart file upload support
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+} as FastifyMultipartBaseOptions); // Add multipart file upload support
 
 // JWT
-await fastify.register(import('@fastify/jwt'), {
-  secret: process.env.JWT_SECRET || 'your-secret-key',
+await fastify.register(import("@fastify/jwt"), {
+  secret: process.env.JWT_SECRET || "your-secret-key",
   cookie: {
-    cookieName: 'jwt',
-    signed: false
-  }
+    cookieName: "jwt",
+    signed: false,
+  },
 });
 
 // Rate Limiting
@@ -110,7 +110,7 @@ await fastify.register(cors, {
     "Origin",
     "Access-Control-Allow-Headers",
     "Access-Control-Allow-Origin",
-    "Access-Control-Allow-Credentials"
+    "Access-Control-Allow-Credentials",
   ],
   exposedHeaders: ["Content-Range", "X-Content-Range"],
   maxAge: 600,
@@ -137,7 +137,7 @@ if (process.env.NODE_ENV === "development") {
   fastify.addHook("onRequest", async (request) => {
     console.log(`📥 ${request.method} ${request.url}`);
   });
-  
+
   // Comment out the onSend hook for logging to prevent conflicts
   // fastify.addHook("onSend", async (request, reply, payload) => {
   //   console.log(`📤 Response ${reply.statusCode}`);
@@ -226,7 +226,6 @@ async function startServer() {
         console.log("User disconnected:", socket.id);
       });
     });
-
   } catch (error) {
     console.error("❌ Failed to start server:", error);
     process.exit(1);

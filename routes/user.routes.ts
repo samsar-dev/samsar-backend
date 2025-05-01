@@ -25,14 +25,20 @@ export default async function (fastify: FastifyInstance) {
       } catch (error) {
         reply.code(500).send({
           success: false,
-          error: error instanceof Error ? error.message : "An unknown error occurred",
+          error:
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred",
         });
       }
     };
   };
 
   // Middleware to process profile picture
-  const processProfilePicture = async (request: FastifyRequest, reply: FastifyReply) => {
+  const processProfilePicture = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
     try {
       const authReq = request as unknown as MultipartAuthRequest;
       if (authReq.file) {
@@ -43,19 +49,28 @@ export default async function (fastify: FastifyInstance) {
     } catch (error) {
       reply.code(500).send({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to process profile picture"
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process profile picture",
       });
     }
   };
 
   // Get user public details
-  fastify.get("/public-profile/:id", createFastifyHandler(getUserPublicDetails));
+  fastify.get(
+    "/public-profile/:id",
+    createFastifyHandler(getUserPublicDetails),
+  );
 
   // Apply authentication to all routes below
-  fastify.addHook('preHandler', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Authenticate using Fastify request/reply (adapt your middleware if needed)
-    await authenticate(request, reply);
-  });
+  fastify.addHook(
+    "preHandler",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // Authenticate using Fastify request/reply (adapt your middleware if needed)
+      await authenticate(request, reply);
+    },
+  );
 
   // Get user profile
   fastify.get("/profile", createFastifyHandler(getUserProfile));
@@ -69,7 +84,7 @@ export default async function (fastify: FastifyInstance) {
         await processProfilePicture(request, reply);
       },
     },
-    createFastifyHandler(updateProfile)
+    createFastifyHandler(updateProfile),
   );
 
   // Get user settings
