@@ -416,36 +416,35 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
               } as Prisma.VehicleDetailsCreateWithoutListingInput,
             }
           : undefined,
-        realEstateDetails: parsedDetails?.realEstate
+          realEstateDetails: parsedDetails?.realEstate
           ? {
               create: {
-                propertyType:
-                  parsedDetails.realEstate.propertyType || undefined,
-                size: parsedDetails.realEstate.size || undefined,
-                yearBuilt: parsedDetails.realEstate.yearBuilt
-                  ? String(parseInt(parsedDetails.realEstate.yearBuilt, 10))
+                propertyType: parsedDetails.realEstate.propertyType || undefined,
+                totalArea: parsedDetails.realEstate.totalArea
+                  ? parseFloat(parsedDetails.realEstate.totalArea)
                   : undefined,
                 bedrooms: parsedDetails.realEstate.bedrooms
-                  ? String(parseInt(parsedDetails.realEstate.bedrooms, 10))
+                  ? parseInt(parsedDetails.realEstate.bedrooms, 10)
                   : undefined,
                 bathrooms: parsedDetails.realEstate.bathrooms
-                  ? String(parseInt(parsedDetails.realEstate.bathrooms, 10))
+                  ? parseFloat(parsedDetails.realEstate.bathrooms)
                   : undefined,
+                yearBuilt: parsedDetails.realEstate.yearBuilt
+                  ? parseInt(parsedDetails.realEstate.yearBuilt, 10)
+                  : undefined,
+                floorLevel: parsedDetails.realEstate.floorLevel
+                  ? parseInt(parsedDetails.realEstate.floorLevel, 10)
+                  : undefined,
+                isBuildable:
+                  typeof parsedDetails.realEstate.isBuildable === "boolean"
+                    ? parsedDetails.realEstate.isBuildable
+                    : undefined,
+                usageType: parsedDetails.realEstate.usageType || undefined,
                 condition: parsedDetails.realEstate.condition || undefined,
               } as Prisma.RealEstateDetailsCreateWithoutListingInput,
             }
           : undefined,
-        attributes: attributes
-          ? {
-              create: attributes,
-            }
-          : undefined,
-        features: features
-          ? {
-              create: features,
-            }
-          : undefined,
-      };
+        };
 
       // Create listing
       const listing = await tx.listing.create({

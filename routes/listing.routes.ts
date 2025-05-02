@@ -185,7 +185,7 @@ export default async function (fastify: FastifyInstance) {
         where.realEstateDetails = {
           is: {
             ...(where.realEstateDetails?.is || {}),
-            yearBuilt: builtYear.toString(),
+            yearBuilt: parseInt(builtYear),
           },
         };
       }
@@ -292,9 +292,14 @@ export default async function (fastify: FastifyInstance) {
                 : undefined,
               realEstate: listing.realEstateDetails
                 ? {
-                    size: listing.realEstateDetails.size,
+                    totalArea: listing.realEstateDetails.totalArea,
                     bedrooms: listing.realEstateDetails.bedrooms,
                     bathrooms: listing.realEstateDetails.bathrooms,
+                    yearBuilt: listing.realEstateDetails.yearBuilt,
+                    floorLevel: listing.realEstateDetails.floorLevel,
+                    isBuildable: listing.realEstateDetails.isBuildable,
+                    usageType: listing.realEstateDetails.usageType,
+                    condition: listing.realEstateDetails.condition,
                   }
                 : undefined,
             },

@@ -417,9 +417,13 @@ model RealEstateDetails {
   id                    String   @id @default(cuid())
   propertyType          String
   size                  String?
-  yearBuilt             String?
-  bedrooms              String?
-  bathrooms             String?
+  totalArea             Float?
+  bedrooms              Int?
+  bathrooms             Float?
+  yearBuilt             Int?
+  floorLevel            Int?
+  isBuildable           Boolean?
+  usageType             String?
   condition             String?
   listingId             String   @unique
   constructionType      String?
