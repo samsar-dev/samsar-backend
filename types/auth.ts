@@ -45,7 +45,6 @@ export interface User {
   location?: string;
   city?: string;
   dateOfBirth?: string;
-  postalCode?: string;
   street?: string;
   preferences?: any;
   createdAt?: Date;

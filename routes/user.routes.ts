@@ -1,5 +1,4 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { NextFunction } from "express";
 import { authenticate } from "../middleware/auth.js";
 import {
   updateProfile,
@@ -10,11 +9,10 @@ import {
   getUserPublicDetails,
 } from "../controllers/user.controller.js";
 import {
-  upload,
-  processImage,
+  processImagesMiddleware,
   uploadToR2,
 } from "../middleware/upload.middleware.js";
-import { MultipartAuthRequest } from "../types/auth.js";
+import { MultipartFile } from "@fastify/multipart";
 
 export default async function (fastify: FastifyInstance) {
   // Create Fastify-compatible handlers
@@ -40,19 +38,50 @@ export default async function (fastify: FastifyInstance) {
     reply: FastifyReply,
   ) => {
     try {
-      const authReq = request as unknown as MultipartAuthRequest;
-      if (authReq.file) {
-        // Upload processed image to R2
-        const body = authReq.body as any;
-        body.profilePicture = await uploadToR2(authReq.file as any, "avatar");
+      if (!request.isMultipart()) {
+        return;
       }
+      
+      // Process the multipart form data
+      const parts = await request.parts();
+      let profilePictureFile: MultipartFile | null = null;
+      const formData: Record<string, any> = {};
+      
+      for await (const part of parts) {
+        if (part.type === 'file' && part.fieldname === 'profilePicture') {
+          // Store the profile picture file
+          profilePictureFile = part;
+          const buffer = await part.toBuffer();
+          const fileObj = {
+            fieldname: part.fieldname,
+            originalname: part.filename || 'profile.jpg',
+            encoding: part.encoding,
+            mimetype: part.mimetype,
+            buffer: buffer,
+            size: buffer.length
+          };
+          
+          try {
+            const result = await uploadToR2(fileObj as any, "profilePictures");
+            formData.profilePicture = result.url;
+          } catch (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw new Error('Failed to upload profile picture');
+          }
+        } else if (part.type === 'field') {
+          // Process form fields
+          formData[part.fieldname] = await part.value;
+        }
+      }
+      
+      // Attach the processed data to the request
+      request.body = formData;
+      
     } catch (error) {
+      console.error('Profile picture processing error:', error);
       reply.code(500).send({
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to process profile picture",
+        error: error instanceof Error ? error.message : "Failed to process profile picture",
       });
     }
   };
@@ -76,12 +105,13 @@ export default async function (fastify: FastifyInstance) {
   fastify.get("/profile", createFastifyHandler(getUserProfile));
 
   // Update profile (optional profile picture upload)
-  // Note: Fastify file upload handling will need to be configured separately
   fastify.put(
     "/profile",
     {
       preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-        await processProfilePicture(request, reply);
+        if (request.isMultipart()) {
+          await processProfilePicture(request, reply);
+        }
       },
     },
     createFastifyHandler(updateProfile),

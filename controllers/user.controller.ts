@@ -21,7 +21,6 @@ interface UpdateData {
   dateOfBirth?: string;
   street?: string;
   city?: string;
-  postalCode?: string;
 }
 
 interface UploadResult {
@@ -160,7 +159,7 @@ export const updateProfile = async (
       dateOfBirth,
       street,
       city,
-      postalCode,
+
     } = request.body as any;
 
     if (email && !validator.isEmail(email)) {
@@ -190,7 +189,6 @@ export const updateProfile = async (
     if (dateOfBirth) updates.dateOfBirth = dateOfBirth.trim();
     if (street) updates.street = street.trim();
     if (city) updates.city = city.trim();
-    if (postalCode) updates.postalCode = postalCode.trim();
 
     if (password) {
       // Verify current password first
@@ -254,22 +252,9 @@ export const updateProfile = async (
       updates.password = await bcrypt.hash(password, salt);
     }
 
-    if (request.file) {
-      try {
-        const uploadResult = await uploadToR2(
-          request.file as any,
-          "profilePictures",
-        );
-        const avatarUrl = uploadResult.url;
-        updates.profilePicture = avatarUrl;
-      } catch (error) {
-        return reply.status(500).send({
-          success: false,
-          error: "Failed to upload profile picture",
-          status: 500,
-          data: null,
-        });
-      }
+    // Check if profilePicture URL was set by the middleware
+    if (request.body && (request.body as any).profilePicture) {
+      updates.profilePicture = (request.body as any).profilePicture;
     }
 
     const updatedUser = await prisma.user.update({

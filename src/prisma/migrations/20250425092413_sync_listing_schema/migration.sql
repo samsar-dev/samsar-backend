@@ -53,7 +53,6 @@ ADD COLUMN     "windowType" TEXT;
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN     "city" TEXT,
 ADD COLUMN     "dateOfBirth" TEXT,
-ADD COLUMN     "postalCode" TEXT,
 ADD COLUMN     "street" TEXT;
 
 -- AlterTable

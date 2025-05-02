@@ -83,7 +83,6 @@ export const authenticate = async (
         location: true,
         city: true,
         dateOfBirth: true,
-        postalCode: true,
         street: true,
         preferences: true,
         createdAt: true,
