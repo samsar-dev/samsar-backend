@@ -7,7 +7,6 @@ import compress from "@fastify/compress";
 import rateLimit from "@fastify/rate-limit";
 import cookie from "@fastify/cookie";
 import multipart, { FastifyMultipartBaseOptions } from "@fastify/multipart";
-import type { MultipartFile } from "@fastify/multipart";
 import dotenv from "dotenv";
 import { Server as SocketIOServer } from "socket.io";
 import { createServer } from "node:http";
@@ -58,9 +57,9 @@ fastify.decorate("io", io);
 await fastify.register(helmet);
 // Configure compression with specific settings
 await fastify.register(compress, {
-  global: false, // Only compress responses that have the appropriate headers
-  encodings: ["gzip", "deflate"],
-  customTypes: /^text\/|^application\/json|^application\/javascript/,
+  global: true,
+  encodings: ['gzip', 'deflate', 'br'],
+  threshold: 1024,
 });
 await fastify.register(cookie);
 await fastify.register(import("@fastify/formbody"));
@@ -84,7 +83,14 @@ await fastify.register(import("@fastify/jwt"), {
 
 // Rate Limiting
 await fastify.register(rateLimit, {
-  global: false,
+  global: true,
+  max: 1000,
+  timeWindow: '1 minute',
+});
+
+// Add ETag support for efficient caching
+await fastify.register(import('@fastify/etag'), {
+  weak: true, // Use weak ETags for better compatibility
 });
 
 // CORS
@@ -164,6 +170,10 @@ import userRoutes from "./routes/user.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import uploadRoutes from "./routes/uploads.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import cacheControl from "./middleware/cache.middleware.js";
+
+// Add cache middleware
+await fastify.register(cacheControl);
 
 // Attach routes
 await fastify.register(authRoutes, { prefix: "/api/auth" });
