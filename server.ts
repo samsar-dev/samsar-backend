@@ -95,17 +95,7 @@ await fastify.register(import('@fastify/etag'), {
 
 // CORS
 await fastify.register(cors, {
-  origin: [
-    "https://tijara-frontend-ashk4pprf-darians-projects-e6352288.vercel.app",
-    "https://tijara-frontend-production.up.railway.app",
-    "https://tijara-frontend.vercel.app",
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:3001",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3001",
-  ],
+  origin: true, // Allow all origins in development
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: [

@@ -72,7 +72,39 @@ export const register = async (
   try {
     // TODO: Add Fastify schema validation here
     // If validation fails, reply.code(400).send({ ... })
-    const { email, password, name } = request.body as any;
+    // Handle both multipart form data and JSON
+    let email, password, name;
+    if (request.headers["content-type"]?.includes("multipart/form-data")) {
+      const data = await request.file();
+      if (!data?.fields) {
+        throw new Error("No form data received");
+      }
+      // Extract form data from multipart fields
+      const formData: Record<string, string> = {};
+      for (const [key, field] of Object.entries(data.fields)) {
+        const fieldValue = Array.isArray(field) ? field[0] : field;
+        if (fieldValue && typeof fieldValue === 'object' && 'value' in fieldValue) {
+          formData[key] = String(fieldValue.value);
+        }
+      }
+      if (!formData.email || !formData.password || !formData.name) {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Email, password, and name are required",
+          },
+        });
+      }
+      email = formData.email;
+      password = formData.password;
+      name = formData.name;
+    } else {
+      const body = request.body as any;
+      email = body.email;
+      password = body.password;
+      name = body.name;
+    }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
