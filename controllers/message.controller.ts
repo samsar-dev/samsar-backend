@@ -130,6 +130,8 @@ export const getConversations = async (
             id: true,
             username: true,
             profilePicture: true,
+            name: true,
+            email: true,
           },
         },
         messages: {
