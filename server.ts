@@ -1,17 +1,20 @@
 // src/server.ts
 
-import Fastify from "fastify";
+import compress from "@fastify/compress";
+import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
-import compress from "@fastify/compress";
-import rateLimit from "@fastify/rate-limit";
-import cookie from "@fastify/cookie";
 import multipart, { FastifyMultipartBaseOptions } from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
 import dotenv from "dotenv";
-import { Server as SocketIOServer } from "socket.io";
+import Fastify from "fastify";
+import jwt from "jsonwebtoken";
 import { createServer } from "node:http";
+import { ExtendedError, Server as SocketIOServer } from "socket.io";
+import { config } from "./config/config.js";
 import prisma from "./src/lib/prismaClient.js";
 import { getDirname } from "./utils/path.utils.js";
+
 
 const __dirname = getDirname(import.meta.url);
 
@@ -51,6 +54,30 @@ const io = new SocketIOServer(httpServer, {
 // BEFORE listen, decorate Fastify
 fastify.decorate("io", io);
 
+io.use((socket, next) => {
+  try {
+    const tokenWithBearer = socket.handshake.headers.authorization;
+    if (!tokenWithBearer) {
+      return next(new Error("Token missing"));
+    }
+
+    const token = tokenWithBearer.startsWith("Bearer ")
+      ? tokenWithBearer.split(" ")[1]
+      : tokenWithBearer;
+
+    // Verify and decode JWT token
+    const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
+    if (!decoded) {
+      return next(new Error("Authentication error: Invalid token"));
+    }
+    (socket as AuthSocket).user = decoded;
+    next();
+  } catch (error) {
+    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ error:", error);
+    next(error as ExtendedError);
+  }
+});
+
 // -----------------
 // Register middlewares
 // -----------------
@@ -58,7 +85,7 @@ await fastify.register(helmet);
 // Configure compression with specific settings
 await fastify.register(compress, {
   global: true,
-  encodings: ['gzip', 'deflate', 'br'],
+  encodings: ["gzip", "deflate", "br"],
   threshold: 1024,
 });
 await fastify.register(cookie);
@@ -85,11 +112,11 @@ await fastify.register(import("@fastify/jwt"), {
 await fastify.register(rateLimit, {
   global: true,
   max: 1000,
-  timeWindow: '1 minute',
+  timeWindow: "1 minute",
 });
 
 // Add ETag support for efficient caching
-await fastify.register(import('@fastify/etag'), {
+await fastify.register(import("@fastify/etag"), {
   weak: true, // Use weak ETags for better compatibility
 });
 
@@ -154,13 +181,14 @@ fastify.get("/api/health", async (_, reply) => {
 // -----------------
 // Import routes
 // -----------------
+import { AuthSocket, UserPayload } from "types/auth.js";
+import cacheControl from "./middleware/cache.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import listingRoutes from "./routes/listing.routes.js";
-import userRoutes from "./routes/user.routes.js";
 import messageRoutes from "./routes/message.routes.js";
-import uploadRoutes from "./routes/uploads.js";
 import notificationRoutes from "./routes/notification.routes.js";
-import cacheControl from "./middleware/cache.middleware.js";
+import uploadRoutes from "./routes/uploads.js";
+import userRoutes from "./routes/user.routes.js";
 
 // Add cache middleware
 await fastify.register(cacheControl);
@@ -198,6 +226,10 @@ fastify.setNotFoundHandler((_, reply) => {
 // -----------------
 // Start server
 // -----------------
+
+const usersSocketId = new Map<string, string>();
+let onlineUsersSocketIds: string[] = [];
+
 async function startServer() {
   try {
     await prisma.$connect();
@@ -209,8 +241,12 @@ async function startServer() {
     console.log(`🚀 Server running on http://localhost:${port}`);
 
     // Socket.io handlers
-    io.on("connection", (socket) => {
-      console.log("User connected:", socket.id);
+    io.on("connection", (socket: AuthSocket) => {
+      const user = socket.user;
+      // console.log("User connected:", socket.id);
+      // console.log("User Socket:", user);
+      usersSocketId.set(user.id, socket.id);
+      onlineUsersSocketIds = Array.from(usersSocketId.values());
 
       socket.on("join", (userId: string) => {
         socket.join(userId);

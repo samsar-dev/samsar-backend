@@ -1,5 +1,11 @@
 import { FastifyRequest } from "fastify";
 import { MultipartFile } from "@fastify/multipart";
+import { Socket } from "socket.io";
+
+// Extend the Socket type to include the 'user' property
+export interface AuthSocket extends Socket {
+  user?: any; // Use a specific type instead of 'any' if you know the structure of 'user'
+}
 
 // Core user payload decoded from JWT
 export interface UserPayload {
@@ -14,7 +20,7 @@ export interface UserPayload {
 export type AuthRequest<
   Body = unknown,
   Query = unknown,
-  Params = unknown,
+  Params = unknown
 > = FastifyRequest<{
   Body: Body;
   Querystring: Query;
