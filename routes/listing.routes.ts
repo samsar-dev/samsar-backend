@@ -37,7 +37,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string,
+  sortOrder?: string
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -112,11 +112,11 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
 
 // Helper function to handle authenticated routes
 const handleAuthRoute = (
-  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>,
+  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>
 ) => {
   return async (
     request: FastifyRequest,
-    reply: FastifyReply,
+    reply: FastifyReply
   ): Promise<void> => {
     try {
       console.log("Fetching favorite listings...", request);
@@ -136,10 +136,10 @@ const handleAuthRoute = (
 
       // Cast request to AuthRequest since it's been authenticated
       const authReq = request as unknown as MultipartAuthRequest;
-      await handler(authReq, reply);
+      return await handler(authReq, reply);
     } catch (error) {
       console.error("Auth route error:", error);
-      reply.code(500).send({
+      return reply.code(500).send({
         success: false,
         error:
           error instanceof Error ? error.message : "An unknown error occurred",
@@ -306,7 +306,7 @@ export default async function (fastify: FastifyInstance) {
           }))
         : listings.map((listing) => formatListingResponse(listing));
 
-      reply.send({
+      return reply.send({
         success: true,
         data: {
           items: formattedListings,
@@ -319,7 +319,7 @@ export default async function (fastify: FastifyInstance) {
       });
     } catch (error) {
       console.error("Error fetching listings:", error);
-      reply.code(500).send({
+      return reply.code(500).send({
         success: false,
         error:
           error instanceof Error ? error.message : "Failed to fetch listings",
@@ -380,7 +380,7 @@ export default async function (fastify: FastifyInstance) {
           prisma.listing.count({ where }),
         ]);
 
-        reply.send({
+        return reply.send({
           success: true,
           data: {
             items: listings.map((listing) => formatListingResponse(listing)),
@@ -392,7 +392,7 @@ export default async function (fastify: FastifyInstance) {
           status: 200,
         });
       } catch (error) {
-        reply.code(500).send({
+        return reply.code(500).send({
           success: false,
           error:
             error instanceof Error ? error.message : "Error searching listings",
@@ -400,7 +400,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   fastify.get("/trending", async (_req, reply): Promise<void> => {
@@ -421,7 +421,7 @@ export default async function (fastify: FastifyInstance) {
         take: 10,
       });
 
-      reply.send({
+      return reply.send({
         success: true,
         data: { items: trendingListings },
         status: 200,
@@ -429,7 +429,7 @@ export default async function (fastify: FastifyInstance) {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      reply.code(500).send({
+      return reply.code(500).send({
         success: false,
         error: errorMessage,
         status: 500,
@@ -466,7 +466,7 @@ export default async function (fastify: FastifyInstance) {
 
         if (!listing) {
           console.log(`Listing not found with ID: ${req.params.id}`);
-          reply.code(404).send({
+          return reply.code(404).send({
             success: false,
             error: "Listing not found",
             status: 404,
@@ -487,22 +487,22 @@ export default async function (fastify: FastifyInstance) {
         ) {
           console.log(
             "Formatted listing:",
-            JSON.stringify(formattedListing, null, 2),
+            JSON.stringify(formattedListing, null, 2)
           );
           console.log(
             "Formatted vehicle details:",
-            JSON.stringify(formattedListing.details.vehicles, null, 2),
+            JSON.stringify(formattedListing.details.vehicles, null, 2)
           );
         }
 
-        reply.send({
+        return reply.send({
           success: true,
           data: formattedListing,
           status: 200,
         });
       } catch (error) {
         console.error("Error fetching listing:", error);
-        reply.code(500).send({
+        return reply.code(500).send({
           success: false,
           error:
             error instanceof Error ? error.message : "Failed to fetch listing",
@@ -510,7 +510,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   // Get saved listings
@@ -542,16 +542,16 @@ export default async function (fastify: FastifyInstance) {
           });
 
           const formattedListings = savedListings.map((favorite) =>
-            formatListingResponse(favorite.listing),
+            formatListingResponse(favorite.listing)
           );
 
-          reply.send({
+          return reply.send({
             success: true,
             data: { items: formattedListings },
             status: 200,
           });
         } catch (error) {
-          reply.code(500).send({
+          return reply.code(500).send({
             success: false,
             error:
               error instanceof Error
@@ -561,8 +561,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Save a listing to favorites
@@ -580,7 +580,7 @@ export default async function (fastify: FastifyInstance) {
           });
 
           if (!listing) {
-            reply.code(404).send({
+            return reply.code(404).send({
               success: false,
               error: "Listing not found",
               status: 404,
@@ -600,7 +600,7 @@ export default async function (fastify: FastifyInstance) {
           });
 
           if (existingFavorite) {
-            reply.code(400).send({
+            return reply.code(400).send({
               success: false,
               error: "Listing already saved",
               status: 400,
@@ -632,13 +632,13 @@ export default async function (fastify: FastifyInstance) {
             },
           });
 
-          reply.send({
+          return reply.send({
             success: true,
             data: formatListingResponse(favorite.listing),
             status: 200,
           });
         } catch (error) {
-          reply.code(500).send({
+          return reply.code(500).send({
             success: false,
             error:
               error instanceof Error
@@ -648,8 +648,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Delete a saved listing
@@ -672,7 +672,7 @@ export default async function (fastify: FastifyInstance) {
           });
 
           if (!favorite) {
-            reply.code(404).send({
+            return reply.code(404).send({
               success: false,
               error: "Saved listing not found",
               status: 404,
@@ -691,13 +691,13 @@ export default async function (fastify: FastifyInstance) {
             },
           });
 
-          reply.send({
+          return reply.send({
             success: true,
             data: null,
             status: 200,
           });
         } catch (error) {
-          reply.code(500).send({
+          return reply.code(500).send({
             success: false,
             error:
               error instanceof Error
@@ -707,8 +707,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Add save listing
@@ -724,7 +724,7 @@ export default async function (fastify: FastifyInstance) {
             where: { id: listingId },
           });
           if (!listing) {
-            reply.code(404).send({
+            return reply.code(404).send({
               success: false,
               error: "Listing not found",
               status: 404,
@@ -740,7 +740,7 @@ export default async function (fastify: FastifyInstance) {
           });
 
           if (oldFavorite !== null) {
-            reply.code(400).send({
+            return reply.code(400).send({
               success: false,
               error: "Listing already saved",
               status: 400,
@@ -753,7 +753,7 @@ export default async function (fastify: FastifyInstance) {
               listingId: listing.id,
             },
           });
-          reply.send({
+          return reply.send({
             success: true,
             status: 200,
           });
@@ -776,14 +776,14 @@ export default async function (fastify: FastifyInstance) {
                   "Details:",
                   typeof reqBody.details === "string"
                     ? JSON.parse(reqBody.details)
-                    : reqBody.details,
+                    : reqBody.details
                 );
               }
             } catch (detailsError) {
               console.error("Error logging details:", detailsError);
             }
           }
-          reply.code(500).send({
+          return reply.code(500).send({
             success: false,
             error:
               error instanceof Error
@@ -793,8 +793,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Note: You'll need to adapt upload.array and processImagesMiddleware to work with Fastify
@@ -809,7 +809,7 @@ export default async function (fastify: FastifyInstance) {
       try {
         const user = request.user;
         if (!user) {
-          reply.code(401).send({
+          return reply.code(401).send({
             success: false,
             error: "Unauthorized: User not found",
             status: 401,
@@ -825,7 +825,7 @@ export default async function (fastify: FastifyInstance) {
 
         const body = request.body as any;
         if (!body) {
-          reply.code(400).send({
+          return reply.code(400).send({
             success: false,
             error: "Missing request body",
             status: 400,
@@ -855,7 +855,7 @@ export default async function (fastify: FastifyInstance) {
         if (!subCategory) missingFields.push("subCategory");
 
         if (missingFields.length > 0) {
-          reply.code(400).send({
+          return reply.code(400).send({
             success: false,
             error: `Missing required fields: ${missingFields.join(", ")}`,
             status: 400,
@@ -872,7 +872,7 @@ export default async function (fastify: FastifyInstance) {
           console.log("Details sent to DB:", JSON.stringify(parsedDetails));
         } catch (error) {
           console.error("Error parsing/validating details:", error);
-          reply.code(400).send({
+          return reply.code(400).send({
             success: false,
             error: "Invalid details format",
             status: 400,
@@ -888,7 +888,7 @@ export default async function (fastify: FastifyInstance) {
         // Create listing with images
         console.log(
           "Details sent to DB:",
-          JSON.stringify(parsedDetails, null, 2),
+          JSON.stringify(parsedDetails, null, 2)
         );
 
         const listing = await prisma.listing.create({
@@ -1285,7 +1285,7 @@ export default async function (fastify: FastifyInstance) {
           },
         });
 
-        reply.code(201).send({
+        return reply.code(201).send({
           success: true,
           data: formatListingResponse(listing),
           status: 201,
@@ -1309,14 +1309,14 @@ export default async function (fastify: FastifyInstance) {
                 "Details:",
                 typeof reqBody.details === "string"
                   ? JSON.parse(reqBody.details)
-                  : reqBody.details,
+                  : reqBody.details
               );
             }
           } catch (detailsError) {
             console.error("Error logging details:", detailsError);
           }
         }
-        reply.code(500).send({
+        return reply.code(500).send({
           success: false,
           error:
             error instanceof Error ? error.message : "Failed to create listing",
@@ -1324,69 +1324,70 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
-  ),
-    fastify.get<{ Querystring: { page?: string; limit?: string } }>(
-      "/user",
-      handleAuthRoute(
-        async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
-          try {
-            const { page = 1, limit = 12 } = req.query as {
-              page?: string | number;
-              limit?: string | number;
-            };
-            const skip = (Number(page) - 1) * Number(limit);
+    }
+  );
 
-            const userId = validateUser(req);
+  fastify.get<{ Querystring: { page?: string; limit?: string } }>(
+    "/user",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const { page = 1, limit = 12 } = req.query as {
+            page?: string | number;
+            limit?: string | number;
+          };
+          const skip = (Number(page) - 1) * Number(limit);
 
-            const listings = await prisma.listing.findMany({
-              where: {
-                userId,
-              },
-              include: {
-                user: true,
-                images: true,
-                favorites: true,
-              },
-              skip,
-              take: Number(limit),
-              orderBy: {
-                createdAt: "desc",
-              },
-            });
+          const userId = validateUser(req);
 
-            const total = await prisma.listing.count({
-              where: {
-                userId,
-              },
-            });
+          const listings = await prisma.listing.findMany({
+            where: {
+              userId,
+            },
+            include: {
+              user: true,
+              images: true,
+              favorites: true,
+            },
+            skip,
+            take: Number(limit),
+            orderBy: {
+              createdAt: "desc",
+            },
+          });
 
-            reply.send({
-              success: true,
-              data: {
-                listings: listings.map((listing) =>
-                  formatListingResponse(listing),
-                ),
-                total,
-                page: Number(page),
-                limit: Number(limit),
-                hasMore: total > Number(page) * Number(limit),
-              },
-              status: 200,
-            });
-          } catch (error) {
-            console.error("Error fetching user listings:", error);
-            reply.code(500).send({
-              success: false,
-              error: {
-                code: "SERVER_ERROR",
-                message: "An error occurred while fetching user listings",
-              },
-            });
-          }
-        },
-      ),
-    );
+          const total = await prisma.listing.count({
+            where: {
+              userId,
+            },
+          });
+
+          return reply.send({
+            success: true,
+            data: {
+              listings: listings.map((listing) =>
+                formatListingResponse(listing)
+              ),
+              total,
+              page: Number(page),
+              limit: Number(limit),
+              hasMore: total > Number(page) * Number(limit),
+            },
+            status: 200,
+          });
+        } catch (error) {
+          console.error("Error fetching user listings:", error);
+          return reply.code(500).send({
+            success: false,
+            error: {
+              code: "SERVER_ERROR",
+              message: "An error occurred while fetching user listings",
+            },
+          });
+        }
+      }
+    )
+  );
 
   fastify.get(
     "/favorites",
@@ -1409,19 +1410,21 @@ export default async function (fastify: FastifyInstance) {
             },
           });
 
-          reply.send({
+          const data = {
+            favorites: favorites.map((fav) => ({
+              ...formatListingResponse(fav.listing),
+              favorite: true,
+            })),
+          };
+
+          return reply.send({
             success: true,
-            data: {
-              favorites: favorites.map((fav) => ({
-                ...formatListingResponse(fav.listing),
-                favorite: true,
-              })),
-            },
+            data: data,
             status: 200,
           });
         } catch (error) {
           console.error("Error fetching favorite listings:", error);
-          reply.code(500).send({
+          return reply.code(500).send({
             success: false,
             error: {
               code: "SERVER_ERROR",
@@ -1429,8 +1432,8 @@ export default async function (fastify: FastifyInstance) {
             },
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // This route has been moved above the authentication middleware to make it public
@@ -1547,16 +1550,16 @@ export default async function (fastify: FastifyInstance) {
             },
           });
 
-          reply.send({
+          return reply.send({
             success: true,
             data: formatListingResponse(
-              listing as unknown as ListingWithRelations,
+              listing as unknown as ListingWithRelations
             ),
             status: 200,
           });
         } catch (error) {
           console.error("Database error:", error);
-          reply.code(500).send({
+          return reply.code(500).send({
             success: false,
             error:
               error instanceof Error
@@ -1566,8 +1569,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   fastify.delete<{ Params: { id: string } }>(
@@ -1590,7 +1593,7 @@ export default async function (fastify: FastifyInstance) {
 
           // Check if listing exists and belongs to user
           if (!listing) {
-            reply.code(404).send({
+            return reply.code(404).send({
               success: false,
               error: "Listing not found",
               status: 404,
@@ -1600,7 +1603,7 @@ export default async function (fastify: FastifyInstance) {
           }
 
           if (listing.userId !== userId) {
-            reply.code(403).send({
+            return reply.code(403).send({
               success: false,
               error: "Not authorized to delete this listing",
               status: 403,
@@ -1641,14 +1644,14 @@ export default async function (fastify: FastifyInstance) {
             });
           });
 
-          reply.send({
+          return reply.send({
             success: true,
             data: null,
             status: 200,
           });
         } catch (error) {
           console.error("Error deleting listing:", error);
-          reply.code(500).send({
+          return reply.code(500).send({
             success: false,
             error:
               error instanceof Error
@@ -1658,7 +1661,7 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 }
