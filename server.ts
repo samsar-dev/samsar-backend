@@ -14,7 +14,17 @@ import { ExtendedError, Server as SocketIOServer } from "socket.io";
 import { config } from "./config/config.js";
 import prisma from "./src/lib/prismaClient.js";
 import { getDirname } from "./utils/path.utils.js";
+import { NEW_MESSAGE, NEW_MESSAGE_ALERT } from "./constants/socketEvent.js";
 
+// Store connected users
+
+interface MessageData {
+  content: string;
+  senderId: string;
+  recipientId: string;
+  conversationId: string;
+  createdAt: Date;
+}
 
 const __dirname = getDirname(import.meta.url);
 
@@ -55,8 +65,10 @@ const io = new SocketIOServer(httpServer, {
 fastify.decorate("io", io);
 
 io.use((socket, next) => {
+  console.log("Incoming socket headers:", socket.handshake.headers);
   try {
-    const tokenWithBearer = socket.handshake.headers.authorization;
+    const tokenWithBearer =
+      socket.handshake.headers.authorization || socket.handshake.auth.token;
     if (!tokenWithBearer) {
       return next(new Error("Token missing"));
     }
@@ -156,27 +168,27 @@ await fastify.register(cors, {
 // });
 
 // Logging (only development)
-if (process.env.NODE_ENV === "development") {
-  fastify.addHook("onRequest", async (request) => {
-    console.log(`📥 ${request.method} ${request.url}`);
-  });
+// if (process.env.NODE_ENV === "development") {
+//   fastify.addHook("onRequest", async (request) => {
+//     console.log(`📥 ${request.method} ${request.url}`);
+//   });
 
-  // Comment out the onSend hook for logging to prevent conflicts
-  // fastify.addHook("onSend", async (request, reply, payload) => {
-  //   console.log(`📤 Response ${reply.statusCode}`);
-  //   return payload; // Return payload unchanged
-  // });
-}
+//   // Comment out the onSend hook for logging to prevent conflicts
+//   // fastify.addHook("onSend", async (request, reply, payload) => {
+//   //   console.log(`📤 Response ${reply.statusCode}`);
+//   //   return payload; // Return payload unchanged
+//   // });
+// }
 
 // Health route
-fastify.get("/api/health", async (_, reply) => {
-  reply.status(200).send({
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV,
-  });
-});
+// fastify.get("/api/health", async (_, reply) => {
+//   reply.status(200).send({
+//     status: "healthy",
+//     timestamp: new Date().toISOString(),
+//     uptime: process.uptime(),
+//     environment: process.env.NODE_ENV,
+//   });
+// });
 
 // -----------------
 // Import routes
@@ -228,7 +240,6 @@ fastify.setNotFoundHandler((_, reply) => {
 // -----------------
 
 const usersSocketId = new Map<string, string>();
-let onlineUsersSocketIds: string[] = [];
 
 async function startServer() {
   try {
@@ -242,23 +253,71 @@ async function startServer() {
 
     // Socket.io handlers
     io.on("connection", (socket: AuthSocket) => {
-      const user = socket.user;
-      // console.log("User connected:", socket.id);
-      // console.log("User Socket:", user);
-      usersSocketId.set(user.id, socket.id);
-      onlineUsersSocketIds = Array.from(usersSocketId.values());
+      // const user = socket.user;
+      // usersSocketId.set(user.id, socket.id);
+      console.log("✅ New socket connected:", socket.id);
+      console.log("User payload:", socket.user);
 
-      socket.on("join", (userId: string) => {
-        socket.join(userId);
-        console.log(`User ${userId} joined their room`);
-      });
+      socket.on(
+        "message",
+        async ({
+          content,
+          senderId,
+          recipientId,
+          conversationId,
+          createdAt,
+        }: {
+          content: string;
+          senderId: string;
+          recipientId: string;
+          conversationId: string;
+          createdAt: Date;
+        }) => {
+          console.log("New message data:>>>>>>>>>>>>>>>>", {
+            content,
+            senderId,
+            recipientId,
+            conversationId,
+            createdAt,
+          });
+          let result;
+          try {
+            // result = await prisma.message.create({
+            //   data: {
+            //     content: content,
+            //     senderId: senderId,
+            //     recipientId: recipientId,
+            //     conversationId: conversationId,
+            //     createdAt: createdAt,
+            //   },
+            // });
+            console.log("Message created:", result);
+          } catch (error) {
+            console.log("Error creating message:", error);
+          }
+          const recipientSocketId = usersSocketId.get(recipientId);
+          io.emit("message", {
+            messageData: {
+              content,
+              senderId,
+              recipientId,
+              conversationId,
+              createdAt,
+            },
+          });
+          io.to(recipientSocketId).emit(NEW_MESSAGE_ALERT, {
+            messageData: result,
+            recipientId,
+          });
+        }
+      );
 
-      socket.on("leave", (userId: string) => {
-        socket.leave(userId);
-        console.log(`User ${userId} left their room`);
+      socket.on("join", (data) => {
+        console.log("User joined:", data);
       });
 
       socket.on("disconnect", () => {
+        // usersSocketId.delete(user.id);
         console.log("User disconnected:", socket.id);
       });
     });
@@ -269,3 +328,30 @@ async function startServer() {
 }
 
 startServer();
+
+// io.on("connection", (socket) => {
+//   console.log("🔌 Socket connected:", socket.id);
+
+//   // --- TEST 1: Simple echo event ---
+//   socket.on("echo", (data) => {
+//     console.log('📨 Received "echo":', data);
+//     socket.emit("echo_reply", {
+//       status: "OK",
+//       yourData: data,
+//     });
+//   });
+
+//   // --- TEST 2: Broadcast event ---
+//   socket.on("broadcast_me", () => {
+//     io.emit("broadcast", {
+//       from: socket.id,
+//       message: "Hello everyone!",
+//     });
+//   });
+// });
+
+// // Start server
+// fastify.listen({ port: 5000 }, (err) => {
+//   if (err) throw err;
+//   console.log("🚀 Server + Socket.IO running on http://localhost:5000");
+// });
