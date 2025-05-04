@@ -253,13 +253,14 @@ async function startServer() {
 
     // Socket.io handlers
     io.on("connection", (socket: AuthSocket) => {
-      // const user = socket.user;
-      // usersSocketId.set(user.id, socket.id);
+      const user = socket.user;
+      usersSocketId.set(user.sub, socket.id);
       console.log("✅ New socket connected:", socket.id);
       console.log("User payload:", socket.user);
+      console.log("all user sockets:", usersSocketId);
 
       socket.on(
-        "message",
+        NEW_MESSAGE,
         async ({
           content,
           senderId,
@@ -282,33 +283,35 @@ async function startServer() {
           });
           let result;
           try {
-            // result = await prisma.message.create({
-            //   data: {
-            //     content: content,
-            //     senderId: senderId,
-            //     recipientId: recipientId,
-            //     conversationId: conversationId,
-            //     createdAt: createdAt,
-            //   },
-            // });
+            result = await prisma.message.create({
+              data: {
+                content: content,
+                senderId: senderId,
+                recipientId: recipientId,
+                conversationId: conversationId,
+                createdAt: createdAt,
+              },
+            });
             console.log("Message created:", result);
           } catch (error) {
             console.log("Error creating message:", error);
           }
           const recipientSocketId = usersSocketId.get(recipientId);
-          io.emit("message", {
-            messageData: {
-              content,
-              senderId,
+          if (recipientSocketId) {
+            io.to(recipientSocketId).emit(NEW_MESSAGE, {
+              id: result.id,
+              senderId: result.senderId,
+              recipientId: recipientId,
+              content: result.content,
+              createdAt: result.createdAt,
+              read: result.read,
+              conversationId: result.conversationId,
+            });
+            io.to(recipientSocketId).emit(NEW_MESSAGE_ALERT, {
+              messageData: result,
               recipientId,
-              conversationId,
-              createdAt,
-            },
-          });
-          io.to(recipientSocketId).emit(NEW_MESSAGE_ALERT, {
-            messageData: result,
-            recipientId,
-          });
+            });
+          }
         }
       );
 
