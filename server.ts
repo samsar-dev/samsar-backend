@@ -56,9 +56,12 @@ const io = new SocketIOServer(httpServer, {
       process.env.FRONTEND_URL || "http://localhost:3000",
       "http://localhost:5173",
     ],
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
   },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
 });
 
 // BEFORE listen, decorate Fastify
