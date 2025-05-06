@@ -13,6 +13,7 @@ import { MultipartFile } from "@fastify/multipart";
 
 interface UpdateData {
   email?: string;
+  phone?: string;
   username?: string;
   password?: string;
   bio?: string;
@@ -42,7 +43,7 @@ interface UserPublicDetailsParams {
  */
 export const getUserProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -87,7 +88,7 @@ export const getUserProfile = async (
  */
 export const getUserPublicDetails = async (
   request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const userId = request.params.id;
@@ -133,7 +134,7 @@ export const getUserPublicDetails = async (
  */
 export const updateProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -152,6 +153,7 @@ export const updateProfile = async (
 
     const {
       email,
+      phone,
       username,
       password,
       currentPassword,
@@ -159,7 +161,6 @@ export const updateProfile = async (
       dateOfBirth,
       street,
       city,
-
     } = request.body as any;
 
     if (email && !validator.isEmail(email)) {
@@ -183,7 +184,15 @@ export const updateProfile = async (
       }
       updates.email = email.trim();
     }
-
+    if (!/[0-9]/.test(phone)) {
+      return reply.status(400).send({
+        success: false,
+        error: "Phone number is invalid",
+        status: 400,
+        data: null,
+      });
+    }
+    if (phone) updates.phone = phone.trim();
     if (username) updates.username = username.trim();
     if (bio) updates.bio = bio.trim();
     if (dateOfBirth) updates.dateOfBirth = dateOfBirth.trim();
@@ -204,7 +213,7 @@ export const updateProfile = async (
       // Check if current password is correct
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password,
+        user.password
       );
       if (!isPasswordValid) {
         return reply.status(401).send({
@@ -283,7 +292,7 @@ export const updateProfile = async (
  */
 export const getUserListings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const listings = await prisma.listing.findMany({
@@ -315,7 +324,7 @@ export const getUserListings = async (
  */
 export const deleteUser = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -350,7 +359,7 @@ export const deleteUser = async (
  */
 export const getUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = (await prisma.user.findUnique({
@@ -411,7 +420,7 @@ export const getUserSettings = async (
  */
 export const updateUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const { preferences } = request.body as any;

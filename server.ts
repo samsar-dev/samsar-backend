@@ -334,30 +334,3 @@ async function startServer() {
 }
 
 startServer();
-
-// io.on("connection", (socket) => {
-//   console.log("🔌 Socket connected:", socket.id);
-
-//   // --- TEST 1: Simple echo event ---
-//   socket.on("echo", (data) => {
-//     console.log('📨 Received "echo":', data);
-//     socket.emit("echo_reply", {
-//       status: "OK",
-//       yourData: data,
-//     });
-//   });
-
-//   // --- TEST 2: Broadcast event ---
-//   socket.on("broadcast_me", () => {
-//     io.emit("broadcast", {
-//       from: socket.id,
-//       message: "Hello everyone!",
-//     });
-//   });
-// });
-
-// // Start server
-// fastify.listen({ port: 5000 }, (err) => {
-//   if (err) throw err;
-//   console.log("🚀 Server + Socket.IO running on http://localhost:5000");
-// });
