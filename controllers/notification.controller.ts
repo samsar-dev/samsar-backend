@@ -79,7 +79,7 @@ export const getNotifications = async (
       },
     });
 
-    reply.send({
+    return reply.send({
       success: true,
       notifications,
       pagination: {
