@@ -8,30 +8,32 @@ datasource db {
 }
 
 model User {
-  id                   String         @id @default(cuid())
-  email                String         @unique
-  name                 String?
-  username             String         @unique
-  password             String
-  profilePicture       String?
-  bio                  String?
-  location             String?
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  role                 UserRole       @default(USER)
-  preferences          Json?
-  city                 String?
-  dateOfBirth          String?
-  street               String?
-  refreshToken         String?        @db.Text
+  id                    String         @id @default(cuid())
+  email                 String         @unique
+  phone                 String?
+  name                  String?
+  username              String         @unique
+  password              String
+  profilePicture        String?
+  bio                   String?
+  location              String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  role                  UserRole       @default(USER)
+  preferences           Json?
+  city                  String?
+  dateOfBirth           String?
+  postalCode            String?
+  street                String?
+  refreshToken          String?
   refreshTokenExpiresAt DateTime?
-  favorites            Favorite[]
-  listings             Listing[]      @relation("UserListings")
-  receivedMessages     Message[]      @relation("ReceivedMessages")
-  sentMessages         Message[]      @relation("SentMessages")
-  relatedNotifications Notification[] @relation("RelatedNotifications")
-  notifications        Notification[]
-  conversations        Conversation[] @relation("UserConversations")
+  favorites             Favorite[]
+  listings              Listing[]      @relation("UserListings")
+  receivedMessages      Message[]      @relation("ReceivedMessages")
+  sentMessages          Message[]      @relation("SentMessages")
+  relatedNotifications  Notification[] @relation("RelatedNotifications")
+  notifications         Notification[]
+  conversations         Conversation[] @relation("UserConversations")
 
   @@index([refreshToken])
 }
@@ -416,13 +418,6 @@ model RealEstateDetails {
   id                    String   @id @default(cuid())
   propertyType          String
   size                  String?
-  totalArea             Float?
-  bedrooms              Int?
-  bathrooms             Float?
-  yearBuilt             Int?
-  floorLevel            Int?
-  isBuildable           Boolean?
-  usageType             String?
   condition             String?
   listingId             String   @unique
   constructionType      String?
@@ -466,6 +461,13 @@ model RealEstateDetails {
   stories               Int?
   topography            String[]
   waterFeatures         String?
+  floorLevel            Int?
+  isBuildable           Boolean?
+  totalArea             Float?
+  usageType             String?
+  yearBuilt             Int?
+  bedrooms              Int?
+  bathrooms             Float?
   listing               Listing  @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
