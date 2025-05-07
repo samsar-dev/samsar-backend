@@ -51,10 +51,15 @@ export const getNotifications = async (
   reply: FastifyReply,
 ) => {
   try {
+    // Check if user is authenticated
     if (!req.user) {
-      return reply.code(401).send({ error: "Unauthorized" });
+      return reply.code(401).send({
+        success: false,
+        error: "Unauthorized"
+      });
     }
 
+    // Parse pagination parameters with safe defaults
     const page = Math.max(1, parseInt((req.query as any).page as string) || 1);
     const limit = Math.max(
       1,
@@ -62,36 +67,104 @@ export const getNotifications = async (
     );
     const skip = (page - 1) * limit;
 
-    const notifications = await prisma.notification.findMany({
-      where: {
-        userId: req.user.id,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take: limit,
-    });
+    // Log request information for debugging
+    console.log(`Fetching notifications for user ${req.user.id}, page ${page}, limit ${limit}`);
 
-    const total = await prisma.notification.count({
-      where: {
-        userId: req.user.id,
-      },
-    });
+    try {
+      // Fetch notifications from database
+      const notifications = await prisma.notification.findMany({
+        where: {
+          userId: req.user.id,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+        include: {
+          relatedListing: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+          relatedUser: {
+            select: {
+              id: true,
+              username: true,
+            },
+          },
+        },
+      });
 
-    reply.send({
-      success: true,
-      notifications,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
-    });
+      // Count total notifications for pagination
+      const total = await prisma.notification.count({
+        where: {
+          userId: req.user.id,
+        },
+      });
+
+      console.log(`Found ${notifications.length} notifications out of ${total} total`);
+
+      // Transform notifications to match frontend types
+      const transformedNotifications = notifications.map(notification => {
+        // Generate a title based on notification type and related entities
+        let title = "Notification";
+        if (notification.relatedListing?.title) {
+          title = notification.relatedListing.title;
+        } else if (notification.relatedUser?.username) {
+          title = `Message from ${notification.relatedUser.username}`;
+        } else if (notification.type === "NEW_MESSAGE") {
+          title = "New Message";
+        } else if (notification.type === "PRICE_UPDATE") {
+          title = "Price Update";
+        } else if (notification.type === "LISTING_SOLD") {
+          title = "Listing Sold";
+        } else if (notification.type === "LISTING_INTEREST") {
+          title = "Listing Interest";
+        }
+
+        return {
+          id: notification.id,
+          userId: notification.userId,
+          type: notification.type,
+          title: title,
+          message: notification.content,
+          listingId: notification.relatedListingId,
+          read: notification.read,
+          createdAt: notification.createdAt.toISOString(),
+          // Use only createdAt since updatedAt might not be available in the Prisma schema
+          updatedAt: notification.createdAt.toISOString(),
+          targetId: notification.relatedId,
+          targetType: notification.type,
+        };
+      });
+
+      // Send successful response
+      return reply.send({
+        success: true,
+        data: {
+          items: transformedNotifications,
+          pagination: {
+            page,
+            limit,
+            total,
+            pages: Math.ceil(total / limit),
+          },
+        },
+      });
+    } catch (dbError) {
+      // Handle database-specific errors
+      console.error("Database error fetching notifications:", dbError);
+      return reply.code(500).send({
+        success: false,
+        error: "Database error while fetching notifications",
+      });
+    }
   } catch (error) {
-    console.error("Get notifications error:", error);
-    reply.code(500).send({
+    // Handle any other unexpected errors
+    console.error("Unexpected error in getNotifications:", error);
+    return reply.code(500).send({
       success: false,
       error: "Failed to get notifications",
     });
