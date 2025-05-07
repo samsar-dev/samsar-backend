@@ -1211,11 +1211,14 @@ export default async function (fastify: FastifyInstance) {
                       parsedDetails.realEstate.propertyType || "HOUSE",
                     size: parsedDetails.realEstate.size?.toString() || null,
                     yearBuilt:
-                      parsedDetails.realEstate.yearBuilt || null,
+                      parseInt(parsedDetails.realEstate.yearBuilt.toString()) ||
+                      null,
                     bedrooms:
-                      parsedDetails.realEstate.bedrooms || null,
+                      parseInt(parsedDetails.realEstate.bedrooms.toString()) ||
+                      null,
                     bathrooms:
-                      parsedDetails.realEstate.bathrooms || null,
+                      parseInt(parsedDetails.realEstate.bathrooms.toString()) ||
+                      null,
                     condition:
                       parsedDetails.realEstate.condition?.toString() || null,
                     constructionType: parsedDetails.realEstate.constructionType,
@@ -1248,14 +1251,17 @@ export default async function (fastify: FastifyInstance) {
                     exposureDirection:
                       parsedDetails.realEstate.exposureDirection || [],
                     storageType: parsedDetails.realEstate.storageType || [],
-                    halfBathrooms: parseInt(parsedDetails.realEstate.halfBathrooms) || null,
+                    halfBathrooms:
+                      parseInt(parsedDetails.realEstate.halfBathrooms) || null,
                     stories: parseInt(parsedDetails.realEstate.stories) || null,
                     basement: parsedDetails.realEstate.basement,
                     attic: parsedDetails.realEstate.attic,
                     flooringTypes: parsedDetails.realEstate.flooringTypes || [],
                     parcelNumber: parsedDetails.realEstate.parcelNumber,
                     topography: parsedDetails.realEstate.topography || [],
-                    elevation: parsedDetails.realEstate.elevation,
+                    elevation:
+                      parseInt(parsedDetails.realEstate.elevation.toString()) ||
+                      null,
                     waterFeatures: parsedDetails.realEstate.waterFeatures,
                     naturalFeatures: parsedDetails.realEstate.naturalFeatures,
                     buildable: parsedDetails.realEstate.buildable,
