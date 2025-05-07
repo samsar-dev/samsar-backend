@@ -819,9 +819,9 @@ export default async function (fastify: FastifyInstance) {
         }
 
         // Log request body and files for debugging
-        console.log("Request body:", request.body);
-        console.log("Processed images:", request.processedImages);
-        console.log("User:", user);
+        // console.log("Request body:", request.body);
+        // console.log("Processed images:", request.processedImages);
+        // console.log("User:", user);
 
         const body = request.body as any;
         if (!body) {
@@ -1211,11 +1211,11 @@ export default async function (fastify: FastifyInstance) {
                       parsedDetails.realEstate.propertyType || "HOUSE",
                     size: parsedDetails.realEstate.size?.toString() || null,
                     yearBuilt:
-                      parsedDetails.realEstate.yearBuilt?.toString() || null,
+                      parsedDetails.realEstate.yearBuilt || null,
                     bedrooms:
-                      parsedDetails.realEstate.bedrooms?.toString() || null,
+                      parsedDetails.realEstate.bedrooms || null,
                     bathrooms:
-                      parsedDetails.realEstate.bathrooms?.toString() || null,
+                      parsedDetails.realEstate.bathrooms || null,
                     condition:
                       parsedDetails.realEstate.condition?.toString() || null,
                     constructionType: parsedDetails.realEstate.constructionType,
@@ -1248,8 +1248,8 @@ export default async function (fastify: FastifyInstance) {
                     exposureDirection:
                       parsedDetails.realEstate.exposureDirection || [],
                     storageType: parsedDetails.realEstate.storageType || [],
-                    halfBathrooms: parsedDetails.realEstate.halfBathrooms,
-                    stories: parsedDetails.realEstate.stories,
+                    halfBathrooms: parseInt(parsedDetails.realEstate.halfBathrooms) || null,
+                    stories: parseInt(parsedDetails.realEstate.stories) || null,
                     basement: parsedDetails.realEstate.basement,
                     attic: parsedDetails.realEstate.attic,
                     flooringTypes: parsedDetails.realEstate.flooringTypes || [],
