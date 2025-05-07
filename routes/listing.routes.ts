@@ -1259,9 +1259,9 @@ export default async function (fastify: FastifyInstance) {
                     flooringTypes: parsedDetails.realEstate.flooringTypes || [],
                     parcelNumber: parsedDetails.realEstate.parcelNumber,
                     topography: parsedDetails.realEstate.topography || [],
-                    elevation:
-                      parseInt(parsedDetails.realEstate.elevation.toString()) ||
-                      null,
+                    elevation: parsedDetails?.realEstate?.elevation
+                      ? parseInt(parsedDetails.realEstate.elevation.toString())
+                      : null,
                     waterFeatures: parsedDetails.realEstate.waterFeatures,
                     naturalFeatures: parsedDetails.realEstate.naturalFeatures,
                     buildable: parsedDetails.realEstate.buildable,
