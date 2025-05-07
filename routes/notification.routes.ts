@@ -5,7 +5,8 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-  clearAllNotifications
+  clearAllNotifications,
+  sendSystemAnnouncement
 } from "../controllers/notification.controller.js";
 
 // Define Fastify handler types
@@ -62,4 +63,7 @@ export default async function (fastify: FastifyInstance) {
   
   // Clear all notifications
   fastify.delete("/", createFastifyHandler(clearAllNotifications));
+  
+  // Send system announcement (admin only)
+  fastify.post("/system-announcement", createFastifyHandler(sendSystemAnnouncement));
 }

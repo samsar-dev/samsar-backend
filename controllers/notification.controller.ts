@@ -1,6 +1,20 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { Prisma, NotificationType } from "@prisma/client";
+import { Prisma, NotificationType as PrismaNotificationType } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
+import { NotificationType } from "../types/enums.js";
+
+// Map our enum values to Prisma enum values
+const mapToPrismaNotificationType = (type: NotificationType): PrismaNotificationType => {
+  // Since both enums have the same string values, we can cast directly
+  // This works because both enums have the same underlying string values
+  return type as unknown as PrismaNotificationType;
+};
+
+// Map Prisma enum values to our enum values
+const mapFromPrismaNotificationType = (type: PrismaNotificationType): NotificationType => {
+  // Since both enums have the same string values, we can cast directly
+  return type as unknown as NotificationType;
+};
 import { Server } from "socket.io";
 import { UserPayload } from "../types/auth.js";
 
@@ -27,10 +41,13 @@ export const createNotification = async (
       throw new Error("Invalid notification type");
     }
 
+    // Convert our enum type to Prisma enum type for database operation
+    const prismaType = mapToPrismaNotificationType(type);
+
     const notification = await prisma.notification.create({
       data: {
         userId,
-        type,
+        type: prismaType,
         content,
         relatedId,
         read: false,
@@ -114,14 +131,42 @@ export const getNotifications = async (
           title = notification.relatedListing.title;
         } else if (notification.relatedUser?.username) {
           title = `Message from ${notification.relatedUser.username}`;
-        } else if (notification.type === "NEW_MESSAGE") {
-          title = "New Message";
-        } else if (notification.type === "PRICE_UPDATE") {
-          title = "Price Update";
-        } else if (notification.type === "LISTING_SOLD") {
-          title = "Listing Sold";
-        } else if (notification.type === "LISTING_INTEREST") {
-          title = "Listing Interest";
+        } else {
+          // Set title based on notification type
+          // Convert Prisma enum to our enum for the switch statement
+          const notificationType = mapFromPrismaNotificationType(notification.type);
+          
+          switch (notificationType) {
+            case NotificationType.NEW_MESSAGE:
+              title = "New Message";
+              break;
+            case NotificationType.PRICE_UPDATE:
+              title = "Price Update";
+              break;
+            case NotificationType.LISTING_SOLD:
+              title = "Listing Sold";
+              break;
+            case NotificationType.LISTING_INTEREST:
+              title = "Listing Interest";
+              break;
+            case NotificationType.LISTING_CREATED:
+              title = "New Listing Created";
+              break;
+            case NotificationType.NEW_LISTING_MATCH:
+              title = "New Listing Match";
+              break;
+            case NotificationType.ACCOUNT_WARNING:
+              title = "Account Warning";
+              break;
+            case NotificationType.SYSTEM_ANNOUNCEMENT:
+              title = "System Announcement";
+              break;
+            case NotificationType.SYSTEM_NOTICE:
+              title = "System Notice";
+              break;
+            default:
+              title = "Notification";
+          }
         }
 
         return {
@@ -300,6 +345,100 @@ export const clearAllNotifications = async (
     reply.code(500).send({
       success: false,
       error: "Failed to clear all notifications",
+    });
+  }
+};
+
+/**
+ * Send a system announcement to all users or specific users
+ * This endpoint is restricted to admin users only
+ */
+export const sendSystemAnnouncement = async (
+  req: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  try {
+    // Check if user is authenticated and is an admin
+    if (!req.user) {
+      return reply.code(401).send({ 
+        success: false,
+        error: "Unauthorized" 
+      });
+    }
+    
+    // Verify the user is an admin
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { role: true }
+    });
+    
+    if (!user || user.role !== 'ADMIN') {
+      return reply.code(403).send({
+        success: false,
+        error: "Only administrators can send system announcements"
+      });
+    }
+
+    // Get announcement data from request body
+    const { message, title, targetUserIds } = req.body as {
+      message: string;
+      title: string;
+      targetUserIds?: string[];
+    };
+
+    // Validate required fields
+    if (!message || !title) {
+      return reply.code(400).send({
+        success: false,
+        error: "Message and title are required"
+      });
+    }
+
+    // If no target users specified, get all users who haven't opted out
+    let users = targetUserIds;
+    if (!users || users.length === 0) {
+      const allUsers = await prisma.user.findMany({
+        where: { 
+          // Only include users who haven't opted out of system announcements
+          NOT: {
+            preferences: {
+              path: ['notifications', 'systemAnnouncements'],
+              equals: false
+            }
+          }
+        },
+        select: { id: true }
+      });
+      
+      users = allUsers.map(user => user.id);
+    }
+
+    // Create notifications for each user
+    const notificationPromises = users.map(userId => {
+      return prisma.notification.create({
+        data: {
+          type: mapToPrismaNotificationType(NotificationType.SYSTEM_ANNOUNCEMENT),
+          content: message,
+          userId,
+        },
+      });
+    });
+
+    const notifications = await Promise.all(notificationPromises);
+
+    // Return success response
+    reply.send({
+      success: true,
+      message: `System announcement sent to ${users.length} users`,
+      data: {
+        notificationCount: notifications.length,
+      },
+    });
+  } catch (error) {
+    console.error("Send system announcement error:", error);
+    reply.code(500).send({
+      success: false,
+      error: "Failed to send system announcement",
     });
   }
 };
