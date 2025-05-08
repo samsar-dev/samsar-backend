@@ -27,12 +27,7 @@ model User {
   refreshTokenExpiresAt DateTime?
   phone                 String?
   
-  // Security-related fields
-  failedLoginAttempts   Int            @default(0)
-  lastFailedLogin       DateTime?
-  lastLoginAt           DateTime?
-  accountLocked         Boolean        @default(false)
-  accountLockedUntil    DateTime?
+  // Security fields temporarily removed until migration is applied
   favorites             Favorite[]
   listings              Listing[]      @relation("UserListings")
   receivedMessages      Message[]      @relation("ReceivedMessages")

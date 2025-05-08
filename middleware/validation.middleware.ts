@@ -1,19 +1,50 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 
+// List of disposable email domains to block
+const DISPOSABLE_EMAIL_DOMAINS = [
+  'tempmail.com', 'throwawaymail.com', 'mailinator.com', 'guerrillamail.com',
+  'trashmail.com', 'yopmail.com', 'sharklasers.com', 'temp-mail.org',
+  'dispostable.com', 'maildrop.cc', '10minutemail.com', 'mailnesia.com'
+];
+
+// List of reserved usernames that shouldn't be used
+const RESERVED_USERNAMES = [
+  'admin', 'administrator', 'system', 'support', 'help', 'root', 'webmaster',
+  'info', 'contact', 'security', 'staff', 'official', 'moderator', 'mod'
+];
+
 // Define validation schemas compatible with Fastify
 export const RegisterSchema = {
   type: 'object',
   properties: {
-    name: { type: 'string', minLength: 2 },
-    email: { type: 'string', format: 'email' },
-    username: { type: 'string', minLength: 3 },
+    name: { 
+      type: 'string', 
+      minLength: 2,
+      maxLength: 50,
+      pattern: '^[\p{L}\s\'\-\.]+$' // Allow letters, spaces, apostrophes, hyphens, and periods
+    },
+    email: { 
+      type: 'string', 
+      format: 'email',
+      maxLength: 100
+    },
+    username: { 
+      type: 'string', 
+      minLength: 3,
+      maxLength: 30,
+      pattern: '^[a-zA-Z0-9_\-\.]+$' // Alphanumeric plus underscore, hyphen, period
+    },
     password: {
       type: 'string',
       minLength: 8,
-      pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{8,}$'
+      maxLength: 100,
+      pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
+    },
+    captchaToken: {
+      type: 'string'
     }
   },
-  required: ['name', 'email', 'username', 'password']
+  required: ['name', 'email', 'username', 'password', 'captchaToken']
 };
 
 export const LoginSchema = {
@@ -23,6 +54,37 @@ export const LoginSchema = {
     password: { type: 'string' }
   },
   required: ['email', 'password']
+};
+
+// Custom validator function for additional security checks
+export const validateRegistration = (data: any): { valid: boolean; error?: string } => {
+  // Check for disposable email domains
+  const emailDomain = data.email.split('@')[1].toLowerCase();
+  if (DISPOSABLE_EMAIL_DOMAINS.includes(emailDomain)) {
+    return {
+      valid: false,
+      error: 'Disposable email addresses are not allowed'
+    };
+  }
+  
+  // Check for reserved usernames
+  const lowercaseUsername = data.username.toLowerCase();
+  if (RESERVED_USERNAMES.includes(lowercaseUsername)) {
+    return {
+      valid: false,
+      error: 'This username is reserved and cannot be used'
+    };
+  }
+  
+  // Additional password strength check
+  if (data.password.includes(data.username) || data.password.includes(data.email.split('@')[0])) {
+    return {
+      valid: false,
+      error: 'Password cannot contain your username or email'
+    };
+  }
+  
+  return { valid: true };
 };
 
 export const ListingSchema = {
