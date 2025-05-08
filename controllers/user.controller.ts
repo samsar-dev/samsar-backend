@@ -22,7 +22,6 @@ interface UpdateData {
   dateOfBirth?: string;
   street?: string;
   city?: string;
-  phone?: string;
 }
 
 interface UploadResult {
