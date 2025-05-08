@@ -516,7 +516,6 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
       select: {
         id: true,
         email: true,
-        phone: true,
         username: true,
         role: true,
         name: true,
