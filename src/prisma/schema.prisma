@@ -22,7 +22,6 @@ model User {
   preferences           Json?
   city                  String?
   dateOfBirth           String?
-  postalCode            String?
   street                String?
   refreshToken          String?
   refreshTokenExpiresAt DateTime?
