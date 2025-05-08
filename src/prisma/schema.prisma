@@ -26,8 +26,6 @@ model User {
   refreshToken          String?
   refreshTokenExpiresAt DateTime?
   phone                 String?
-  
-  // Security fields temporarily removed until migration is applied
   favorites             Favorite[]
   listings              Listing[]      @relation("UserListings")
   receivedMessages      Message[]      @relation("ReceivedMessages")
@@ -421,84 +419,77 @@ model VehicleDetails {
 
 model RealEstateDetails {
   id                    String   @id @default(cuid())
-  listingId             String   @unique
-  listing               Listing  @relation(fields: [listingId], references: [id])
-
   propertyType          String
   size                  String?
   condition             String?
+  listingId             String   @unique
   constructionType      String?
-  totalArea             Float?
-  yearBuilt             Int?
-  bedrooms              Int?
-  bathrooms             Float?
-  floor                 Int?
-  totalFloors           Int?
-  elevator              Boolean?
-  balcony               Boolean?
-  storage               Boolean?
-  heating               String?
-  cooling               String?
-  energyRating          String?
-  furnished             String?
-  view                  String?
-  windowType            String?
-  parkingType           String?
+  features              String[] @default([])
   parking               String?
-  internetIncluded      Boolean?
-  flooringType          String?
-  flooringTypes         String[]
+  accessibilityFeatures String[] @default([])
+  balcony               Boolean?
+  buildingAmenities     String[] @default([])
+  cooling               String?
+  elevator              Boolean?
+  energyRating          String?
   exposureDirection     String[] @default([])
   fireSafety            String[] @default([])
+  floor                 Int?
+  flooringType          String?
+  furnished             String?
+  heating               String?
+  internetIncluded      Boolean?
+  parkingType           String?
+  petPolicy             String?
+  renovationHistory     String?
   securityFeatures      String[] @default([])
-  buildingAmenities     String[] @default([])
-  features              String[] @default([])
-  accessibilityFeatures String[] @default([])
+  storage               Boolean?
   storageType           String[] @default([])
+  totalFloors           Int?
   utilities             String[] @default([])
-
-  parkingSpaces         Int?
-  halfBathrooms         Int?
-  stories               Int?
-
+  view                  String?
+  windowType            String?
   attic                 String?
   basement              String?
-
-  // Missing fields added below
-  livingArea            Float?
-  renovationHistory     String?
-  energyFeatures        String?
-  basementFeatures      String?
-  windowFeatures        String?
-  kitchenFeatures       String?
-  bathroomFeatures      String?
-  roofAge               Int?
-  exteriorFeatures      String?
-  outdoorFeatures       String?
-  landscaping           String?
-  smartHomeFeatures     String?
-  communityFeatures     String?
-  hoaFeatures           String?
-  appliances            String?
-  petFeatures           String?
-  accessibility         String?
-  storageFeatures       String?
-
-  // Unused schema fields retained for flexibility
-  petPolicy             String?
   buildable             String?
   buildingRestrictions  String?
   elevation             Int?
   environmentalFeatures String?
+  flooringTypes         String[]
+  halfBathrooms         Int?
   naturalFeatures       String?
   parcelNumber          String?
   permitsInPlace        String?
   soilTypes             String[]
+  stories               Int?
   topography            String[]
   waterFeatures         String?
   floorLevel            Int?
   isBuildable           Boolean?
-  
+  totalArea             Float?
+  yearBuilt             Int?
+  bedrooms              Int?
+  bathrooms             Float?
+  accessibility         String?
+  appliances            String?
+  basementFeatures      String?
+  bathroomFeatures      String?
+  communityFeatures     String?
+  energyFeatures        String?
+  exteriorFeatures      String?
+  hoaFeatures           String?
+  kitchenFeatures       String?
+  landscaping           String?
+  livingArea            Float?
+  outdoorFeatures       String?
+  parkingSpaces         Int?
+  petFeatures           String?
+  roofAge               Int?
+  smartHomeFeatures     String?
+  storageFeatures       String?
+  windowFeatures        String?
+  listing               Listing  @relation(fields: [listingId], references: [id])
+
   @@index([listingId])
 }
 
