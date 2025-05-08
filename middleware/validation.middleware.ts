@@ -1,61 +1,53 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { body, validationResult, ValidationChain } from "express-validator";
+import { z } from "zod";
 
-export const validateRegistration: ValidationChain[] = [
-  body("email")
-    .isEmail()
-    .withMessage("Please enter a valid email address")
-    .normalizeEmail(),
-  body("password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long")
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/)
-    .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number",
-    ),
-  body("name")
-    .trim()
-    .isLength({ min: 2 })
-    .withMessage("Name must be at least 2 characters long"),
-];
+// Define validation schemas using Zod
+export const RegisterSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  username: z.string().min(3),
+  password: z.string().min(8).regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/,
+    "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+  )
+});
 
-export const validateListing: ValidationChain[] = [
-  body("title")
-    .trim()
-    .isLength({ min: 3 })
-    .withMessage("Title must be at least 3 characters long"),
-  body("description")
-    .trim()
-    .isLength({ min: 10 })
-    .withMessage("Description must be at least 10 characters long"),
-  body("price").isNumeric().withMessage("Price must be a number"),
-  body("category").trim().notEmpty().withMessage("Category is required"),
-];
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string()
+});
 
+export const ListingSchema = z.object({
+  title: z.string().min(3),
+  description: z.string().min(10),
+  price: z.number(),
+  category: z.string()
+});
+
+// Type exports for TypeScript
+export type RegisterBody = z.infer<typeof RegisterSchema>;
+export type LoginBody = z.infer<typeof LoginSchema>;
+export type ListingBody = z.infer<typeof ListingSchema>;
+
+// Validation middleware
 export const validate = async (
   request: FastifyRequest,
   reply: FastifyReply,
-  done: (error?: Error) => void,
+  schema: any
 ) => {
-  // Run validation chains
-  await Promise.all(
-    validateRegistration.map((validation) => validation.run(request as any)),
-  );
-
-  // Check for validation errors
-  const errors = validationResult(request as any);
-  if (!errors.isEmpty()) {
+  try {
+    // Validate request body against schema
+    await schema.parseAsync(request.body);
+    return true;
+  } catch (error: any) {
     reply.code(400).send({
       success: false,
       error: {
         code: "VALIDATION_ERROR",
         message: "Invalid input data",
-        errors: errors.array(),
-      },
+        errors: error.errors
+      }
     });
-    return;
+    return false;
   }
-
-  // Continue to next middleware/handler
-  done();
 };
