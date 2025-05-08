@@ -22,6 +22,7 @@ interface UpdateData {
   dateOfBirth?: string;
   street?: string;
   city?: string;
+  phone?: string;
 }
 
 interface UploadResult {
@@ -198,6 +199,7 @@ export const updateProfile = async (
     if (dateOfBirth) updates.dateOfBirth = dateOfBirth.trim();
     if (street) updates.street = street.trim();
     if (city) updates.city = city.trim();
+    if (phone) updates.phone = phone.trim();
 
     if (password) {
       // Verify current password first
