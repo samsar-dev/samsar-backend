@@ -946,7 +946,7 @@ export default async function (fastify: FastifyInstance) {
                       parsedDetails.vehicles.exteriorFeatures || [],
                     performanceFeatures:
                       parsedDetails.vehicles.performanceFeatures || [],
-                    modifications: parsedDetails.vehicles.modifications || [],
+                    modifications: parsedDetails.vehicles.modifications || null,
                     customFeatures: parsedDetails.vehicles.customFeatures || [],
                     emissionStandard: parsedDetails.vehicles.emissionStandard,
                     enginePower: parsedDetails.vehicles.enginePower,
@@ -1003,7 +1003,7 @@ export default async function (fastify: FastifyInstance) {
                     truckType: parsedDetails.vehicles.truckType,
                     cabType: parsedDetails.vehicles.cabType,
                     bedLength: parsedDetails.vehicles.bedLength,
-                    payload: parsedDetails.vehicles.payload,
+                    payload: parseInt(parsedDetails.vehicles.payload) || null,
                     equipmentType: parsedDetails.vehicles.equipmentType,
                     operatingWeight: parsedDetails.vehicles.operatingWeight,
                     maxLiftingCapacity:
@@ -1176,7 +1176,8 @@ export default async function (fastify: FastifyInstance) {
                     electronics: parsedDetails.vehicles.electronics || [],
                     seatType: parsedDetails.vehicles.seatType,
                     seatMaterial: parsedDetails.vehicles.seatMaterial,
-                    seatHeight: parsedDetails.vehicles.seatHeight,
+                    seatHeight:
+                      parseInt(parsedDetails.vehicles.seatHeight) || null,
                     handlebarType: parsedDetails.vehicles.handlebarType,
                     storageOptions: parsedDetails.vehicles.storageOptions || [],
                     seatBelts: parsedDetails.vehicles.seatBelts,

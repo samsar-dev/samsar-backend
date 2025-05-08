@@ -276,6 +276,7 @@ model VehicleDetails {
   fatigueWarningSystem             Boolean?
   fogLights                        Boolean?
   frameType                        String?
+  coolingSystem                        String?
   frontAirbags                     Boolean?
   frontAttachments                 String[]          @default([])
   frontSuspension                  String[]          @default([])
@@ -316,7 +317,7 @@ model VehicleDetails {
   luggageSpace                     Float?
   lumbarSupport                    Boolean?
   maintenanceHistory               String?
-  modifications                    String[]          @default([])
+  modifications                    String?
   monitor                          String[]          @default([])
   motorcycleType                   String?
   mountainDrivingAssistant         Boolean?
@@ -337,6 +338,7 @@ model VehicleDetails {
   precisionFarming                 String[]          @default([])
   premiumSound                     Boolean?
   protectiveEquipment              String[]          @default([])
+  customParts              String[]          @default([])
   ptoHorsepower                    Int?
   ptoSystem                        String[]          @default([])
   radio                            Boolean?
@@ -362,7 +364,7 @@ model VehicleDetails {
   soundSystem                      Boolean?
   spareKey                         Boolean?
   speedLimitingSystem              Boolean?
-  startType                        String?
+  startType                        String[]     @default([])
   startingSystem                   String?
   steeringSystem                   String[]          @default([])
   steeringType                     String?
@@ -388,12 +390,12 @@ model VehicleDetails {
   voiceControl                     Boolean?
   warrantyPeriod                   String?
   wheelSize                        String?
-  wheelType                        String?
+  wheelType                        String?       
   wheelchairAccessible             Boolean?
   wheelchairLift                   Boolean?
   wifiHotspot                      Boolean?
   wirelessCharging                 Boolean?
-  seatType                         String?
+  seatType                         String[]       @default([])
   seatMaterial                     String?
   emissionStandard                 String?
   enginePower                      String?
