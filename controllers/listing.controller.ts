@@ -416,10 +416,11 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
               } as Prisma.VehicleDetailsCreateWithoutListingInput,
             }
           : undefined,
-          realEstateDetails: parsedDetails?.realEstate
+        realEstateDetails: parsedDetails?.realEstate
           ? {
               create: {
-                propertyType: parsedDetails.realEstate.propertyType || undefined,
+                propertyType:
+                  parsedDetails.realEstate.propertyType || undefined,
                 totalArea: parsedDetails.realEstate.totalArea
                   ? parseFloat(parsedDetails.realEstate.totalArea)
                   : undefined,
@@ -444,7 +445,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
               } as Prisma.RealEstateDetailsCreateWithoutListingInput,
             }
           : undefined,
-        };
+      };
 
       // Create listing
       const listing = await tx.listing.create({

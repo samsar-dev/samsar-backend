@@ -5,11 +5,14 @@ import axios from "axios";
 export const verifyCaptcha = async (
   request: FastifyRequest,
   reply: FastifyReply,
-  done: () => void
+  done: () => void,
 ) => {
   try {
     // Skip CAPTCHA verification in development mode if configured
-    if (process.env.NODE_ENV === "development" && process.env.SKIP_CAPTCHA === "true") {
+    if (
+      process.env.NODE_ENV === "development" &&
+      process.env.SKIP_CAPTCHA === "true"
+    ) {
       return done();
     }
 
@@ -22,8 +25,8 @@ export const verifyCaptcha = async (
         success: false,
         error: {
           code: "CAPTCHA_REQUIRED",
-          message: "CAPTCHA verification is required"
-        }
+          message: "CAPTCHA verification is required",
+        },
       });
     }
 
@@ -35,8 +38,8 @@ export const verifyCaptcha = async (
         success: false,
         error: {
           code: "SERVER_ERROR",
-          message: "Server configuration error"
-        }
+          message: "Server configuration error",
+        },
       });
     }
 
@@ -50,8 +53,8 @@ export const verifyCaptcha = async (
         error: {
           code: "INVALID_CAPTCHA",
           message: "CAPTCHA verification failed",
-          details: data["error-codes"]
-        }
+          details: data["error-codes"],
+        },
       });
     }
 
@@ -63,8 +66,8 @@ export const verifyCaptcha = async (
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "An error occurred during CAPTCHA verification"
-      }
+        message: "An error occurred during CAPTCHA verification",
+      },
     });
   }
 };

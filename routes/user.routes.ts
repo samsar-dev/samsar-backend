@@ -41,47 +41,49 @@ export default async function (fastify: FastifyInstance) {
       if (!request.isMultipart()) {
         return;
       }
-      
+
       // Process the multipart form data
       const parts = await request.parts();
       let profilePictureFile: MultipartFile | null = null;
       const formData: Record<string, any> = {};
-      
+
       for await (const part of parts) {
-        if (part.type === 'file' && part.fieldname === 'profilePicture') {
+        if (part.type === "file" && part.fieldname === "profilePicture") {
           // Store the profile picture file
           profilePictureFile = part;
           const buffer = await part.toBuffer();
           const fileObj = {
             fieldname: part.fieldname,
-            originalname: part.filename || 'profile.jpg',
+            originalname: part.filename || "profile.jpg",
             encoding: part.encoding,
             mimetype: part.mimetype,
             buffer: buffer,
-            size: buffer.length
+            size: buffer.length,
           };
-          
+
           try {
             const result = await uploadToR2(fileObj as any, "profilePictures");
             formData.profilePicture = result.url;
           } catch (uploadError) {
-            console.error('Upload error:', uploadError);
-            throw new Error('Failed to upload profile picture');
+            console.error("Upload error:", uploadError);
+            throw new Error("Failed to upload profile picture");
           }
-        } else if (part.type === 'field') {
+        } else if (part.type === "field") {
           // Process form fields
           formData[part.fieldname] = await part.value;
         }
       }
-      
+
       // Attach the processed data to the request
       request.body = formData;
-      
     } catch (error) {
-      console.error('Profile picture processing error:', error);
+      console.error("Profile picture processing error:", error);
       reply.code(500).send({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to process profile picture",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process profile picture",
       });
     }
   };

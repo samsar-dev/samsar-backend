@@ -37,7 +37,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string
+  sortOrder?: string,
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -112,11 +112,11 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
 
 // Helper function to handle authenticated routes
 const handleAuthRoute = (
-  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>
+  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>,
 ) => {
   return async (
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> => {
     try {
       console.log("Fetching favorite listings...", request);
@@ -400,7 +400,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    }
+    },
   );
 
   fastify.get("/trending", async (_req, reply): Promise<void> => {
@@ -487,11 +487,11 @@ export default async function (fastify: FastifyInstance) {
         ) {
           console.log(
             "Formatted listing:",
-            JSON.stringify(formattedListing, null, 2)
+            JSON.stringify(formattedListing, null, 2),
           );
           console.log(
             "Formatted vehicle details:",
-            JSON.stringify(formattedListing.details.vehicles, null, 2)
+            JSON.stringify(formattedListing.details.vehicles, null, 2),
           );
         }
 
@@ -510,7 +510,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    }
+    },
   );
 
   // Get saved listings
@@ -542,7 +542,7 @@ export default async function (fastify: FastifyInstance) {
           });
 
           const formattedListings = savedListings.map((favorite) =>
-            formatListingResponse(favorite.listing)
+            formatListingResponse(favorite.listing),
           );
 
           return reply.send({
@@ -561,8 +561,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      }
-    )
+      },
+    ),
   );
 
   // Save a listing to favorites
@@ -648,8 +648,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      }
-    )
+      },
+    ),
   );
 
   // Delete a saved listing
@@ -707,8 +707,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      }
-    )
+      },
+    ),
   );
 
   // Add save listing
@@ -776,7 +776,7 @@ export default async function (fastify: FastifyInstance) {
                   "Details:",
                   typeof reqBody.details === "string"
                     ? JSON.parse(reqBody.details)
-                    : reqBody.details
+                    : reqBody.details,
                 );
               }
             } catch (detailsError) {
@@ -793,8 +793,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      }
-    )
+      },
+    ),
   );
 
   // Note: You'll need to adapt upload.array and processImagesMiddleware to work with Fastify
@@ -1207,25 +1207,25 @@ export default async function (fastify: FastifyInstance) {
                     size: parsedDetails.realEstate.size?.toString() || null,
                     yearBuilt:
                       parseInt(
-                        parsedDetails.realEstate.yearBuilt?.toString()
+                        parsedDetails.realEstate.yearBuilt?.toString(),
                       ) || null,
                     bedrooms:
                       parseInt(
-                        parsedDetails.realEstate.houseDetails?.bedrooms?.toString()
+                        parsedDetails.realEstate.houseDetails?.bedrooms?.toString(),
                       ) || null,
                     bathrooms:
                       parseInt(
-                        parsedDetails.realEstate.houseDetails?.bathrooms?.toString()
+                        parsedDetails.realEstate.houseDetails?.bathrooms?.toString(),
                       ) || null,
                     totalArea:
                       parseInt(
-                        parsedDetails.realEstate.houseDetails?.totalArea?.toString()
+                        parsedDetails.realEstate.houseDetails?.totalArea?.toString(),
                       ) || null,
                     condition:
                       parsedDetails.realEstate.condition?.toString() || null,
                     parkingSpaces:
                       parseInt(
-                        parsedDetails.realEstate.parkingSpaces?.toString()
+                        parsedDetails.realEstate.parkingSpaces?.toString(),
                       ) || null,
                     constructionType:
                       parsedDetails.realEstate.constructionType || null,
@@ -1286,7 +1286,7 @@ export default async function (fastify: FastifyInstance) {
                     // 🆕 Added fields based on updated schema:
                     livingArea: parsedDetails.realEstate.livingArea
                       ? parseFloat(
-                          parsedDetails.realEstate.livingArea.toString()
+                          parsedDetails.realEstate.livingArea.toString(),
                         )
                       : null,
                     energyFeatures:
@@ -1365,7 +1365,7 @@ export default async function (fastify: FastifyInstance) {
                 "Details:",
                 typeof reqBody.details === "string"
                   ? JSON.parse(reqBody.details)
-                  : reqBody.details
+                  : reqBody.details,
               );
             }
           } catch (detailsError) {
@@ -1380,7 +1380,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    }
+    },
   );
 
   fastify.get<{ Querystring: { page?: string; limit?: string } }>(
@@ -1422,7 +1422,7 @@ export default async function (fastify: FastifyInstance) {
             success: true,
             data: {
               listings: listings.map((listing) =>
-                formatListingResponse(listing)
+                formatListingResponse(listing),
               ),
               total,
               page: Number(page),
@@ -1441,8 +1441,8 @@ export default async function (fastify: FastifyInstance) {
             },
           });
         }
-      }
-    )
+      },
+    ),
   );
 
   fastify.get(
@@ -1488,8 +1488,8 @@ export default async function (fastify: FastifyInstance) {
             },
           });
         }
-      }
-    )
+      },
+    ),
   );
 
   // This route has been moved above the authentication middleware to make it public
@@ -1609,7 +1609,7 @@ export default async function (fastify: FastifyInstance) {
           return reply.send({
             success: true,
             data: formatListingResponse(
-              listing as unknown as ListingWithRelations
+              listing as unknown as ListingWithRelations,
             ),
             status: 200,
           });
@@ -1625,8 +1625,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      }
-    )
+      },
+    ),
   );
 
   fastify.delete<{ Params: { id: string } }>(
@@ -1717,7 +1717,7 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      }
-    )
+      },
+    ),
   );
 }
