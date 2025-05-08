@@ -819,9 +819,9 @@ export default async function (fastify: FastifyInstance) {
         }
 
         // Log request body and files for debugging
-        console.log("Request body:", request.body);
-        console.log("Processed images:", request.processedImages);
-        console.log("User:", user);
+        // console.log("Request body:", request.body);
+        // console.log("Processed images:", request.processedImages);
+        // console.log("User:", user);
 
         const body = request.body as any;
         if (!body) {
@@ -869,7 +869,7 @@ export default async function (fastify: FastifyInstance) {
         try {
           parsedDetails =
             typeof details === "string" ? JSON.parse(details) : details;
-          console.log("Details sent to DB:", JSON.stringify(parsedDetails));
+          console.log("Details sent to DB:", parsedDetails);
         } catch (error) {
           console.error("Error parsing/validating details:", error);
           return reply.code(400).send({
@@ -884,12 +884,6 @@ export default async function (fastify: FastifyInstance) {
         // Get processed image URLs
         const imageUrls = request.processedImages?.map((img) => img.url) || [];
         console.log("Processed image URLs:", imageUrls);
-
-        // Create listing with images
-        console.log(
-          "Details sent to DB:",
-          JSON.stringify(parsedDetails, null, 2)
-        );
 
         const listing = await prisma.listing.create({
           data: {
@@ -1211,61 +1205,120 @@ export default async function (fastify: FastifyInstance) {
                       parsedDetails.realEstate.propertyType || "HOUSE",
                     size: parsedDetails.realEstate.size?.toString() || null,
                     yearBuilt:
-                      parsedDetails.realEstate.yearBuilt?.toString() || null,
+                      parseInt(
+                        parsedDetails.realEstate.yearBuilt?.toString()
+                      ) || null,
                     bedrooms:
-                      parsedDetails.realEstate.bedrooms?.toString() || null,
+                      parseInt(
+                        parsedDetails.realEstate.houseDetails?.bedrooms?.toString()
+                      ) || null,
                     bathrooms:
-                      parsedDetails.realEstate.bathrooms?.toString() || null,
+                      parseInt(
+                        parsedDetails.realEstate.houseDetails?.bathrooms?.toString()
+                      ) || null,
+                    totalArea:
+                      parseInt(
+                        parsedDetails.realEstate.houseDetails?.totalArea?.toString()
+                      ) || null,
                     condition:
                       parsedDetails.realEstate.condition?.toString() || null,
-                    constructionType: parsedDetails.realEstate.constructionType,
+                    parkingSpaces:
+                      parseInt(
+                        parsedDetails.realEstate.parkingSpaces?.toString()
+                      ) || null,
+                    constructionType:
+                      parsedDetails.realEstate.constructionType || null,
                     features: parsedDetails.realEstate.features || [],
-                    parking: parsedDetails.realEstate.parking,
-                    floor: parsedDetails.realEstate.floor,
-                    totalFloors: parsedDetails.realEstate.totalFloors,
+                    parking: parsedDetails.realEstate.parking || null,
+                    floor: parsedDetails.realEstate.floor || null,
+                    totalFloors: parsedDetails.realEstate.totalFloors || null,
                     elevator: parsedDetails.realEstate.elevator,
                     balcony: parsedDetails.realEstate.balcony,
                     storage: parsedDetails.realEstate.storage,
-                    heating: parsedDetails.realEstate.heating,
-                    cooling: parsedDetails.realEstate.cooling,
+                    heating: parsedDetails.realEstate.heating || null,
+                    cooling: parsedDetails.realEstate.cooling || null,
                     buildingAmenities:
                       parsedDetails.realEstate.buildingAmenities || [],
-                    energyRating: parsedDetails.realEstate.energyRating,
-                    furnished: parsedDetails.realEstate.furnished,
-                    view: parsedDetails.realEstate.view,
+                    energyRating: parsedDetails.realEstate.energyRating || null,
+                    furnished: parsedDetails.realEstate.furnished || null,
+                    view: parsedDetails.realEstate.view || null,
                     securityFeatures:
                       parsedDetails.realEstate.securityFeatures || [],
                     fireSafety: parsedDetails.realEstate.fireSafety || [],
-                    flooringType: parsedDetails.realEstate.flooringType,
+                    flooringType: parsedDetails.realEstate.flooringType || null,
                     internetIncluded: parsedDetails.realEstate.internetIncluded,
-                    windowType: parsedDetails.realEstate.windowType,
+                    windowType: parsedDetails.realEstate.windowType || null,
                     accessibilityFeatures:
                       parsedDetails.realEstate.accessibilityFeatures || [],
                     renovationHistory:
-                      parsedDetails.realEstate.renovationHistory,
-                    parkingType: parsedDetails.realEstate.parkingType,
+                      parsedDetails.realEstate.renovationHistory || null,
+                    parkingType: parsedDetails.realEstate.parkingType || null,
                     utilities: parsedDetails.realEstate.utilities || [],
                     exposureDirection:
                       parsedDetails.realEstate.exposureDirection || [],
                     storageType: parsedDetails.realEstate.storageType || [],
-                    halfBathrooms: parsedDetails.realEstate.halfBathrooms,
-                    stories: parsedDetails.realEstate.stories,
-                    basement: parsedDetails.realEstate.basement,
-                    attic: parsedDetails.realEstate.attic,
+                    halfBathrooms:
+                      parseInt(parsedDetails.realEstate.halfBathrooms) || null,
+                    stories: parseInt(parsedDetails.realEstate.stories) || null,
+                    basement: parsedDetails.realEstate.basement || null,
+                    attic: parsedDetails.realEstate.attic || null,
                     flooringTypes: parsedDetails.realEstate.flooringTypes || [],
-                    parcelNumber: parsedDetails.realEstate.parcelNumber,
+                    parcelNumber: parsedDetails.realEstate.parcelNumber || null,
                     topography: parsedDetails.realEstate.topography || [],
-                    elevation: parsedDetails.realEstate.elevation,
-                    waterFeatures: parsedDetails.realEstate.waterFeatures,
-                    naturalFeatures: parsedDetails.realEstate.naturalFeatures,
-                    buildable: parsedDetails.realEstate.buildable,
+                    elevation: parsedDetails.realEstate.elevation
+                      ? parseInt(parsedDetails.realEstate.elevation.toString())
+                      : null,
+                    waterFeatures:
+                      parsedDetails.realEstate.waterFeatures || null,
+                    naturalFeatures:
+                      parsedDetails.realEstate.naturalFeatures || null,
+                    buildable: parsedDetails.realEstate.buildable || null,
                     buildingRestrictions:
-                      parsedDetails.realEstate.buildingRestrictions,
-                    permitsInPlace: parsedDetails.realEstate.permitsInPlace,
+                      parsedDetails.realEstate.buildingRestrictions || null,
+                    permitsInPlace:
+                      parsedDetails.realEstate.permitsInPlace || null,
                     environmentalFeatures:
-                      parsedDetails.realEstate.environmentalFeatures,
+                      parsedDetails.realEstate.environmentalFeatures || null,
                     soilTypes: parsedDetails.realEstate.soilTypes || [],
-                    petPolicy: parsedDetails.realEstate.petPolicy,
+                    petPolicy: parsedDetails.realEstate.petPolicy || null,
+
+                    // 🆕 Added fields based on updated schema:
+                    livingArea: parsedDetails.realEstate.livingArea
+                      ? parseFloat(
+                          parsedDetails.realEstate.livingArea.toString()
+                        )
+                      : null,
+                    energyFeatures:
+                      parsedDetails.realEstate.energyFeatures || null,
+                    basementFeatures:
+                      parsedDetails.realEstate.basementFeatures || null,
+                    windowFeatures:
+                      parsedDetails.realEstate.windowFeatures || null,
+                    kitchenFeatures:
+                      parsedDetails.realEstate.kitchenFeatures || null,
+                    bathroomFeatures:
+                      parsedDetails.realEstate.bathroomFeatures || null,
+                    roofAge: parsedDetails.realEstate.roofAge
+                      ? parseInt(parsedDetails.realEstate.roofAge.toString())
+                      : null,
+                    exteriorFeatures:
+                      parsedDetails.realEstate.exteriorFeatures || null,
+                    outdoorFeatures:
+                      parsedDetails.realEstate.outdoorFeatures || null,
+                    landscaping: parsedDetails.realEstate.landscaping || null,
+                    smartHomeFeatures:
+                      parsedDetails.realEstate.smartHomeFeatures || null,
+                    communityFeatures:
+                      parsedDetails.realEstate.communityFeatures || null,
+                    hoaFeatures: parsedDetails.realEstate.hoaFeatures || null,
+                    appliances: parsedDetails.realEstate.appliances || null,
+                    petFeatures: parsedDetails.realEstate.petFeatures || null,
+                    accessibility:
+                      parsedDetails.realEstate.accessibility || null,
+                    storageFeatures:
+                      parsedDetails.realEstate.storageFeatures || null,
+                    floorLevel: parsedDetails.realEstate.floorLevel || null,
+                    isBuildable: parsedDetails.realEstate.isBuildable || null,
                   },
                 }
               : undefined,
@@ -1284,6 +1337,8 @@ export default async function (fastify: FastifyInstance) {
             realEstateDetails: true,
           },
         });
+
+        console.log("✅ Created listing:", listing);
 
         return reply.code(201).send({
           success: true,

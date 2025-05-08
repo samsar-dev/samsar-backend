@@ -49,7 +49,7 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 15, // 15 minutes in seconds
     },
-    jwtSecret,
+    jwtSecret
   );
 
   const refreshToken = jwt.sign(
@@ -59,7 +59,7 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 60 * 24 * 7, // 7 days in seconds
     },
-    jwtSecret,
+    jwtSecret
   );
 
   return { accessToken, refreshToken };
@@ -68,7 +68,7 @@ const generateTokens = (user: {
 // Register a New User
 export const register = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     // Get client IP for rate limiting
@@ -139,7 +139,11 @@ export const register = async (
       const formData: Record<string, string> = {};
       for (const [key, field] of Object.entries(data.fields)) {
         const fieldValue = Array.isArray(field) ? field[0] : field;
-        if (fieldValue && typeof fieldValue === 'object' && 'value' in fieldValue) {
+        if (
+          fieldValue &&
+          typeof fieldValue === "object" &&
+          "value" in fieldValue
+        ) {
           formData[key] = String(fieldValue.value);
         }
       }
@@ -193,6 +197,10 @@ export const register = async (
       select: {
         id: true,
         email: true,
+        phone: true,
+        profilePicture: true,
+        bio: true,
+        dateOfBirth: true,
         username: true,
         name: true,
         role: true,
@@ -334,6 +342,11 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       select: {
         id: true,
         email: true,
+        name: true,
+        phone: true,
+        profilePicture: true,
+        bio: true,
+        dateOfBirth: true,
         password: true,
         username: true,
         role: true,
@@ -503,6 +516,7 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
       select: {
         id: true,
         email: true,
+        phone: true,
         username: true,
         role: true,
         name: true,
@@ -548,7 +562,7 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
 // Refresh Token
 export const verifyToken = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const token = request.headers.authorization?.split(" ")[1];
@@ -565,7 +579,7 @@ export const verifyToken = async (
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET as string,
+        process.env.JWT_SECRET as string
       ) as JWTUser;
       const user = await prisma.user.findUnique({
         where: { id: decoded.sub },
@@ -614,7 +628,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
     // Verify the refresh token
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_SECRET as string,
+      process.env.JWT_SECRET as string
     ) as JWTUser;
 
     // Find the user with matching refresh token
@@ -623,6 +637,11 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       select: {
         id: true,
         email: true,
+        phone: true,
+        name: true,
+        profilePicture: true,
+        bio: true,
+        dateOfBirth: true,
         username: true,
         role: true,
         refreshToken: true,

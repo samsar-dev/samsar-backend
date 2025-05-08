@@ -122,20 +122,20 @@ model Conversation {
 }
 
 model Message {
-  id             String       @id @default(cuid())
-  content        String
-  senderId       String
-  recipientId    String
-  conversationId String
-  createdAt      DateTime     @default(now())
-  read           Boolean      @default(false)
-  listingId      String?
-  relatedNotificationId   String?   @unique
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  listing        Listing?     @relation(fields: [listingId], references: [id])
-  recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
-  notification   Notification? @relation("MessageNotification",fields: [relatedNotificationId], references: [id])
+  id                    String        @id @default(cuid())
+  content               String
+  senderId              String
+  recipientId           String
+  conversationId        String
+  createdAt             DateTime      @default(now())
+  read                  Boolean       @default(false)
+  listingId             String?
+  relatedNotificationId String?       @unique
+  conversation          Conversation  @relation(fields: [conversationId], references: [id])
+  listing               Listing?      @relation(fields: [listingId], references: [id])
+  recipient             User          @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  notification          Notification? @relation("MessageNotification", fields: [relatedNotificationId], references: [id])
+  sender                User          @relation("SentMessages", fields: [senderId], references: [id])
 
   @@index([senderId])
   @@index([recipientId])
@@ -144,22 +144,21 @@ model Message {
 }
 
 model Notification {
-  id                 String       @id @default(cuid())
-  type               NotificationType
-  content            String
-  read               Boolean      @default(false)
-  createdAt          DateTime     @default(now())
-  userId             String
-  relatedId          String?
-  relatedMessageId   String?
-  relatedListingId   String?
-  relatedUserId      String?
-  relatedListing     Listing?     @relation("ListingNotifications", fields: [relatedListingId], references: [id])
-  relatedUser        User?        @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
-  user               User         @relation(fields: [userId], references: [id])
-  message            Message?     @relation("MessageNotification")
+  id               String           @id @default(cuid())
+  type             NotificationType
+  content          String
+  read             Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  userId           String
+  relatedId        String?
+  relatedListingId String?
+  relatedUserId    String?
+  relatedMessageId String?
+  message          Message?         @relation("MessageNotification")
+  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id])
+  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
 
-  // relatedMessageId   String?
   @@index([userId])
   @@index([relatedListingId])
   @@index([relatedUserId])
@@ -422,60 +421,84 @@ model VehicleDetails {
 
 model RealEstateDetails {
   id                    String   @id @default(cuid())
+  listingId             String   @unique
+  listing               Listing  @relation(fields: [listingId], references: [id])
+
   propertyType          String
   size                  String?
   condition             String?
-  listingId             String   @unique
   constructionType      String?
-  features              String[] @default([])
-  parking               String?
-  accessibilityFeatures String[] @default([])
-  balcony               Boolean?
-  buildingAmenities     String[] @default([])
-  cooling               String?
-  elevator              Boolean?
-  energyRating          String?
-  exposureDirection     String[] @default([])
-  fireSafety            String[] @default([])
+  totalArea             Float?
+  yearBuilt             Int?
+  bedrooms              Int?
+  bathrooms             Float?
   floor                 Int?
-  flooringType          String?
-  furnished             String?
-  heating               String?
-  internetIncluded      Boolean?
-  parkingType           String?
-  petPolicy             String?
-  renovationHistory     String?
-  securityFeatures      String[] @default([])
-  storage               Boolean?
-  storageType           String[] @default([])
   totalFloors           Int?
-  utilities             String[] @default([])
+  elevator              Boolean?
+  balcony               Boolean?
+  storage               Boolean?
+  heating               String?
+  cooling               String?
+  energyRating          String?
+  furnished             String?
   view                  String?
   windowType            String?
+  parkingType           String?
+  parking               String?
+  internetIncluded      Boolean?
+  flooringType          String?
+  flooringTypes         String[]
+  exposureDirection     String[] @default([])
+  fireSafety            String[] @default([])
+  securityFeatures      String[] @default([])
+  buildingAmenities     String[] @default([])
+  features              String[] @default([])
+  accessibilityFeatures String[] @default([])
+  storageType           String[] @default([])
+  utilities             String[] @default([])
+
+  parkingSpaces         Int?
+  halfBathrooms         Int?
+  stories               Int?
+
   attic                 String?
   basement              String?
+
+  // Missing fields added below
+  livingArea            Float?
+  renovationHistory     String?
+  energyFeatures        String?
+  basementFeatures      String?
+  windowFeatures        String?
+  kitchenFeatures       String?
+  bathroomFeatures      String?
+  roofAge               Int?
+  exteriorFeatures      String?
+  outdoorFeatures       String?
+  landscaping           String?
+  smartHomeFeatures     String?
+  communityFeatures     String?
+  hoaFeatures           String?
+  appliances            String?
+  petFeatures           String?
+  accessibility         String?
+  storageFeatures       String?
+
+  // Unused schema fields retained for flexibility
+  petPolicy             String?
   buildable             String?
   buildingRestrictions  String?
   elevation             Int?
   environmentalFeatures String?
-  flooringTypes         String[]
-  halfBathrooms         Int?
   naturalFeatures       String?
   parcelNumber          String?
   permitsInPlace        String?
   soilTypes             String[]
-  stories               Int?
   topography            String[]
   waterFeatures         String?
   floorLevel            Int?
   isBuildable           Boolean?
-  totalArea             Float?
-  usageType             String?
-  yearBuilt             Int?
-  bedrooms              Int?
-  bathrooms             Float?
-  listing               Listing  @relation(fields: [listingId], references: [id])
-
+  
   @@index([listingId])
 }
 

@@ -15,6 +15,7 @@ import { config } from "./config/config.js";
 import prisma from "./src/lib/prismaClient.js";
 import { getDirname } from "./utils/path.utils.js";
 import { NEW_MESSAGE, NEW_MESSAGE_ALERT } from "./constants/socketEvent.js";
+import { newMessages } from "./controllers_sockets/newMessages.js";
 
 // Store connected users
 
@@ -47,7 +48,7 @@ const fastify = Fastify({
 });
 
 // Attach Socket.IO to httpServer
-const io = new SocketIOServer(httpServer, {
+export const io = new SocketIOServer(httpServer, {
   serveClient: false,
   pingTimeout: 30000,
   pingInterval: 25000,
@@ -58,10 +59,16 @@ const io = new SocketIOServer(httpServer, {
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
   },
-  transports: ['websocket', 'polling'],
-  allowEIO3: true
+  transports: ["websocket", "polling"],
+  allowEIO3: true,
 });
 
 // BEFORE listen, decorate Fastify
@@ -171,27 +178,27 @@ await fastify.register(cors, {
 // });
 
 // Logging (only development)
-// if (process.env.NODE_ENV === "development") {
-//   fastify.addHook("onRequest", async (request) => {
-//     console.log(`📥 ${request.method} ${request.url}`);
-//   });
+if (process.env.NODE_ENV === "development") {
+  fastify.addHook("onRequest", async (request) => {
+    console.log(`📥 ${request.method} ${request.url}`);
+  });
 
-//   // Comment out the onSend hook for logging to prevent conflicts
-//   // fastify.addHook("onSend", async (request, reply, payload) => {
-//   //   console.log(`📤 Response ${reply.statusCode}`);
-//   //   return payload; // Return payload unchanged
-//   // });
-// }
+  // Comment out the onSend hook for logging to prevent conflicts
+  fastify.addHook("onSend", async (request, reply, payload) => {
+    console.log(`📤 Response ${reply.statusCode}`);
+    return payload; // Return payload unchanged
+  });
+}
 
 // Health route
-// fastify.get("/api/health", async (_, reply) => {
-//   reply.status(200).send({
-//     status: "healthy",
-//     timestamp: new Date().toISOString(),
-//     uptime: process.uptime(),
-//     environment: process.env.NODE_ENV,
-//   });
-// });
+fastify.get("/api/health", async (_, reply) => {
+  reply.status(200).send({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+  });
+});
 
 // -----------------
 // Import routes
@@ -204,6 +211,7 @@ import messageRoutes from "./routes/message.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import uploadRoutes from "./routes/uploads.js";
 import userRoutes from "./routes/user.routes.js";
+import { NewMessageData } from "types/socket.js";
 
 // Add cache middleware
 await fastify.register(cacheControl);
@@ -242,7 +250,7 @@ fastify.setNotFoundHandler((_, reply) => {
 // Start server
 // -----------------
 
-const usersSocketId = new Map<string, string>();
+export const usersSocketId = new Map<string, string>();
 
 async function startServer() {
   try {
@@ -262,61 +270,9 @@ async function startServer() {
       console.log("User payload:", socket.user);
       console.log("all user sockets:", usersSocketId);
 
-      socket.on(
-        NEW_MESSAGE,
-        async ({
-          content,
-          senderId,
-          recipientId,
-          conversationId,
-          createdAt,
-        }: {
-          content: string;
-          senderId: string;
-          recipientId: string;
-          conversationId: string;
-          createdAt: Date;
-        }) => {
-          console.log("New message data:>>>>>>>>>>>>>>>>", {
-            content,
-            senderId,
-            recipientId,
-            conversationId,
-            createdAt,
-          });
-          let result;
-          try {
-            result = await prisma.message.create({
-              data: {
-                content: content,
-                senderId: senderId,
-                recipientId: recipientId,
-                conversationId: conversationId,
-                createdAt: createdAt,
-              },
-            });
-            console.log("Message created:", result);
-          } catch (error) {
-            console.log("Error creating message:", error);
-          }
-          const recipientSocketId = usersSocketId.get(recipientId);
-          if (recipientSocketId) {
-            io.to(recipientSocketId).emit(NEW_MESSAGE, {
-              id: result.id,
-              senderId: result.senderId,
-              recipientId: recipientId,
-              content: result.content,
-              createdAt: result.createdAt,
-              read: result.read,
-              conversationId: result.conversationId,
-            });
-            io.to(recipientSocketId).emit(NEW_MESSAGE_ALERT, {
-              messageData: result,
-              recipientId,
-            });
-          }
-        }
-      );
+      socket.on(NEW_MESSAGE, (data: NewMessageData) => {
+        newMessages(data);
+      });
 
       socket.on("join", (data) => {
         console.log("User joined:", data);
@@ -334,30 +290,3 @@ async function startServer() {
 }
 
 startServer();
-
-// io.on("connection", (socket) => {
-//   console.log("🔌 Socket connected:", socket.id);
-
-//   // --- TEST 1: Simple echo event ---
-//   socket.on("echo", (data) => {
-//     console.log('📨 Received "echo":', data);
-//     socket.emit("echo_reply", {
-//       status: "OK",
-//       yourData: data,
-//     });
-//   });
-
-//   // --- TEST 2: Broadcast event ---
-//   socket.on("broadcast_me", () => {
-//     io.emit("broadcast", {
-//       from: socket.id,
-//       message: "Hello everyone!",
-//     });
-//   });
-// });
-
-// // Start server
-// fastify.listen({ port: 5000 }, (err) => {
-//   if (err) throw err;
-//   console.log("🚀 Server + Socket.IO running on http://localhost:5000");
-// });

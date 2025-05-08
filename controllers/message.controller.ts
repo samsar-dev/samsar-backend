@@ -132,6 +132,8 @@ export const getConversations = async (
             profilePicture: true,
             name: true,
             email: true,
+            phone: true,
+            bio: true,
           },
         },
         messages: {
