@@ -72,36 +72,44 @@ export const register = async (
 ) => {
   try {
     // Get client IP for rate limiting
-    const clientIp = request.ip || 'unknown';
-    
+    const clientIp = request.ip || "unknown";
+
     // Initialize auth attempts for this IP if not exists
     if (!authAttempts.has(clientIp)) {
       authAttempts.set(clientIp, {
         loginCount: 0,
         registrationCount: 0,
         lastLoginAttempt: new Date(0),
-        lastRegistrationAttempt: new Date(0)
+        lastRegistrationAttempt: new Date(0),
       });
     }
-    
+
     // Get current attempts
     const attempts = authAttempts.get(clientIp)!;
-    
+
     // Check for registration rate limiting
-    const timeSinceLastRegistration = Date.now() - attempts.lastRegistrationAttempt.getTime();
-    
+    const timeSinceLastRegistration =
+      Date.now() - attempts.lastRegistrationAttempt.getTime();
+
     // Check if too many registrations in a short period
-    if (attempts.registrationCount >= AUTH_RATE_LIMITS.REGISTRATION_MAX_ATTEMPTS) {
-      const timeElapsed = Date.now() - attempts.lastRegistrationAttempt.getTime();
-      
+    if (
+      attempts.registrationCount >= AUTH_RATE_LIMITS.REGISTRATION_MAX_ATTEMPTS
+    ) {
+      const timeElapsed =
+        Date.now() - attempts.lastRegistrationAttempt.getTime();
+
       if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
-        const remainingTime = Math.ceil((AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000); // minutes
+        const remainingTime = Math.ceil(
+          (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
+        ); // minutes
         return reply.code(429).send({
           success: false,
           error: {
             code: "RATE_LIMIT_EXCEEDED",
             message: `Too many registration attempts. Please try again in ${remainingTime} minutes.`,
-            retryAfter: new Date(Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed))
+            retryAfter: new Date(
+              Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
+            ),
           },
         });
       } else {
@@ -109,20 +117,28 @@ export const register = async (
         attempts.registrationCount = 0;
       }
     }
-    
+
     // Check for throttling (minimum time between registrations)
     if (timeSinceLastRegistration < AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS) {
-      const waitTime = Math.ceil((AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS - timeSinceLastRegistration) / 1000);
+      const waitTime = Math.ceil(
+        (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
+          timeSinceLastRegistration) /
+          1000
+      );
       return reply.code(429).send({
         success: false,
         error: {
           code: "THROTTLED",
           message: `Please wait ${waitTime} seconds before trying to register again.`,
-          retryAfter: new Date(Date.now() + (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS - timeSinceLastRegistration))
+          retryAfter: new Date(
+            Date.now() +
+              (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
+                timeSinceLastRegistration)
+          ),
         },
       });
     }
-    
+
     // Update registration attempt timestamp
     attempts.lastRegistrationAttempt = new Date();
     attempts.registrationCount += 1;
@@ -270,52 +286,59 @@ interface UserWithSecurity {
 }
 
 // Track authentication attempts (both login and registration)
-const authAttempts = new Map<string, { 
-  loginCount: number; 
-  registrationCount: number;
-  lastLoginAttempt: Date;
-  lastRegistrationAttempt: Date;
-}>();
+const authAttempts = new Map<
+  string,
+  {
+    loginCount: number;
+    registrationCount: number;
+    lastLoginAttempt: Date;
+    lastRegistrationAttempt: Date;
+  }
+>();
 
 // Rate limiting configuration
 const AUTH_RATE_LIMITS = {
   LOGIN_MAX_ATTEMPTS: 5,
   REGISTRATION_MAX_ATTEMPTS: 3,
   COOLDOWN_PERIOD_MS: 15 * 60 * 1000, // 15 minutes
-  REGISTRATION_THROTTLE_MS: 30 * 1000  // 30 seconds between registrations
+  REGISTRATION_THROTTLE_MS: 30 * 1000, // 30 seconds between registrations
 };
 
 // Login User with enhanced security
 export const login = async (request: FastifyRequest, reply: FastifyReply) => {
   // Get client IP for rate limiting
-  const clientIp = request.ip || 'unknown';
-  
+  const clientIp = request.ip || "unknown";
+
   // Initialize auth attempts for this IP if not exists
   if (!authAttempts.has(clientIp)) {
     authAttempts.set(clientIp, {
       loginCount: 0,
       registrationCount: 0,
       lastLoginAttempt: new Date(0),
-      lastRegistrationAttempt: new Date(0)
+      lastRegistrationAttempt: new Date(0),
     });
   }
-  
+
   // Get current attempts
   const attempts = authAttempts.get(clientIp)!;
-  
+
   // Check for too many failed login attempts from this IP
   if (attempts.loginCount >= AUTH_RATE_LIMITS.LOGIN_MAX_ATTEMPTS) {
     // Check if we're still in cooldown period
     const timeElapsed = Date.now() - attempts.lastLoginAttempt.getTime();
-    
+
     if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
-      const remainingTime = Math.ceil((AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000); // minutes
+      const remainingTime = Math.ceil(
+        (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
+      ); // minutes
       return reply.code(429).send({
         success: false,
         error: {
           code: "RATE_LIMIT_EXCEEDED",
           message: `Too many failed login attempts. Please try again in ${remainingTime} minutes.`,
-          retryAfter: new Date(Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed))
+          retryAfter: new Date(
+            Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
+          ),
         },
       });
     } else {
@@ -323,7 +346,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       attempts.loginCount = 0;
     }
   }
-  
+
   const { email, password } = request.body as {
     email: string;
     password: string;
@@ -332,10 +355,12 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     // Normalize email to lowercase
     const normalizedEmail = email.toLowerCase().trim();
-    
+
     // Add a small delay to prevent timing attacks (helps hide if an email exists or not)
-    await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
-    
+    await new Promise((resolve) =>
+      setTimeout(resolve, 100 + Math.random() * 200)
+    );
+
     // Find the user by email - only select fields that definitely exist in the database
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -352,32 +377,38 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         role: true,
         createdAt: true,
         updatedAt: true,
-      }
+      },
     });
-    
+
     // Create a security interface with default values since the fields don't exist in DB yet
-    const userWithSecurity: UserWithSecurity | null = user ? {
-      ...user,
-      failedLoginAttempts: 0, // Default values since fields don't exist yet
-      lastFailedLogin: null,
-      lastLoginAt: null,
-      accountLocked: false,
-      accountLockedUntil: null
-    } : null;
+    const userWithSecurity: UserWithSecurity | null = user
+      ? {
+          ...user,
+          failedLoginAttempts: 0, // Default values since fields don't exist yet
+          lastFailedLogin: null,
+          lastLoginAt: null,
+          accountLocked: false,
+          accountLockedUntil: null,
+        }
+      : null;
 
     // Check if account is locked
     if (userWithSecurity?.accountLocked) {
       const now = new Date();
-      if (userWithSecurity.accountLockedUntil && userWithSecurity.accountLockedUntil > now) {
+      if (
+        userWithSecurity.accountLockedUntil &&
+        userWithSecurity.accountLockedUntil > now
+      ) {
         const minutesRemaining = Math.ceil(
-          (userWithSecurity.accountLockedUntil.getTime() - now.getTime()) / 60000
+          (userWithSecurity.accountLockedUntil.getTime() - now.getTime()) /
+            60000
         );
         return reply.code(401).send({
           success: false,
           error: {
             code: "ACCOUNT_LOCKED",
             message: `Account is temporarily locked. Please try again in ${minutesRemaining} minutes.`,
-            lockedUntil: userWithSecurity.accountLockedUntil
+            lockedUntil: userWithSecurity.accountLockedUntil,
           },
         });
       } else {
@@ -392,7 +423,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       const currentAttempts = authAttempts.get(clientIp)!;
       currentAttempts.loginCount += 1;
       currentAttempts.lastLoginAttempt = new Date();
-      
+
       return reply.code(401).send({
         success: false,
         error: {
@@ -409,14 +440,16 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       const currentAttempts = authAttempts.get(clientIp)!;
       currentAttempts.loginCount += 1;
       currentAttempts.lastLoginAttempt = new Date();
-      
+
       // Skip updating failed login attempts since security fields don't exist in DB yet
       // We'll track this in memory for now
       const failedAttempts = (userWithSecurity?.failedLoginAttempts || 0) + 1;
-      
+
       // Just log the attempt for now
-      console.log(`Failed login attempt for user ${user.email}. Count: ${failedAttempts}`);
-      
+      console.log(
+        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`
+      );
+
       // We'll implement account locking after migration
 
       return reply.code(401).send({
@@ -430,8 +463,10 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     // Skip resetting failed login attempts since security fields don't exist in DB yet
     // We'll implement this after migration
-    console.log(`Successful login for user ${user.email}. Would reset security fields here.`);
-    
+    console.log(
+      `Successful login for user ${user.email}. Would reset security fields here.`
+    );
+
     // Reset login attempts counter for this IP on successful login
     const currentAttempts = authAttempts.get(clientIp)!;
     currentAttempts.loginCount = 0;
@@ -455,7 +490,9 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     `;
 
     // Log successful login for audit purposes
-    console.log(`User ${user.id} (${user.email}) logged in successfully from IP ${clientIp}`);
+    console.log(
+      `User ${user.id} (${user.email}) logged in successfully from IP ${clientIp}`
+    );
 
     return reply
       .setCookie("jwt", tokens.accessToken, {
