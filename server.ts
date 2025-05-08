@@ -178,27 +178,27 @@ await fastify.register(cors, {
 // });
 
 // Logging (only development)
-// if (process.env.NODE_ENV === "development") {
-//   fastify.addHook("onRequest", async (request) => {
-//     console.log(`📥 ${request.method} ${request.url}`);
-//   });
+if (process.env.NODE_ENV === "development") {
+  fastify.addHook("onRequest", async (request) => {
+    console.log(`📥 ${request.method} ${request.url}`);
+  });
 
-//   // Comment out the onSend hook for logging to prevent conflicts
-//   // fastify.addHook("onSend", async (request, reply, payload) => {
-//   //   console.log(`📤 Response ${reply.statusCode}`);
-//   //   return payload; // Return payload unchanged
-//   // });
-// }
+  // Comment out the onSend hook for logging to prevent conflicts
+  fastify.addHook("onSend", async (request, reply, payload) => {
+    console.log(`📤 Response ${reply.statusCode}`);
+    return payload; // Return payload unchanged
+  });
+}
 
 // Health route
-// fastify.get("/api/health", async (_, reply) => {
-//   reply.status(200).send({
-//     status: "healthy",
-//     timestamp: new Date().toISOString(),
-//     uptime: process.uptime(),
-//     environment: process.env.NODE_ENV,
-//   });
-// });
+fastify.get("/api/health", async (_, reply) => {
+  reply.status(200).send({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+  });
+});
 
 // -----------------
 // Import routes
@@ -270,7 +270,7 @@ async function startServer() {
       console.log("User payload:", socket.user);
       console.log("all user sockets:", usersSocketId);
 
-      socket.on(NEW_MESSAGE,(data:NewMessageData) => {
+      socket.on(NEW_MESSAGE, (data: NewMessageData) => {
         newMessages(data);
       });
 

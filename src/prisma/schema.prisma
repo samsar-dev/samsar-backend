@@ -26,6 +26,13 @@ model User {
   refreshToken          String?
   refreshTokenExpiresAt DateTime?
   phone                 String?
+  
+  // Security-related fields
+  failedLoginAttempts   Int            @default(0)
+  lastFailedLogin       DateTime?
+  lastLoginAt           DateTime?
+  accountLocked         Boolean        @default(false)
+  accountLockedUntil    DateTime?
   favorites             Favorite[]
   listings              Listing[]      @relation("UserListings")
   receivedMessages      Message[]      @relation("ReceivedMessages")

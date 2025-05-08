@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import jwt, { SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import prisma from "../src/lib/prismaClient.js";
+import { Prisma } from "@prisma/client";
 import { env } from "../config/env.js";
 
 // Add to the imports
@@ -191,16 +192,62 @@ export const register = async (
   }
 };
 
-// Login User
+// Define extended user type with security fields
+interface UserWithSecurity extends Omit<Prisma.UserGetPayload<{}>, 'password'> {
+  password: string;
+  failedLoginAttempts: number;
+  lastFailedLogin: Date | null;
+  lastLoginAt: Date | null;
+  accountLocked: boolean;
+  accountLockedUntil: Date | null;
+}
+
+// Track failed login attempts
+const loginAttempts = new Map<string, { count: number; lastAttempt: Date }>();
+
+// Login User with enhanced security
 export const login = async (request: FastifyRequest, reply: FastifyReply) => {
+  // Get client IP for rate limiting
+  const clientIp = request.ip || 'unknown';
+  
+  // Check for too many failed attempts from this IP
+  const attempts = loginAttempts.get(clientIp);
+  if (attempts && attempts.count >= 5) {
+    // Check if we're still in cooldown period (15 minutes)
+    const cooldownPeriod = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const timeElapsed = Date.now() - attempts.lastAttempt.getTime();
+    
+    if (timeElapsed < cooldownPeriod) {
+      const remainingTime = Math.ceil((cooldownPeriod - timeElapsed) / 60000); // minutes
+      return reply.code(429).send({
+        success: false,
+        error: {
+          code: "RATE_LIMIT_EXCEEDED",
+          message: `Too many failed login attempts. Please try again in ${remainingTime} minutes.`,
+          retryAfter: new Date(Date.now() + (cooldownPeriod - timeElapsed))
+        },
+      });
+    } else {
+      // Reset counter after cooldown period
+      loginAttempts.delete(clientIp);
+    }
+  }
+  
   const { email, password } = request.body as {
     email: string;
     password: string;
   };
 
   try {
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Add a small delay to prevent timing attacks (helps hide if an email exists or not)
+    await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
+    
+    // Use a type assertion to handle the new security fields
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       select: {
         id: true,
         email: true,
@@ -214,10 +261,49 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         role: true,
         createdAt: true,
         updatedAt: true,
-      },
-    });
+        // These fields will be available after the migration is applied
+        // For now, TypeScript doesn't know about them, so we need to use a type assertion
+      } as any, // Type assertion for select statement
+    }) as unknown as UserWithSecurity | null;
 
+    // Check if account is locked
+    if (user?.accountLocked) {
+      const now = new Date();
+      if (user.accountLockedUntil && user.accountLockedUntil > now) {
+        const minutesRemaining = Math.ceil(
+          (user.accountLockedUntil.getTime() - now.getTime()) / 60000
+        );
+        return reply.code(401).send({
+          success: false,
+          error: {
+            code: "ACCOUNT_LOCKED",
+            message: `Account is temporarily locked. Please try again in ${minutesRemaining} minutes.`,
+            lockedUntil: user.accountLockedUntil
+          },
+        });
+      } else {
+        // Unlock account if lock period has expired
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            // Use type assertion for the new security fields
+            accountLocked: false,
+            accountLockedUntil: null,
+            failedLoginAttempts: 0
+          } as any
+        });
+      }
+    }
+
+    // User not found - return generic error but track the attempt
     if (!user) {
+      // Record failed attempt for this IP
+      const currentAttempts = loginAttempts.get(clientIp) || { count: 0, lastAttempt: new Date() };
+      loginAttempts.set(clientIp, {
+        count: currentAttempts.count + 1,
+        lastAttempt: new Date()
+      });
+      
       return reply.code(401).send({
         success: false,
         error: {
@@ -227,8 +313,36 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       });
     }
 
+    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      // Record failed attempt for this IP
+      const currentAttempts = loginAttempts.get(clientIp) || { count: 0, lastAttempt: new Date() };
+      loginAttempts.set(clientIp, {
+        count: currentAttempts.count + 1,
+        lastAttempt: new Date()
+      });
+      
+      // Update user's failed login attempts
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+      // Use a type-safe approach with explicit typing
+      const updateData = {
+        failedLoginAttempts: failedAttempts,
+        lastFailedLogin: new Date()
+      } as any; // Type assertion needed until migration is applied
+      
+      // Lock account after 5 failed attempts
+      if (failedAttempts >= 5) {
+        const lockDuration = 30 * 60 * 1000; // 30 minutes
+        updateData.accountLocked = true;
+        updateData.accountLockedUntil = new Date(Date.now() + lockDuration);
+      }
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: updateData
+      });
+
       return reply.code(401).send({
         success: false,
         error: {
@@ -238,7 +352,21 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       });
     }
 
-    // Generate JWT tokens
+    // Reset failed login attempts on successful login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lastFailedLogin: null,
+        accountLocked: false,
+        accountLockedUntil: null
+      } as any // Type assertion needed until migration is applied
+    });
+    
+    // Clear IP-based login attempts for this IP on successful login
+    loginAttempts.delete(clientIp);
+
+    // Generate JWT tokens with enhanced security
     const tokens = generateTokens({
       id: user.id,
       email: user.email,
@@ -252,16 +380,21 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     await prisma.$executeRaw`
       UPDATE "User" 
       SET "refreshToken" = ${tokens.refreshToken}, 
-          "refreshTokenExpiresAt" = ${expiryDate}
+          "refreshTokenExpiresAt" = ${expiryDate},
+          "lastLoginAt" = ${new Date()}
       WHERE id = ${user.id}
     `;
+
+    // Log successful login for audit purposes
+    console.log(`User ${user.id} (${user.email}) logged in successfully from IP ${clientIp}`);
 
     return reply
       .setCookie("jwt", tokens.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: "strict", // Enhanced from 'lax' to 'strict' for better security
         path: "/",
+        maxAge: 60 * 15, // 15 minutes in seconds, matching token expiry
       })
       .send({
         success: true,
@@ -286,7 +419,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       success: false,
       error: {
         code: "INTERNAL_ERROR",
-        message: "An error occurred during login",
+        message: "An error occurred during login. Please try again later.",
       },
     });
   }
