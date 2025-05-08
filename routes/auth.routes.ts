@@ -31,7 +31,20 @@ export default async function authRoutes(fastify: FastifyInstance) {
     "/register",
     {
       schema: {
-        body: RegisterSchema
+        body: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', minLength: 2 },
+            email: { type: 'string', format: 'email' },
+            username: { type: 'string', minLength: 3 },
+            password: {
+              type: 'string',
+              minLength: 8,
+              pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{8,}$'
+            }
+          },
+          required: ['name', 'email', 'username', 'password']
+        }
       },
       preHandler: async (request: RegisterRequest, reply) => {
         const isValid = await validate(request, reply, RegisterSchema);
@@ -58,7 +71,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
     "/login",
     {
       schema: {
-        body: LoginSchema
+        body: {
+          type: 'object',
+          properties: {
+            email: { type: 'string', format: 'email' },
+            password: { type: 'string' }
+          },
+          required: ['email', 'password']
+        }
       },
       preHandler: async (request: LoginRequest, reply) => {
         const isValid = await validate(request, reply, LoginSchema);
