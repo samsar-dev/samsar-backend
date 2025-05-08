@@ -26,6 +26,8 @@ model User {
   refreshToken          String?
   refreshTokenExpiresAt DateTime?
   phone                 String?
+  
+  // Security fields temporarily removed until migration is applied
   favorites             Favorite[]
   listings              Listing[]      @relation("UserListings")
   receivedMessages      Message[]      @relation("ReceivedMessages")
@@ -120,20 +122,20 @@ model Conversation {
 }
 
 model Message {
-  id                    String        @id @default(cuid())
-  content               String
-  senderId              String
-  recipientId           String
-  conversationId        String
-  createdAt             DateTime      @default(now())
-  read                  Boolean       @default(false)
-  listingId             String?
-  relatedNotificationId String?       @unique
-  conversation          Conversation  @relation(fields: [conversationId], references: [id])
-  listing               Listing?      @relation(fields: [listingId], references: [id])
-  recipient             User          @relation("ReceivedMessages", fields: [recipientId], references: [id])
-  notification          Notification? @relation("MessageNotification", fields: [relatedNotificationId], references: [id])
-  sender                User          @relation("SentMessages", fields: [senderId], references: [id])
+  id             String       @id @default(cuid())
+  content        String
+  senderId       String
+  recipientId    String
+  conversationId String
+  createdAt      DateTime     @default(now())
+  read           Boolean      @default(false)
+  listingId      String?
+  relatedNotificationId   String?   @unique
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  listing        Listing?     @relation(fields: [listingId], references: [id])
+  recipient      User         @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  notification   Notification? @relation("MessageNotification",fields: [relatedNotificationId], references: [id])
 
   @@index([senderId])
   @@index([recipientId])
@@ -142,21 +144,22 @@ model Message {
 }
 
 model Notification {
-  id               String           @id @default(cuid())
-  type             NotificationType
-  content          String
-  read             Boolean          @default(false)
-  createdAt        DateTime         @default(now())
-  userId           String
-  relatedId        String?
-  relatedListingId String?
-  relatedUserId    String?
-  relatedMessageId String?
-  message          Message?         @relation("MessageNotification")
-  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id])
-  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
-  user             User             @relation(fields: [userId], references: [id])
+  id                 String       @id @default(cuid())
+  type               NotificationType
+  content            String
+  read               Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  userId             String
+  relatedId          String?
+  relatedMessageId   String?
+  relatedListingId   String?
+  relatedUserId      String?
+  relatedListing     Listing?     @relation("ListingNotifications", fields: [relatedListingId], references: [id])
+  relatedUser        User?        @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
+  user               User         @relation(fields: [userId], references: [id])
+  message            Message?     @relation("MessageNotification")
 
+  // relatedMessageId   String?
   @@index([userId])
   @@index([relatedListingId])
   @@index([relatedUserId])
@@ -467,27 +470,10 @@ model RealEstateDetails {
   floorLevel            Int?
   isBuildable           Boolean?
   totalArea             Float?
+  usageType             String?
   yearBuilt             Int?
   bedrooms              Int?
   bathrooms             Float?
-  accessibility         String?
-  appliances            String?
-  basementFeatures      String?
-  bathroomFeatures      String?
-  communityFeatures     String?
-  energyFeatures        String?
-  exteriorFeatures      String?
-  hoaFeatures           String?
-  kitchenFeatures       String?
-  landscaping           String?
-  livingArea            Float?
-  outdoorFeatures       String?
-  parkingSpaces         Int?
-  petFeatures           String?
-  roofAge               Int?
-  smartHomeFeatures     String?
-  storageFeatures       String?
-  windowFeatures        String?
   listing               Listing  @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
