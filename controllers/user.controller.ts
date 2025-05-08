@@ -21,6 +21,7 @@ interface UpdateData {
   dateOfBirth?: string;
   street?: string;
   city?: string;
+  phone?: string;
 }
 
 interface UploadResult {
@@ -159,7 +160,7 @@ export const updateProfile = async (
       dateOfBirth,
       street,
       city,
-
+      phone
     } = request.body as any;
 
     if (email && !validator.isEmail(email)) {
@@ -189,6 +190,7 @@ export const updateProfile = async (
     if (dateOfBirth) updates.dateOfBirth = dateOfBirth.trim();
     if (street) updates.street = street.trim();
     if (city) updates.city = city.trim();
+    if (phone) updates.phone = phone.trim();
 
     if (password) {
       // Verify current password first

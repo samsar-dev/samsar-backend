@@ -511,6 +511,11 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
         location: true,
         createdAt: true,
         updatedAt: true,
+        // Additional profile fields
+        phone: true,
+        dateOfBirth: true,
+        street: true,
+        city: true,
       },
     });
 
