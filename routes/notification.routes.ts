@@ -4,6 +4,9 @@ import {
   getNotifications,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
+  clearAllNotifications,
+  sendSystemAnnouncement
 } from "../controllers/notification.controller.js";
 
 // Define Fastify handler types
@@ -46,7 +49,21 @@ export default async function (fastify: FastifyInstance) {
     },
   );
 
+  // Get all notifications for the authenticated user
   fastify.get("/", createFastifyHandler(getNotifications));
+  
+  // Mark a specific notification as read
   fastify.put("/:id/read", createFastifyHandler(markAsRead));
+  
+  // Mark all notifications as read
   fastify.put("/read-all", createFastifyHandler(markAllAsRead));
+  
+  // Delete a specific notification
+  fastify.delete("/:id", createFastifyHandler(deleteNotification));
+  
+  // Clear all notifications
+  fastify.delete("/", createFastifyHandler(clearAllNotifications));
+  
+  // Send system announcement (admin only)
+  fastify.post("/system-announcement", createFastifyHandler(sendSystemAnnouncement));
 }

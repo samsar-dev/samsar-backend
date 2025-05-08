@@ -1,61 +1,137 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { body, validationResult, ValidationChain } from "express-validator";
 
-export const validateRegistration: ValidationChain[] = [
-  body("email")
-    .isEmail()
-    .withMessage("Please enter a valid email address")
-    .normalizeEmail(),
-  body("password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long")
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/)
-    .withMessage(
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number",
-    ),
-  body("name")
-    .trim()
-    .isLength({ min: 2 })
-    .withMessage("Name must be at least 2 characters long"),
-];
+// Define validation schemas compatible with Fastify
+export const RegisterSchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', minLength: 2 },
+    email: { type: 'string', format: 'email' },
+    username: { type: 'string', minLength: 3 },
+    password: {
+      type: 'string',
+      minLength: 8,
+      pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{8,}$'
+    }
+  },
+  required: ['name', 'email', 'username', 'password']
+};
 
-export const validateListing: ValidationChain[] = [
-  body("title")
-    .trim()
-    .isLength({ min: 3 })
-    .withMessage("Title must be at least 3 characters long"),
-  body("description")
-    .trim()
-    .isLength({ min: 10 })
-    .withMessage("Description must be at least 10 characters long"),
-  body("price").isNumeric().withMessage("Price must be a number"),
-  body("category").trim().notEmpty().withMessage("Category is required"),
-];
+export const LoginSchema = {
+  type: 'object',
+  properties: {
+    email: { type: 'string', format: 'email' },
+    password: { type: 'string' }
+  },
+  required: ['email', 'password']
+};
 
+export const ListingSchema = {
+  type: 'object',
+  properties: {
+    title: { type: 'string', minLength: 3 },
+    description: { type: 'string', minLength: 10 },
+    price: { type: 'number' },
+    category: { type: 'string' }
+  },
+  required: ['title', 'description', 'price', 'category']
+};
+
+// Type definitions for TypeScript
+export interface RegisterBody {
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+}
+
+export interface LoginBody {
+  email: string;
+  password: string;
+}
+
+export interface ListingBody {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+}
+
+// Custom validation error interface for better error reporting
+export interface ValidationErrorDetail {
+  field: string;
+  message: string;
+  value?: any;
+}
+
+// Validation middleware with enhanced error handling
 export const validate = async (
   request: FastifyRequest,
   reply: FastifyReply,
-  done: (error?: Error) => void,
+  schema: any
 ) => {
-  // Run validation chains
-  await Promise.all(
-    validateRegistration.map((validation) => validation.run(request as any)),
-  );
+  try {
+    // Check if request body exists
+    if (!request.body) {
+      throw new Error('Missing request body');
+    }
 
-  // Check for validation errors
-  const errors = validationResult(request as any);
-  if (!errors.isEmpty()) {
+    // Fastify automatically validates against the schema
+    // This is just an additional check for specific validations
+    const body = request.body as Record<string, any>;
+    const errors: ValidationErrorDetail[] = [];
+
+    // Perform custom validations if needed
+    if (schema === RegisterSchema && body.email) {
+      // Additional email validation beyond format
+      if (body.email.includes('admin') || body.email.includes('root')) {
+        errors.push({
+          field: 'email',
+          message: 'Email contains reserved terms',
+          value: body.email
+        });
+      }
+
+      // Check for common disposable email domains
+      const disposableDomains = ['tempmail.com', 'throwaway.com', 'mailinator.com'];
+      const domain = body.email.split('@')[1];
+      if (domain && disposableDomains.includes(domain)) {
+        errors.push({
+          field: 'email',
+          message: 'Please use a non-disposable email address',
+          value: domain
+        });
+      }
+    }
+
+    // If there are custom validation errors, return them
+    if (errors.length > 0) {
+      reply.code(400).send({
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Validation failed",
+          details: errors
+        }
+      });
+      return false;
+    }
+
+    return true;
+  } catch (error: any) {
+    // Enhanced error handling with more specific messages
+    const errorMessage = error.message || "Invalid input data";
+    const errorCode = errorMessage.includes("pattern") ? "INVALID_FORMAT" : "VALIDATION_ERROR";
+    
     reply.code(400).send({
       success: false,
       error: {
-        code: "VALIDATION_ERROR",
-        message: "Invalid input data",
-        errors: errors.array(),
-      },
+        code: errorCode,
+        message: errorMessage.includes("pattern") ? 
+          "Password must include uppercase, lowercase, numbers, and be at least 8 characters" : 
+          "Invalid input data",
+        details: error.message
+      }
     });
-    return;
+    return false;
   }
-
-  // Continue to next middleware/handler
-  done();
 };
