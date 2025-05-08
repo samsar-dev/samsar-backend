@@ -37,42 +37,46 @@ function isImage(mimetype: string) {
 }
 
 // Process image with sharp
-export const processImage = async (buffer: Buffer, originalMimetype: string): Promise<{ buffer: Buffer; format: string }> => {
+export const processImage = async (
+  buffer: Buffer,
+  originalMimetype: string,
+): Promise<{ buffer: Buffer; format: string }> => {
   // Extract metadata to preserve orientation and other important data
   const metadata = await sharp(buffer).metadata();
-  
+
   // Create a base sharp instance with proper orientation handling
   let processor = sharp(buffer)
     .rotate() // Auto-rotate based on EXIF orientation
-    .resize(1920, 1920, { // Support higher resolution images
+    .resize(1920, 1920, {
+      // Support higher resolution images
       fit: sharp.fit.inside,
       withoutEnlargement: true,
     });
 
   // Determine best output format
   // WebP for best compression, but keep original format for transparency (PNG) if needed
-  if (metadata.hasAlpha && originalMimetype === 'image/png') {
+  if (metadata.hasAlpha && originalMimetype === "image/png") {
     // For PNGs with transparency, keep as PNG with good compression
     return {
       buffer: await processor
         .png({ quality: 90, compressionLevel: 9, palette: true })
         .toBuffer(),
-      format: 'png'
+      format: "png",
     };
   } else {
     // For all other images, convert to WebP for best quality/size ratio
     return {
       buffer: await processor
-        .webp({ 
-          quality: 92,           // Higher quality for better images
-          alphaQuality: 100,     // Preserve alpha channel quality
-          lossless: false,       // Use lossy compression for smaller files
-          nearLossless: false,   // Better compression
-          smartSubsample: true,  // Improve color detail
-          effort: 6              // Higher effort for better compression (0-6)
+        .webp({
+          quality: 92, // Higher quality for better images
+          alphaQuality: 100, // Preserve alpha channel quality
+          lossless: false, // Use lossy compression for smaller files
+          nearLossless: false, // Better compression
+          smartSubsample: true, // Improve color detail
+          effort: 6, // Higher effort for better compression (0-6)
         })
         .toBuffer(),
-      format: 'webp'
+      format: "webp",
     };
   }
 };
@@ -84,7 +88,7 @@ export const processImagesMiddleware = async (
 ) => {
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const MIN_FILE_SIZE = 5 * 1024; // 5KB
-  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
   try {
     if (!request.isMultipart()) {
       console.log("Request is not multipart");
@@ -106,7 +110,10 @@ export const processImagesMiddleware = async (
           `Processing image file: ${part.filename}, field: ${part.fieldname}, size: ${(part.file.bytesRead / 1024).toFixed(1)}KB`,
         );
         const buffer = await part.toBuffer();
-        const { buffer: processedBuffer, format } = await processImage(buffer, part.mimetype);
+        const { buffer: processedBuffer, format } = await processImage(
+          buffer,
+          part.mimetype,
+        );
 
         // Create a temporary file for the processed image
         const tempFilename = `processed-${crypto.randomUUID()}.${format}`;
@@ -123,14 +130,14 @@ export const processImagesMiddleware = async (
 
         // Log compression results
         console.log(
-          `Image processed: Original: ${(buffer.length / 1024).toFixed(1)}KB, Compressed: ${(processedBuffer.length / 1024).toFixed(1)}KB, Savings: ${((1 - processedBuffer.length / buffer.length) * 100).toFixed(1)}%`
+          `Image processed: Original: ${(buffer.length / 1024).toFixed(1)}KB, Compressed: ${(processedBuffer.length / 1024).toFixed(1)}KB, Savings: ${((1 - processedBuffer.length / buffer.length) * 100).toFixed(1)}%`,
         );
 
         const fileForUpload: ExpressMulterFile = {
           fieldname: part.fieldname,
           originalname: part.filename || tempFilename,
           encoding: part.encoding,
-          mimetype: format === 'webp' ? "image/webp" : `image/${format}`,
+          mimetype: format === "webp" ? "image/webp" : `image/${format}`,
           buffer: processedBuffer,
           size: processedBuffer.length,
           destination: tempDir,

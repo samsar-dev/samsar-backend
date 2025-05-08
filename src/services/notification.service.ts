@@ -73,7 +73,7 @@ export const handleListingPriceUpdate = async (
 export const handleNewListingMatch = async (
   listingId: string,
   matchingUserIds: string[],
-  searchCriteriaId?: string
+  searchCriteriaId?: string,
 ) => {
   try {
     if (!matchingUserIds.length) return;
@@ -81,11 +81,11 @@ export const handleNewListingMatch = async (
     // Get the listing details
     const listing = await prismaClient.listing.findUnique({
       where: { id: listingId },
-      select: { 
+      select: {
         title: true,
         price: true,
-        category: true
-      }
+        category: true,
+      },
     });
 
     if (!listing) {
@@ -94,7 +94,7 @@ export const handleNewListingMatch = async (
     }
 
     // Create notifications for each matching user
-    const notificationPromises = matchingUserIds.map(userId => {
+    const notificationPromises = matchingUserIds.map((userId) => {
       return prismaClient.notification.create({
         data: {
           type: toPrismaNotificationType(NotificationType.NEW_LISTING_MATCH),
@@ -117,7 +117,7 @@ export const handleNewListingMatch = async (
 export const sendAccountWarning = async (
   userId: string,
   warningMessage: string,
-  relatedListingId?: string
+  relatedListingId?: string,
 ) => {
   try {
     await prismaClient.notification.create({
@@ -139,29 +139,29 @@ export const sendAccountWarning = async (
 export const sendSystemAnnouncement = async (
   message: string,
   title: string,
-  targetUserIds?: string[]
+  targetUserIds?: string[],
 ) => {
   try {
     // If no target users specified, get all users who haven't opted out
     if (!targetUserIds || targetUserIds.length === 0) {
       const users = await prismaClient.user.findMany({
-        where: { 
+        where: {
           // Only include users who haven't opted out of system announcements
           NOT: {
             preferences: {
-              path: ['notifications', 'systemAnnouncements'],
-              equals: false
-            }
-          }
+              path: ["notifications", "systemAnnouncements"],
+              equals: false,
+            },
+          },
         },
-        select: { id: true }
+        select: { id: true },
       });
-      
-      targetUserIds = users.map(user => user.id);
+
+      targetUserIds = users.map((user) => user.id);
     }
 
     // Create notifications for each user
-    const notificationPromises = targetUserIds.map(userId => {
+    const notificationPromises = targetUserIds.map((userId) => {
       return prismaClient.notification.create({
         data: {
           type: toPrismaNotificationType(NotificationType.SYSTEM_ANNOUNCEMENT),

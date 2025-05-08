@@ -14,7 +14,7 @@ const PUBLIC_ROUTES = [
 // Helper to check if route is public
 const isPublicRoute = (path: string, method: string): boolean => {
   return PUBLIC_ROUTES.some(
-    route => path.includes(route.path) && method === route.method
+    (route) => path.includes(route.path) && method === route.method,
   );
 };
 
@@ -41,7 +41,7 @@ const extractToken = (request: FastifyRequest): string | null => {
 // Fastify Middleware
 export const authenticate = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ): Promise<void> => {
   try {
     // Check if route is public
@@ -67,7 +67,6 @@ export const authenticate = async (
 
       // Attach user to request
       (request as any).user = decoded;
-
     } catch (jwtError) {
       // Handle specific JWT errors
       if (jwtError instanceof jwt.TokenExpiredError) {
@@ -75,8 +74,8 @@ export const authenticate = async (
           success: false,
           error: {
             code: "TOKEN_EXPIRED",
-            message: "Authentication token has expired"
-          }
+            message: "Authentication token has expired",
+          },
         });
         return;
       }
@@ -86,8 +85,8 @@ export const authenticate = async (
           success: false,
           error: {
             code: "INVALID_TOKEN",
-            message: "Invalid authentication token"
-          }
+            message: "Invalid authentication token",
+          },
         });
         return;
       }
@@ -95,15 +94,15 @@ export const authenticate = async (
       // Generic JWT error
       throw jwtError;
     }
-
   } catch (error) {
     // Handle all other errors
     reply.code(401).send({
       success: false,
       error: {
         code: "AUTH_ERROR",
-        message: error instanceof Error ? error.message : "Authentication failed"
-      }
+        message:
+          error instanceof Error ? error.message : "Authentication failed",
+      },
     });
   }
 };

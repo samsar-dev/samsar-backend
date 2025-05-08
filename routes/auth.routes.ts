@@ -32,24 +32,25 @@ export default async function authRoutes(fastify: FastifyInstance) {
     {
       schema: {
         body: {
-          type: 'object',
+          type: "object",
           properties: {
-            name: { type: 'string', minLength: 2 },
-            email: { type: 'string', format: 'email' },
-            username: { type: 'string', minLength: 3 },
+            name: { type: "string", minLength: 2 },
+            email: { type: "string", format: "email" },
+            username: { type: "string", minLength: 3 },
             password: {
-              type: 'string',
+              type: "string",
               minLength: 8,
-              pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{8,}$'
-            }
+              pattern:
+                "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{8,}$",
+            },
           },
-          required: ['name', 'email', 'username', 'password']
-        }
+          required: ["name", "email", "username", "password"],
+        },
       },
       preHandler: async (request: RegisterRequest, reply) => {
         const isValid = await validate(request, reply, RegisterSchema);
         if (!isValid) return reply;
-      }
+      },
     },
     async (request, reply) => {
       try {
@@ -59,11 +60,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
           success: false,
           error: {
             code: "REGISTRATION_ERROR",
-            message: error.message || "Registration failed"
-          }
+            message: error.message || "Registration failed",
+          },
         });
       }
-    }
+    },
   );
 
   // Login route with schema validation
@@ -72,18 +73,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
     {
       schema: {
         body: {
-          type: 'object',
+          type: "object",
           properties: {
-            email: { type: 'string', format: 'email' },
-            password: { type: 'string' }
+            email: { type: "string", format: "email" },
+            password: { type: "string" },
           },
-          required: ['email', 'password']
-        }
+          required: ["email", "password"],
+        },
       },
       preHandler: async (request: LoginRequest, reply) => {
         const isValid = await validate(request, reply, LoginSchema);
         if (!isValid) return reply;
-      }
+      },
     },
     async (request, reply) => {
       try {
@@ -93,18 +94,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
           success: false,
           error: {
             code: "LOGIN_ERROR",
-            message: error.message || "Invalid credentials"
-          }
+            message: error.message || "Invalid credentials",
+          },
         });
       }
-    }
+    },
   );
 
   // Token refresh route
   fastify.post(
     "/refresh",
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate],
     },
     async (request, reply) => {
       try {
@@ -114,18 +115,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
           success: false,
           error: {
             code: "REFRESH_ERROR",
-            message: error.message || "Token refresh failed"
-          }
+            message: error.message || "Token refresh failed",
+          },
         });
       }
-    }
+    },
   );
 
   // Token verification endpoint
   fastify.get(
     "/verify-token",
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate],
     },
     async (request, reply) => {
       try {
@@ -135,18 +136,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
           success: false,
           error: {
             code: "TOKEN_VERIFICATION_ERROR",
-            message: error.message || "Token verification failed"
-          }
+            message: error.message || "Token verification failed",
+          },
         });
       }
-    }
+    },
   );
 
   // Protected routes
   fastify.post(
     "/logout",
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate],
     },
     async (request, reply) => {
       try {
@@ -156,17 +157,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
           success: false,
           error: {
             code: "LOGOUT_ERROR",
-            message: error.message || "Logout failed"
-          }
+            message: error.message || "Logout failed",
+          },
         });
       }
-    }
+    },
   );
 
   fastify.get(
     "/me",
     {
-      preHandler: [authenticate]
+      preHandler: [authenticate],
     },
     async (request, reply) => {
       try {
@@ -176,10 +177,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
           success: false,
           error: {
             code: "PROFILE_ERROR",
-            message: error.message || "Failed to get profile"
-          }
+            message: error.message || "Failed to get profile",
+          },
         });
       }
-    }
+    },
   );
 }

@@ -1,17 +1,24 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { Prisma, NotificationType as PrismaNotificationType } from "@prisma/client";
+import {
+  Prisma,
+  NotificationType as PrismaNotificationType,
+} from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { NotificationType } from "../types/enums.js";
 
 // Map our enum values to Prisma enum values
-const mapToPrismaNotificationType = (type: NotificationType): PrismaNotificationType => {
+const mapToPrismaNotificationType = (
+  type: NotificationType,
+): PrismaNotificationType => {
   // Since both enums have the same string values, we can cast directly
   // This works because both enums have the same underlying string values
   return type as unknown as PrismaNotificationType;
 };
 
 // Map Prisma enum values to our enum values
-const mapFromPrismaNotificationType = (type: PrismaNotificationType): NotificationType => {
+const mapFromPrismaNotificationType = (
+  type: PrismaNotificationType,
+): NotificationType => {
   // Since both enums have the same string values, we can cast directly
   return type as unknown as NotificationType;
 };
@@ -72,7 +79,7 @@ export const getNotifications = async (
     if (!req.user) {
       return reply.code(401).send({
         success: false,
-        error: "Unauthorized"
+        error: "Unauthorized",
       });
     }
 
@@ -85,7 +92,9 @@ export const getNotifications = async (
     const skip = (page - 1) * limit;
 
     // Log request information for debugging
-    console.log(`Fetching notifications for user ${req.user.id}, page ${page}, limit ${limit}`);
+    console.log(
+      `Fetching notifications for user ${req.user.id}, page ${page}, limit ${limit}`,
+    );
 
     try {
       // Fetch notifications from database
@@ -121,10 +130,12 @@ export const getNotifications = async (
         },
       });
 
-      console.log(`Found ${notifications.length} notifications out of ${total} total`);
+      console.log(
+        `Found ${notifications.length} notifications out of ${total} total`,
+      );
 
       // Transform notifications to match frontend types
-      const transformedNotifications = notifications.map(notification => {
+      const transformedNotifications = notifications.map((notification) => {
         // Generate a title based on notification type and related entities
         let title = "Notification";
         if (notification.relatedListing?.title) {
@@ -134,8 +145,10 @@ export const getNotifications = async (
         } else {
           // Set title based on notification type
           // Convert Prisma enum to our enum for the switch statement
-          const notificationType = mapFromPrismaNotificationType(notification.type);
-          
+          const notificationType = mapFromPrismaNotificationType(
+            notification.type,
+          );
+
           switch (notificationType) {
             case NotificationType.NEW_MESSAGE:
               title = "New Message";
@@ -360,22 +373,22 @@ export const sendSystemAnnouncement = async (
   try {
     // Check if user is authenticated and is an admin
     if (!req.user) {
-      return reply.code(401).send({ 
+      return reply.code(401).send({
         success: false,
-        error: "Unauthorized" 
+        error: "Unauthorized",
       });
     }
-    
+
     // Verify the user is an admin
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { role: true }
+      select: { role: true },
     });
-    
-    if (!user || user.role !== 'ADMIN') {
+
+    if (!user || user.role !== "ADMIN") {
       return reply.code(403).send({
         success: false,
-        error: "Only administrators can send system announcements"
+        error: "Only administrators can send system announcements",
       });
     }
 
@@ -390,7 +403,7 @@ export const sendSystemAnnouncement = async (
     if (!message || !title) {
       return reply.code(400).send({
         success: false,
-        error: "Message and title are required"
+        error: "Message and title are required",
       });
     }
 
@@ -398,26 +411,28 @@ export const sendSystemAnnouncement = async (
     let users = targetUserIds;
     if (!users || users.length === 0) {
       const allUsers = await prisma.user.findMany({
-        where: { 
+        where: {
           // Only include users who haven't opted out of system announcements
           NOT: {
             preferences: {
-              path: ['notifications', 'systemAnnouncements'],
-              equals: false
-            }
-          }
+              path: ["notifications", "systemAnnouncements"],
+              equals: false,
+            },
+          },
         },
-        select: { id: true }
+        select: { id: true },
       });
-      
-      users = allUsers.map(user => user.id);
+
+      users = allUsers.map((user) => user.id);
     }
 
     // Create notifications for each user
-    const notificationPromises = users.map(userId => {
+    const notificationPromises = users.map((userId) => {
       return prisma.notification.create({
         data: {
-          type: mapToPrismaNotificationType(NotificationType.SYSTEM_ANNOUNCEMENT),
+          type: mapToPrismaNotificationType(
+            NotificationType.SYSTEM_ANNOUNCEMENT,
+          ),
           content: message,
           userId,
         },

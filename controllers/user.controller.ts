@@ -43,7 +43,7 @@ interface UserPublicDetailsParams {
  */
 export const getUserProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -88,7 +88,7 @@ export const getUserProfile = async (
  */
 export const getUserPublicDetails = async (
   request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const userId = request.params.id;
@@ -134,7 +134,7 @@ export const getUserPublicDetails = async (
  */
 export const updateProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -214,7 +214,7 @@ export const updateProfile = async (
       // Check if current password is correct
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password
+        user.password,
       );
       if (!isPasswordValid) {
         return reply.status(401).send({
@@ -293,7 +293,7 @@ export const updateProfile = async (
  */
 export const getUserListings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const listings = await prisma.listing.findMany({
@@ -325,7 +325,7 @@ export const getUserListings = async (
  */
 export const deleteUser = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -360,7 +360,7 @@ export const deleteUser = async (
  */
 export const getUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = (await prisma.user.findUnique({
@@ -421,7 +421,7 @@ export const getUserSettings = async (
  */
 export const updateUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { preferences } = request.body as any;

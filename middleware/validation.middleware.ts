@@ -2,100 +2,127 @@ import { FastifyRequest, FastifyReply } from "fastify";
 
 // List of disposable email domains to block
 const DISPOSABLE_EMAIL_DOMAINS = [
-  'tempmail.com', 'throwawaymail.com', 'mailinator.com', 'guerrillamail.com',
-  'trashmail.com', 'yopmail.com', 'sharklasers.com', 'temp-mail.org',
-  'dispostable.com', 'maildrop.cc', '10minutemail.com', 'mailnesia.com'
+  "tempmail.com",
+  "throwawaymail.com",
+  "mailinator.com",
+  "guerrillamail.com",
+  "trashmail.com",
+  "yopmail.com",
+  "sharklasers.com",
+  "temp-mail.org",
+  "dispostable.com",
+  "maildrop.cc",
+  "10minutemail.com",
+  "mailnesia.com",
 ];
 
 // List of reserved usernames that shouldn't be used
 const RESERVED_USERNAMES = [
-  'admin', 'administrator', 'system', 'support', 'help', 'root', 'webmaster',
-  'info', 'contact', 'security', 'staff', 'official', 'moderator', 'mod'
+  "admin",
+  "administrator",
+  "system",
+  "support",
+  "help",
+  "root",
+  "webmaster",
+  "info",
+  "contact",
+  "security",
+  "staff",
+  "official",
+  "moderator",
+  "mod",
 ];
 
 // Define validation schemas compatible with Fastify
 export const RegisterSchema = {
-  type: 'object',
+  type: "object",
   properties: {
-    name: { 
-      type: 'string', 
+    name: {
+      type: "string",
       minLength: 2,
       maxLength: 50,
-      pattern: '^[\p{L}\s\'\-\.]+$' // Allow letters, spaces, apostrophes, hyphens, and periods
+      pattern: "^[\p{L}\s'\-\.]+$", // Allow letters, spaces, apostrophes, hyphens, and periods
     },
-    email: { 
-      type: 'string', 
-      format: 'email',
-      maxLength: 100
+    email: {
+      type: "string",
+      format: "email",
+      maxLength: 100,
     },
-    username: { 
-      type: 'string', 
+    username: {
+      type: "string",
       minLength: 3,
       maxLength: 30,
-      pattern: '^[a-zA-Z0-9_\-\.]+$' // Alphanumeric plus underscore, hyphen, period
+      pattern: "^[a-zA-Z0-9_\-\.]+$", // Alphanumeric plus underscore, hyphen, period
     },
     password: {
-      type: 'string',
+      type: "string",
       minLength: 8,
       maxLength: 100,
-      pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$'
+      pattern:
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
     },
     captchaToken: {
-      type: 'string'
-    }
+      type: "string",
+    },
   },
-  required: ['name', 'email', 'username', 'password', 'captchaToken']
+  required: ["name", "email", "username", "password", "captchaToken"],
 };
 
 export const LoginSchema = {
-  type: 'object',
+  type: "object",
   properties: {
-    email: { type: 'string', format: 'email' },
-    password: { type: 'string' }
+    email: { type: "string", format: "email" },
+    password: { type: "string" },
   },
-  required: ['email', 'password']
+  required: ["email", "password"],
 };
 
 // Custom validator function for additional security checks
-export const validateRegistration = (data: any): { valid: boolean; error?: string } => {
+export const validateRegistration = (
+  data: any,
+): { valid: boolean; error?: string } => {
   // Check for disposable email domains
-  const emailDomain = data.email.split('@')[1].toLowerCase();
+  const emailDomain = data.email.split("@")[1].toLowerCase();
   if (DISPOSABLE_EMAIL_DOMAINS.includes(emailDomain)) {
     return {
       valid: false,
-      error: 'Disposable email addresses are not allowed'
+      error: "Disposable email addresses are not allowed",
     };
   }
-  
+
   // Check for reserved usernames
   const lowercaseUsername = data.username.toLowerCase();
   if (RESERVED_USERNAMES.includes(lowercaseUsername)) {
     return {
       valid: false,
-      error: 'This username is reserved and cannot be used'
+      error: "This username is reserved and cannot be used",
     };
   }
-  
+
   // Additional password strength check
-  if (data.password.includes(data.username) || data.password.includes(data.email.split('@')[0])) {
+  if (
+    data.password.includes(data.username) ||
+    data.password.includes(data.email.split("@")[0])
+  ) {
     return {
       valid: false,
-      error: 'Password cannot contain your username or email'
+      error: "Password cannot contain your username or email",
     };
   }
-  
+
   return { valid: true };
 };
 
 export const ListingSchema = {
-  type: 'object',
+  type: "object",
   properties: {
-    title: { type: 'string', minLength: 3 },
-    description: { type: 'string', minLength: 10 },
-    price: { type: 'number' },
-    category: { type: 'string' }
+    title: { type: "string", minLength: 3 },
+    description: { type: "string", minLength: 10 },
+    price: { type: "number" },
+    category: { type: "string" },
   },
-  required: ['title', 'description', 'price', 'category']
+  required: ["title", "description", "price", "category"],
 };
 
 // Type definitions for TypeScript
@@ -129,12 +156,12 @@ export interface ValidationErrorDetail {
 export const validate = async (
   request: FastifyRequest,
   reply: FastifyReply,
-  schema: any
+  schema: any,
 ) => {
   try {
     // Check if request body exists
     if (!request.body) {
-      throw new Error('Missing request body');
+      throw new Error("Missing request body");
     }
 
     // Fastify automatically validates against the schema
@@ -145,22 +172,26 @@ export const validate = async (
     // Perform custom validations if needed
     if (schema === RegisterSchema && body.email) {
       // Additional email validation beyond format
-      if (body.email.includes('admin') || body.email.includes('root')) {
+      if (body.email.includes("admin") || body.email.includes("root")) {
         errors.push({
-          field: 'email',
-          message: 'Email contains reserved terms',
-          value: body.email
+          field: "email",
+          message: "Email contains reserved terms",
+          value: body.email,
         });
       }
 
       // Check for common disposable email domains
-      const disposableDomains = ['tempmail.com', 'throwaway.com', 'mailinator.com'];
-      const domain = body.email.split('@')[1];
+      const disposableDomains = [
+        "tempmail.com",
+        "throwaway.com",
+        "mailinator.com",
+      ];
+      const domain = body.email.split("@")[1];
       if (domain && disposableDomains.includes(domain)) {
         errors.push({
-          field: 'email',
-          message: 'Please use a non-disposable email address',
-          value: domain
+          field: "email",
+          message: "Please use a non-disposable email address",
+          value: domain,
         });
       }
     }
@@ -172,8 +203,8 @@ export const validate = async (
         error: {
           code: "VALIDATION_ERROR",
           message: "Validation failed",
-          details: errors
-        }
+          details: errors,
+        },
       });
       return false;
     }
@@ -182,17 +213,19 @@ export const validate = async (
   } catch (error: any) {
     // Enhanced error handling with more specific messages
     const errorMessage = error.message || "Invalid input data";
-    const errorCode = errorMessage.includes("pattern") ? "INVALID_FORMAT" : "VALIDATION_ERROR";
-    
+    const errorCode = errorMessage.includes("pattern")
+      ? "INVALID_FORMAT"
+      : "VALIDATION_ERROR";
+
     reply.code(400).send({
       success: false,
       error: {
         code: errorCode,
-        message: errorMessage.includes("pattern") ? 
-          "Password must include uppercase, lowercase, numbers, and be at least 8 characters" : 
-          "Invalid input data",
-        details: error.message
-      }
+        message: errorMessage.includes("pattern")
+          ? "Password must include uppercase, lowercase, numbers, and be at least 8 characters"
+          : "Invalid input data",
+        details: error.message,
+      },
     });
     return false;
   }

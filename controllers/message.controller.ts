@@ -12,7 +12,7 @@ import {
 
 export const createConversation = async (
   req: AuthRequest<CreateConversationBody>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { participantIds, initialMessage } = req.body;
@@ -110,7 +110,7 @@ export const createConversation = async (
 
 export const getConversations = async (
   req: AuthRequest<unknown, PaginationQuery>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const userId = req.user.id;
@@ -175,7 +175,7 @@ export const getConversations = async (
 
 export const sendMessage = async (
   req: AuthRequest<SendMessageBody>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { recipientId, content, listingId } = req.body;
@@ -408,7 +408,7 @@ export const sendMessage = async (
 
 export const getMessages = async (
   req: AuthRequest<unknown, PaginationQuery, ParamWithConversationId>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { conversationId } = req.params;
@@ -468,7 +468,7 @@ export const getMessages = async (
 
 export const deleteMessage = async (
   req: AuthRequest<unknown, unknown, ParamWithMessageId>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { messageId } = req.params;
@@ -510,7 +510,7 @@ export const deleteMessage = async (
 
 export const deleteConversation = async (
   req: AuthRequest<unknown, unknown, ParamWithConversationId>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { conversationId } = req.params;
