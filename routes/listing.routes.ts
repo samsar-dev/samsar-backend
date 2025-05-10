@@ -38,7 +38,6 @@ type SortField = (typeof validSortFields)[number];
 const buildOrderBy = (
   sortBy?: string,
   sortOrder?: string
-  sortOrder?: string
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
