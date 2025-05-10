@@ -38,6 +38,7 @@ type SortField = (typeof validSortFields)[number];
 const buildOrderBy = (
   sortBy?: string,
   sortOrder?: string
+  sortOrder?: string
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -991,7 +992,7 @@ export default async function (fastify: FastifyInstance) {
                       parsedDetails.vehicles.rearAttachments || [],
                     threePointHitch: parsedDetails.vehicles.threePointHitch,
                     hitchCapacity:
-                      parseInt(parsedDetails.vehicles.hitchCapacity) || null,
+                      parseFloat(parsedDetails.vehicles.hitchCapacity) || null,
                     cabFeatures: parsedDetails.vehicles.cabFeatures || [],
                     seating: parsedDetails.vehicles.seating || [],
                     steeringSystem: parsedDetails.vehicles.steeringSystem || [],
@@ -999,7 +1000,8 @@ export default async function (fastify: FastifyInstance) {
                     precisionFarming:
                       parsedDetails.vehicles.precisionFarming || [],
                     vanType: parsedDetails.vehicles.vanType,
-                    cargoVolume: parsedDetails.vehicles.cargoVolume,
+                    cargoVolume:
+                      parseInt(parsedDetails.vehicles.cargoVolume) || null,
                     roofHeight: parsedDetails.vehicles.roofHeight,
                     loadingFeatures:
                       parsedDetails.vehicles.loadingFeatures || [],
@@ -1007,6 +1009,11 @@ export default async function (fastify: FastifyInstance) {
                     cabType: parsedDetails.vehicles.cabType,
                     bedLength: parsedDetails.vehicles.bedLength,
                     payload: parseInt(parsedDetails.vehicles.payload) || null,
+                    seatingConfiguration:
+                      parsedDetails.vehicles.seatingConfiguration,
+                    interiorHeight: parsedDetails.vehicles.interiorHeight,
+                    interiorLength: parsedDetails.vehicles.interiorLength,
+                    temperatureRange: parsedDetails.vehicles.temperatureRange,
                     equipmentType: parsedDetails.vehicles.equipmentType,
                     operatingWeight: parsedDetails.vehicles.operatingWeight,
                     maxLiftingCapacity:
@@ -1015,7 +1022,8 @@ export default async function (fastify: FastifyInstance) {
                     operatorCabType: parsedDetails.vehicles.operatorCabType,
                     gps: parsedDetails.vehicles.gps,
                     ptoType: parsedDetails.vehicles.ptoType,
-                    hydraulicOutlets: parsedDetails.vehicles.hydraulicOutlets,
+                    hydraulicOutlets:
+                      parseInt(parsedDetails.vehicles.hydraulicOutlets) || null,
                     busType: parsedDetails.vehicles.busType,
                     seatingCapacity: parsedDetails.vehicles.seatingCapacity,
                     luggageSpace: parsedDetails.vehicles.luggageSpace,

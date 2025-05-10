@@ -197,6 +197,7 @@ model VehicleDetails {
   interiorColor                    String?
   engine                           String?
   warranty                         String?
+  serviceHistory                   String[]          @default([])
   previousOwners                   Int?
   listingId                        String            @unique
   brakeType                        String?
@@ -210,6 +211,10 @@ model VehicleDetails {
   airConditioning                  Boolean?
   airQualitySensor                 Boolean?
   airbags                          Int?
+  seatingConfiguration                          String?
+  interiorHeight                          String?
+  interiorLength                          String?
+  temperatureRange                          String?
   aluminumRims                     Boolean?
   ambientLighting                  Boolean?
   androidAuto                      Boolean?
@@ -546,6 +551,7 @@ enum FuelType {
   gasoline
   diesel
   electric
+  biodiesel
   hybrid
   pluginHybrid
   lpg
