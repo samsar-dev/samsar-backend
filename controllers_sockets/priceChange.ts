@@ -50,7 +50,7 @@ export const handlePriceChange = async ({
       // Create notification in the database
       const notification = await prisma.notification.create({
         data: {
-          type: 'PRICE_UPDATE',
+          type: "PRICE_UPDATE",
           content: `Price reduced for ${title} from ${oldPrice} to ${newPrice} (${percentReduction.toFixed(2)}% off)`,
           userId: favorite.userId,
           relatedListingId: listingId,
@@ -61,7 +61,10 @@ export const handlePriceChange = async ({
         },
       });
 
-      console.log(`Created notification for user ${favorite.userId}:`, notification);
+      console.log(
+        `Created notification for user ${favorite.userId}:`,
+        notification,
+      );
 
       // Send real-time notification to the user if they are online
       const recipientSocketId = usersSocketId.get(favorite.userId);
@@ -81,6 +84,9 @@ export const handlePriceChange = async ({
     return { success: true, message: "Price change notifications sent" };
   } catch (error) {
     console.error("Error handling price change:", error);
-    return { success: false, error: "Failed to process price change notifications" };
+    return {
+      success: false,
+      error: "Failed to process price change notifications",
+    };
   }
 };

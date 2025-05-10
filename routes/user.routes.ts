@@ -36,7 +36,7 @@ export default async function (fastify: FastifyInstance) {
   // Middleware to process profile picture
   const processProfilePicture = async (
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) => {
     try {
       if (!request.isMultipart()) {
@@ -94,7 +94,7 @@ export default async function (fastify: FastifyInstance) {
   // Get user public details
   fastify.get(
     "/public-profile/:id",
-    createFastifyHandler(getUserPublicDetails)
+    createFastifyHandler(getUserPublicDetails),
   );
 
   // Apply authentication to all routes below
@@ -103,7 +103,7 @@ export default async function (fastify: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       // Check if the route starts with any public route
       const isPublic = publicRoutes.some((route) =>
-        request.url.includes(route)
+        request.url.includes(route),
       );
 
       if (isPublic) {
@@ -111,7 +111,7 @@ export default async function (fastify: FastifyInstance) {
       }
 
       await authenticate(request, reply);
-    }
+    },
   );
 
   // Get user profile
@@ -127,7 +127,7 @@ export default async function (fastify: FastifyInstance) {
         }
       },
     },
-    createFastifyHandler(updateProfile)
+    createFastifyHandler(updateProfile),
   );
 
   // Get user settings

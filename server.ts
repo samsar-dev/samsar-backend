@@ -14,7 +14,11 @@ import { ExtendedError, Server as SocketIOServer } from "socket.io";
 import { config } from "./config/config.js";
 import prisma from "./src/lib/prismaClient.js";
 import { getDirname } from "./utils/path.utils.js";
-import { NEW_MESSAGE, NEW_MESSAGE_ALERT, PRICE_CHANGE } from "./constants/socketEvent.js";
+import {
+  NEW_MESSAGE,
+  NEW_MESSAGE_ALERT,
+  PRICE_CHANGE,
+} from "./constants/socketEvent.js";
 import { newMessages } from "./controllers_sockets/newMessages.js";
 import { handlePriceChange } from "./controllers_sockets/priceChange.js";
 
@@ -275,7 +279,7 @@ async function startServer() {
       socket.on(NEW_MESSAGE, (data: NewMessageData) => {
         newMessages(data);
       });
-      
+
       socket.on(PRICE_CHANGE, (data: PriceChangeData) => {
         handlePriceChange(data);
       });

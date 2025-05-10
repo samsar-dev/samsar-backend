@@ -105,7 +105,7 @@ export const getUserPublicDetails = async (
     });
 
     if (!user) {
-      console.log("User not found"); 
+      console.log("User not found");
       return reply.status(404).send({
         success: false,
         error: "User not found",
@@ -113,7 +113,7 @@ export const getUserPublicDetails = async (
         data: null,
       });
     }
-    console.log("User found:", user)
+    console.log("User found:", user);
 
     return reply.status(200).send({
       success: true,
