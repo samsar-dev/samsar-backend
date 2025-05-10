@@ -20,6 +20,7 @@ export default async function (fastify: FastifyInstance) {
     return async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         await controller(request, reply);
+        console.log("User profile updated successfully", reply);
       } catch (error) {
         reply.code(500).send({
           success: false,
@@ -35,7 +36,7 @@ export default async function (fastify: FastifyInstance) {
   // Middleware to process profile picture
   const processProfilePicture = async (
     request: FastifyRequest,
-    reply: FastifyReply,
+    reply: FastifyReply
   ) => {
     try {
       if (!request.isMultipart()) {
@@ -88,19 +89,29 @@ export default async function (fastify: FastifyInstance) {
     }
   };
 
+  const publicRoutes = ["/public-profile"];
+
   // Get user public details
   fastify.get(
     "/public-profile/:id",
-    createFastifyHandler(getUserPublicDetails),
+    createFastifyHandler(getUserPublicDetails)
   );
 
   // Apply authentication to all routes below
   fastify.addHook(
     "preHandler",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      // Authenticate using Fastify request/reply (adapt your middleware if needed)
+      // Check if the route starts with any public route
+      const isPublic = publicRoutes.some((route) =>
+        request.url.includes(route)
+      );
+
+      if (isPublic) {
+        return; // skip authentication
+      }
+
       await authenticate(request, reply);
-    },
+    }
   );
 
   // Get user profile
@@ -116,7 +127,7 @@ export default async function (fastify: FastifyInstance) {
         }
       },
     },
-    createFastifyHandler(updateProfile),
+    createFastifyHandler(updateProfile)
   );
 
   // Get user settings

@@ -113,7 +113,7 @@ export const getUserPublicDetails = async (
       });
     }
 
-    reply.status(200).send({
+    return reply.status(200).send({
       success: true,
       data: user,
       status: 200,
