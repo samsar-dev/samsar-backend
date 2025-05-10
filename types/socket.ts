@@ -5,3 +5,12 @@ export interface NewMessageData {
   conversationId: string;
   createdAt: Date;
 }
+
+export interface PriceChangeData {
+  listingId: string;
+  title: string;
+  oldPrice: number;
+  newPrice: number;
+  percentReduction: number;
+  userId: string;
+}

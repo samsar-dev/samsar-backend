@@ -14,8 +14,9 @@ import { ExtendedError, Server as SocketIOServer } from "socket.io";
 import { config } from "./config/config.js";
 import prisma from "./src/lib/prismaClient.js";
 import { getDirname } from "./utils/path.utils.js";
-import { NEW_MESSAGE, NEW_MESSAGE_ALERT } from "./constants/socketEvent.js";
+import { NEW_MESSAGE, NEW_MESSAGE_ALERT, PRICE_CHANGE } from "./constants/socketEvent.js";
 import { newMessages } from "./controllers_sockets/newMessages.js";
+import { handlePriceChange } from "./controllers_sockets/priceChange.js";
 
 // Store connected users
 
@@ -212,6 +213,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import uploadRoutes from "./routes/uploads.js";
 import userRoutes from "./routes/user.routes.js";
 import { NewMessageData } from "types/socket.js";
+import { PriceChangeData } from "types/socket.js";
 
 // Add cache middleware
 await fastify.register(cacheControl);
@@ -272,6 +274,10 @@ async function startServer() {
 
       socket.on(NEW_MESSAGE, (data: NewMessageData) => {
         newMessages(data);
+      });
+      
+      socket.on(PRICE_CHANGE, (data: PriceChangeData) => {
+        handlePriceChange(data);
       });
 
       socket.on("join", (data) => {
