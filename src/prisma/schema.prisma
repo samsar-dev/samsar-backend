@@ -197,7 +197,6 @@ model VehicleDetails {
   interiorColor                    String?
   engine                           String?
   warranty                         String?
-  serviceHistory                   String?
   previousOwners                   Int?
   listingId                        String            @unique
   brakeType                        String?
@@ -276,7 +275,6 @@ model VehicleDetails {
   fatigueWarningSystem             Boolean?
   fogLights                        Boolean?
   frameType                        String?
-  coolingSystem                        String?
   frontAirbags                     Boolean?
   frontAttachments                 String[]          @default([])
   frontSuspension                  String[]          @default([])
@@ -338,7 +336,6 @@ model VehicleDetails {
   precisionFarming                 String[]          @default([])
   premiumSound                     Boolean?
   protectiveEquipment              String[]          @default([])
-  customParts              String[]          @default([])
   ptoHorsepower                    Int?
   ptoSystem                        String[]          @default([])
   radio                            Boolean?
@@ -364,7 +361,6 @@ model VehicleDetails {
   soundSystem                      Boolean?
   spareKey                         Boolean?
   speedLimitingSystem              Boolean?
-  startType                        String[]     @default([])
   startingSystem                   String?
   steeringSystem                   String[]          @default([])
   steeringType                     String?
@@ -390,12 +386,11 @@ model VehicleDetails {
   voiceControl                     Boolean?
   warrantyPeriod                   String?
   wheelSize                        String?
-  wheelType                        String?       
+  wheelType                        String?
   wheelchairAccessible             Boolean?
   wheelchairLift                   Boolean?
   wifiHotspot                      Boolean?
   wirelessCharging                 Boolean?
-  seatType                         String[]       @default([])
   seatMaterial                     String?
   emissionStandard                 String?
   enginePower                      String?
@@ -416,6 +411,15 @@ model VehicleDetails {
   truckType                        String?
   hydraulicOutlets                 Int?
   registrationStatus               String?
+  coolingSystem                    String?
+  customParts                      String[]          @default([])
+  startType                        String[]          @default([])
+  seatType                         String[]          @default([])
+  interiorHeight                   String?
+  interiorLength                   String?
+  seatingConfiguration             String?
+  temperatureRange                 String?
+  serviceHistory                   String[]          @default([])
   listing                          Listing           @relation(fields: [listingId], references: [id])
 }
 
@@ -547,6 +551,7 @@ enum FuelType {
   lpg
   cng
   other
+  biodiesel
 }
 
 enum TransmissionType {
