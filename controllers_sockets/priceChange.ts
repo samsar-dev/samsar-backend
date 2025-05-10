@@ -50,11 +50,10 @@ export const handlePriceChange = async ({
       // Create notification in the database
       const notification = await prisma.notification.create({
         data: {
-          type: "PRICE_UPDATE",
-          message: `The price for "${title}" has been reduced by ${percentReduction}% (from $${oldPrice} to $${newPrice})`, // Using message instead of title/content
+          type: 'PRICE_UPDATE',
+          content: `Price reduced for ${title} from ${oldPrice} to ${newPrice} (${percentReduction.toFixed(2)}% off)`,
           userId: favorite.userId,
-          targetId: listingId, // Using targetId instead of relatedId
-          targetType: "listing",
+          relatedListingId: listingId,
           read: false,
         },
         include: {
