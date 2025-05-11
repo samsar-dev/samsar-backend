@@ -92,6 +92,8 @@ io.use((socket, next) => {
       ? tokenWithBearer.split(" ")[1]
       : tokenWithBearer;
 
+    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ token:", token);
+
     // Verify and decode JWT token
     const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
     if (!decoded) {
@@ -281,6 +283,7 @@ async function startServer() {
       });
 
       socket.on(PRICE_CHANGE, (data: PriceChangeData) => {
+        console.log("Price change data:", data);
         handlePriceChange(data);
       });
 
