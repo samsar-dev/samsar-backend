@@ -51,7 +51,9 @@ export const handlePriceChange = async ({
       const notification = await prisma.notification.create({
         data: {
           type: "PRICE_UPDATE",
-          content: `Price reduced for ${title} from ${oldPrice} to ${newPrice} (${percentReduction.toFixed(2)}% off)`,
+          content: `Price reduced for ${title} from ${oldPrice} to ${newPrice} (${percentReduction.toFixed(
+            2
+          )}% off)`,
           userId: favorite.userId,
           relatedListingId: listingId,
           read: false,
@@ -63,19 +65,15 @@ export const handlePriceChange = async ({
 
       console.log(
         `Created notification for user ${favorite.userId}:`,
-        notification,
+        notification
       );
 
       // Send real-time notification to the user if they are online
       const recipientSocketId = usersSocketId.get(favorite.userId);
       if (recipientSocketId) {
         io.to(recipientSocketId).emit(PRICE_CHANGE, {
-          notification,
-          listingId,
+          ...notification,
           title,
-          oldPrice,
-          newPrice,
-          percentReduction,
         });
         console.log(`Sent real-time notification to user ${favorite.userId}`);
       }
