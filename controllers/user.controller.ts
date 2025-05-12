@@ -43,7 +43,7 @@ interface UserPublicDetailsParams {
  */
 export const getUserProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -88,7 +88,7 @@ export const getUserProfile = async (
  */
 export const getUserPublicDetails = async (
   request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const userId = request.params.id;
@@ -136,7 +136,7 @@ export const getUserPublicDetails = async (
  */
 export const updateProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -216,7 +216,7 @@ export const updateProfile = async (
       // Check if current password is correct
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password,
+        user.password
       );
       if (!isPasswordValid) {
         return reply.status(401).send({
@@ -295,7 +295,7 @@ export const updateProfile = async (
  */
 export const getUserListings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const listings = await prisma.listing.findMany({
@@ -327,7 +327,7 @@ export const getUserListings = async (
  */
 export const deleteUser = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -362,7 +362,7 @@ export const deleteUser = async (
  */
 export const getUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = (await prisma.user.findUnique({
@@ -421,72 +421,139 @@ export const getUserSettings = async (
 /**
  * Update user settings
  */
+// export const updateUserSettings = async (
+//   request: FastifyRequest,
+//   reply: FastifyReply,
+// ) => {
+//   try {
+//     const { preferences } = request.body as any;
+
+//     // Validate preferences structure
+//     if (!preferences || typeof preferences !== "object") {
+//       return reply.status(400).send({
+//         success: false,
+//         error: "Invalid preferences format",
+//         status: 400,
+//         data: null,
+//       });
+//     }
+
+//     // Ensure preferences has the correct structure
+//     const defaultPreferences: UserPreferences = {
+//       language: "en",
+//       theme: "light",
+//       notifications: {
+//         email: true,
+//         push: true,
+//         sms: false,
+//         enabledTypes: [],
+//         emailNotifications: {
+//           newMessage: true,
+//           listingUpdates: true,
+//           promotions: true,
+//         },
+//       },
+//       currency: "USD",
+//       timezone: "UTC",
+//       dateFormat: "MM/DD/YYYY",
+//     };
+
+//     // Merge with defaults to ensure all required fields are present
+//     const updatedPreferences = {
+//       ...defaultPreferences,
+//       ...preferences,
+//       notifications: {
+//         ...defaultPreferences.notifications,
+//         ...(preferences.notifications || {}),
+//         emailNotifications: {
+//           ...defaultPreferences.notifications.emailNotifications,
+//           ...(preferences.notifications?.emailNotifications || {}),
+//         },
+//       },
+//     } as UserPreferences;
+
+//     const updatedUser = await prisma.user.update({
+//       where: { id: (request.user as any).id },
+//       data: {
+//         preferences: updatedPreferences,
+//       },
+//     });
+
+//     reply.status(200).send({
+//       success: true,
+//       data: updatedUser,
+//       status: 200,
+//     });
+//   } catch (error) {
+//     console.error("Settings update error:", error);
+//     reply.status(500).send({
+//       success: false,
+//       error: "Error updating user settings",
+//       status: 500,
+//       data: null,
+//     });
+//   }
+// };
+
 export const updateUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
-    const { preferences } = request.body as any;
+    console.log("Request body:", request);
+    const { notifications, privacy } = request.body as any;
 
-    // Validate preferences structure
-    if (!preferences || typeof preferences !== "object") {
+    // Validate required fields
+    if (!notifications || typeof notifications !== "object") {
       return reply.status(400).send({
         success: false,
-        error: "Invalid preferences format",
+        error: "Invalid notifications settings format",
         status: 400,
         data: null,
       });
     }
 
-    // Ensure preferences has the correct structure
-    const defaultPreferences: UserPreferences = {
-      language: "en",
-      theme: "light",
-      notifications: {
-        email: true,
-        push: true,
-        sms: false,
-        enabledTypes: [],
-        emailNotifications: {
-          newMessage: true,
-          listingUpdates: true,
-          promotions: true,
-        },
-      },
-      currency: "USD",
-      timezone: "UTC",
-      dateFormat: "MM/DD/YYYY",
-    };
+    if (!privacy || typeof privacy !== "object") {
+      return reply.status(400).send({
+        success: false,
+        error: "Invalid privacy settings format",
+        status: 400,
+        data: null,
+      });
+    }
 
-    // Merge with defaults to ensure all required fields are present
-    const updatedPreferences = {
-      ...defaultPreferences,
-      ...preferences,
-      notifications: {
-        ...defaultPreferences.notifications,
-        ...(preferences.notifications || {}),
-        emailNotifications: {
-          ...defaultPreferences.notifications.emailNotifications,
-          ...(preferences.notifications?.emailNotifications || {}),
-        },
-      },
-    } as UserPreferences;
-
+    // Update user
     const updatedUser = await prisma.user.update({
       where: { id: (request.user as any).id },
       data: {
-        preferences: updatedPreferences,
+        // Flatten notifications
+        listingNotifications: notifications?.listing ?? undefined,
+        messageNotifications: notifications?.message ?? undefined,
+        // Flatten privacy settings
+        allowMessaging: privacy?.allowMessaging ?? undefined,
+        showEmail: privacy?.showEmail ?? undefined,
+        showOnlineStatus: privacy?.showOnlineStatus ?? undefined,
+        showPhoneNumber: privacy?.showPhone ?? undefined,
       },
     });
 
-    reply.status(200).send({
+    if (!updatedUser) {
+      return reply.status(404).send({
+        success: false,
+        error: "User not found",
+        status: 404,
+        data: null,
+      });
+    }
+
+    return reply.status(200).send({
       success: true,
-      data: updatedUser,
+      data: { ...updatedUser, password: undefined },
       status: 200,
     });
   } catch (error) {
     console.error("Settings update error:", error);
-    reply.status(500).send({
+    return reply.status(500).send({
       success: false,
       error: "Error updating user settings",
       status: 500,
