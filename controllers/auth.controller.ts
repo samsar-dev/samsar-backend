@@ -1,12 +1,9 @@
-import { FastifyRequest, FastifyReply } from "fastify";
-import jwt, { SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { FastifyReply, FastifyRequest } from "fastify";
+import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
-import { Prisma } from "@prisma/client";
-import { env } from "../config/env.js";
 
 // Add to the imports
-import { verify } from "jsonwebtoken";
 
 // Define JWT user interface
 interface JWTUser {
@@ -49,7 +46,7 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 15, // 15 minutes in seconds
     },
-    jwtSecret,
+    jwtSecret
   );
 
   const refreshToken = jwt.sign(
@@ -59,7 +56,7 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 60 * 24 * 7, // 7 days in seconds
     },
-    jwtSecret,
+    jwtSecret
   );
 
   return { accessToken, refreshToken };
@@ -68,7 +65,7 @@ const generateTokens = (user: {
 // Register a New User
 export const register = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     // Get client IP for rate limiting
@@ -100,7 +97,7 @@ export const register = async (
 
       if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
         const remainingTime = Math.ceil(
-          (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000,
+          (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
         ); // minutes
         return reply.code(429).send({
           success: false,
@@ -108,7 +105,7 @@ export const register = async (
             code: "RATE_LIMIT_EXCEEDED",
             message: `Too many registration attempts. Please try again in ${remainingTime} minutes.`,
             retryAfter: new Date(
-              Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed),
+              Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
             ),
           },
         });
@@ -123,7 +120,7 @@ export const register = async (
       const waitTime = Math.ceil(
         (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
           timeSinceLastRegistration) /
-          1000,
+          1000
       );
       return reply.code(429).send({
         success: false,
@@ -133,7 +130,7 @@ export const register = async (
           retryAfter: new Date(
             Date.now() +
               (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
-                timeSinceLastRegistration),
+                timeSinceLastRegistration)
           ),
         },
       });
@@ -329,7 +326,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
       const remainingTime = Math.ceil(
-        (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000,
+        (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
       ); // minutes
       return reply.code(429).send({
         success: false,
@@ -337,7 +334,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
           code: "RATE_LIMIT_EXCEEDED",
           message: `Too many failed login attempts. Please try again in ${remainingTime} minutes.`,
           retryAfter: new Date(
-            Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed),
+            Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
           ),
         },
       });
@@ -358,7 +355,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     // Add a small delay to prevent timing attacks (helps hide if an email exists or not)
     await new Promise((resolve) =>
-      setTimeout(resolve, 100 + Math.random() * 200),
+      setTimeout(resolve, 100 + Math.random() * 200)
     );
 
     // Find the user by email - only select fields that definitely exist in the database
@@ -401,7 +398,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       ) {
         const minutesRemaining = Math.ceil(
           (userWithSecurity.accountLockedUntil.getTime() - now.getTime()) /
-            60000,
+            60000
         );
         return reply.code(401).send({
           success: false,
@@ -447,7 +444,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
       // Just log the attempt for now
       console.log(
-        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`,
+        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`
       );
 
       // We'll implement account locking after migration
@@ -464,7 +461,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     // Skip resetting failed login attempts since security fields don't exist in DB yet
     // We'll implement this after migration
     console.log(
-      `Successful login for user ${user.email}. Would reset security fields here.`,
+      `Successful login for user ${user.email}. Would reset security fields here.`
     );
 
     // Reset login attempts counter for this IP on successful login
@@ -491,7 +488,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     // Log successful login for audit purposes
     console.log(
-      `User ${user.id} (${user.email}) logged in successfully from IP ${clientIp}`,
+      `User ${user.id} (${user.email}) logged in successfully from IP ${clientIp}`
     );
 
     return reply
@@ -516,6 +513,11 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
             role: user.role,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
+            phone: user.phone,
+            profilePicture: user.profilePicture,
+            bio: user.bio,
+            name: user.name,
+            dateOfBirth: user.dateOfBirth,
           },
         },
       });
@@ -598,7 +600,7 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
 // Refresh Token
 export const verifyToken = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const token = request.headers.authorization?.split(" ")[1];
@@ -615,7 +617,7 @@ export const verifyToken = async (
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET as string,
+        process.env.JWT_SECRET as string
       ) as JWTUser;
       const user = await prisma.user.findUnique({
         where: { id: decoded.sub },
@@ -664,7 +666,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
     // Verify the refresh token
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_SECRET as string,
+      process.env.JWT_SECRET as string
     ) as JWTUser;
 
     // Find the user with matching refresh token
