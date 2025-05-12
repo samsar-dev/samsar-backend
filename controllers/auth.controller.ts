@@ -374,6 +374,12 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         role: true,
         createdAt: true,
         updatedAt: true,
+        allowMessaging: true,
+        listingNotifications: true,
+        messageNotifications: true,
+        showEmail: true,
+        showOnlineStatus: true,
+        showPhoneNumber: true,
       },
     });
 
@@ -518,6 +524,12 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
             bio: user.bio,
             name: user.name,
             dateOfBirth: user.dateOfBirth,
+            allowMessaging: user.allowMessaging,
+            listingNotifications: user.listingNotifications,
+            messageNotifications: user.messageNotifications,
+            showEmail: user.showEmail,
+            showOnlineStatus: user.showOnlineStatus,
+            showPhoneNumber: user.showPhoneNumber,
           },
         },
       });
@@ -568,6 +580,12 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
         dateOfBirth: true,
         street: true,
         city: true,
+        allowMessaging: true,
+        listingNotifications: true,
+        messageNotifications: true,
+        showEmail: true,
+        showOnlineStatus: true,
+        showPhoneNumber: true,
       },
     });
 
