@@ -137,11 +137,52 @@ await fastify.register(import("@fastify/jwt"), {
   },
 });
 
-// Rate Limiting
+// Rate Limiting - Global default
 await fastify.register(rateLimit, {
   global: true,
   max: 1000,
   timeWindow: "1 minute",
+  skipOnError: false,
+  addHeaders: {
+    "x-ratelimit-limit": true,
+    "x-ratelimit-remaining": true,
+    "x-ratelimit-reset": true,
+    "retry-after": true
+  }
+});
+
+// Additional strict rate limits for sensitive endpoints
+fastify.after(() => {
+  // Auth endpoints (login, register, password reset)
+  fastify.route({
+    url: '/auth/*',
+    method: ['POST'],
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '5 minutes',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          error: 'Too Many Requests',
+          message: 'Too many login attempts, please try again later'
+        })
+      }
+    },
+    handler: (_, reply) => reply.send()
+  });
+
+  // Profile update endpoints
+  fastify.route({
+    url: '/users/profile',
+    method: ['PUT', 'PATCH'],
+    config: {
+      rateLimit: {
+        max: 20,
+        timeWindow: '10 minutes'
+      }
+    },
+    handler: (_, reply) => reply.send()
+  });
 });
 
 // Add ETag support for efficient caching

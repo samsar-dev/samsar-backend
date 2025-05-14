@@ -186,7 +186,8 @@ export const updateProfile = async (
       }
       updates.email = email.trim();
     }
-    if (!/[0-9]/.test(phone)) {
+    // Only validate phone if it's provided and not empty
+    if (phone !== undefined && phone !== '' && !/[0-9]/.test(phone)) {
       return reply.status(400).send({
         success: false,
         error: "Phone number is invalid",
@@ -194,13 +195,29 @@ export const updateProfile = async (
         data: null,
       });
     }
-    if (phone) updates.phone = phone.trim();
+    // Handle fields that can be completely removed when empty
     if (username) updates.username = username.trim();
-    if (bio) updates.bio = bio.trim();
-    if (dateOfBirth) updates.dateOfBirth = dateOfBirth.trim();
-    if (street) updates.street = street.trim();
-    if (city) updates.city = city.trim();
-    if (phone) updates.phone = phone.trim();
+    
+    // For optional fields, use undefined to remove them completely when empty
+    if (phone !== undefined) {
+      updates.phone = phone === '' ? undefined : phone.trim();
+    }
+    
+    if (bio !== undefined) {
+      updates.bio = bio === '' ? undefined : bio.trim();
+    }
+    
+    if (dateOfBirth !== undefined) {
+      updates.dateOfBirth = dateOfBirth === '' ? undefined : dateOfBirth.trim();
+    }
+    
+    if (street !== undefined) {
+      updates.street = street === '' ? undefined : street.trim();
+    }
+    
+    if (city !== undefined) {
+      updates.city = city === '' ? undefined : city.trim();
+    }
 
     if (password) {
       // Verify current password first
@@ -325,35 +342,211 @@ export const getUserListings = async (
 /**
  * Delete user and related data
  */
+interface DeleteUserRequest {
+  password: string;
+}
+
 export const deleteUser = async (
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
   try {
+    console.log("Delete user request received");
+    console.log("Request user:", request.user);
+    
+    const body = await request.body as DeleteUserRequest;
+    console.log("Request body received:", { ...body, password: "[REDACTED]" });
+    const { password } = body;
+
+    if (!password) {
+      return reply
+        .status(400)
+        .send({ 
+          success: false, 
+          error: "Password is required", 
+          status: 400 
+        });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: (request.user as any).id },
     });
-    if (!user)
+    if (!user) {
       return reply
         .status(404)
         .send({ success: false, error: "User not found", status: 404 });
+    }
 
-    // Delete favorites, listings, etc. before user
-    await prisma.favorite.deleteMany({ where: { userId: user.id } });
-    await prisma.listing.deleteMany({ where: { userId: user.id } });
+    // Verify the provided password matches the hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return reply
+        .status(401)
+        .send({ 
+          success: false, 
+          error: "Invalid password", 
+          status: 401 
+        });
+    }
 
-    await prisma.user.delete({ where: { id: user.id } });
+    // Delete in proper order to respect foreign key constraints
+    try {
+      // Step 1: Get all the user's listings
+      const userListings = await prisma.listing.findMany({
+        where: { userId: user.id },
+        select: { id: true }
+      });
+      
+      const listingIds = userListings.map(listing => listing.id);
+      console.log(`Found ${listingIds.length} listings to delete`);
+      
+      // Step 2: Get all user's messages
+      const userMessages = await prisma.message.findMany({
+        where: { 
+          OR: [
+            { senderId: user.id },
+            { recipientId: user.id }
+          ]
+        },
+        select: { id: true }
+      });
+      const messageIds = userMessages.map(msg => msg.id);
+      
+      // Step 3: Delete all notifications
+      await prisma.notification.deleteMany({
+        where: {
+          OR: [
+            { userId: user.id },
+            { relatedUserId: user.id },
+            { relatedListingId: { in: listingIds } },
+            { relatedMessageId: { in: messageIds } }
+          ]
+        }
+      });
+      console.log('Deleted all notifications');
+      
+      // Step 4: Delete messages
+      await prisma.message.deleteMany({
+        where: { 
+          OR: [
+            { senderId: user.id },
+            { recipientId: user.id }
+          ]
+        }
+      });
+      console.log('Deleted all user messages');
+      
+      // Step 5: Delete favorites
+      await prisma.favorite.deleteMany({ 
+        where: {
+          OR: [
+            { userId: user.id },
+            { listingId: { in: listingIds } }
+          ]
+        }
+      });
+      console.log('Deleted all favorites');
+      
+      // Step 6: Delete listing-related data
+      if (listingIds.length > 0) {
+        // Delete VehicleDetails and RealEstateDetails first (they have foreign key constraints)
+        await prisma.vehicleDetails.deleteMany({
+          where: { listingId: { in: listingIds } }
+        });
+        
+        await prisma.realEstateDetails.deleteMany({
+          where: { listingId: { in: listingIds } }
+        });
+        
+        // Delete other listing-related data
+        await prisma.image.deleteMany({
+          where: { listingId: { in: listingIds } }
+        });
+        
+        await prisma.attribute.deleteMany({
+          where: { listingId: { in: listingIds } }
+        });
+        
+        await prisma.feature.deleteMany({
+          where: { listingId: { in: listingIds } }
+        });
+        console.log('Deleted all listing-related data');
+      }
+      
+      // Step 7: Handle conversations
+      // First find user's conversations
+      const userConversations = await prisma.conversation.findMany({
+        where: {
+          participants: { some: { id: user.id } }
+        },
+        include: {
+          participants: true
+        }
+      });
+      
+      // Find single-participant conversations (only the user)
+      const singleParticipantConvIds = userConversations
+        .filter(conv => conv.participants.length === 1)
+        .map(conv => conv.id);
+      
+      // Delete single-participant conversations
+      if (singleParticipantConvIds.length > 0) {
+        await prisma.conversation.deleteMany({
+          where: { id: { in: singleParticipantConvIds } }
+        });
+        console.log('Deleted orphaned conversations');
+      }
+      
+      // For multi-participant conversations, disconnect the user
+      const multiParticipantConvs = userConversations
+        .filter(conv => conv.participants.length > 1);
+      
+      // Disconnect user from each conversation individually
+      for (const conv of multiParticipantConvs) {
+        try {
+          await prisma.conversation.update({
+            where: { id: conv.id },
+            data: {
+              participants: {
+                disconnect: { id: user.id }
+              }
+            }
+          });
+        } catch (err) {
+          console.error(`Failed to disconnect user from conversation ${conv.id}:`, err);
+          // Continue with other operations even if this fails
+        }
+      }
+      console.log('Updated conversations');
+      
+      // Step 8: Delete listings
+      await prisma.listing.deleteMany({ 
+        where: { userId: user.id } 
+      });
+      console.log('Deleted all listings');
+      
+      // Step 9: Finally delete the user
+      await prisma.user.delete({ where: { id: user.id } });
+      console.log('Deleted user account');
 
-    reply.status(200).send({
-      success: true,
-      data: { message: "Account and listings deleted successfully" },
-      status: 200,
-    });
+      reply.status(200).send({
+        success: true,
+        data: { message: "Account and listings deleted successfully" },
+        status: 200,
+      });
+    } catch (deleteError) {
+      console.error('Error during deletion process:', deleteError);
+      throw deleteError;
+    }
   } catch (error) {
     console.error("Delete error:", error);
     reply
       .status(500)
-      .send({ success: false, error: "Error deleting user", status: 500 });
+      .send({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Error deleting user", 
+        status: 500 
+      });
   }
 };
 

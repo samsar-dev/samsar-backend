@@ -26,6 +26,11 @@ model User {
   refreshToken          String?
   refreshTokenExpiresAt DateTime?
   phone                 String?
+  // Email verification fields
+  emailVerified         Boolean        @default(false)
+  lastVerifiedAt        DateTime?
+  verificationToken     String?        @unique
+  verificationTokenExpires DateTime?
   allowMessaging        Boolean        @default(true)
   listingNotifications  Boolean        @default(true)
   messageNotifications  Boolean        @default(true)

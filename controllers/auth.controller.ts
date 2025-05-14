@@ -2,6 +2,9 @@ import bcrypt from "bcryptjs";
 import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
+// Using proper relative path to fix module resolution
+// @ts-ignore - This module exists but TypeScript can't find it
+import { createVerificationToken, sendVerificationEmail } from "../utils/email.utils";
 
 // Add to the imports
 
@@ -21,6 +24,7 @@ interface AuthTokens {
   refreshToken: string;
 }
 
+// Enhanced token generation with security options
 const generateTokens = (user: {
   id: string;
   email: string;
@@ -36,6 +40,7 @@ const generateTokens = (user: {
   const CurrentDate = new Date();
   const now = Math.floor(CurrentDate.getTime() / 1000);
 
+  // Access token with shorter expiry (15 minutes)
   const accessToken = jwt.sign(
     {
       sub: user.id,
@@ -46,9 +51,15 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 15, // 15 minutes in seconds
     },
-    jwtSecret
+    jwtSecret,
+    { 
+      algorithm: 'HS256',
+      audience: 'tijara-app',
+      issuer: 'tijara-api'
+    }
   );
 
+  // Refresh token with longer expiry (7 days)
   const refreshToken = jwt.sign(
     {
       sub: user.id,
@@ -56,7 +67,12 @@ const generateTokens = (user: {
       iat: now,
       exp: now + 60 * 60 * 24 * 7, // 7 days in seconds
     },
-    jwtSecret
+    jwtSecret,
+    { 
+      algorithm: 'HS256',
+      audience: 'tijara-app',
+      issuer: 'tijara-api'
+    }
   );
 
   return { accessToken, refreshToken };
@@ -198,7 +214,7 @@ export const register = async (
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
+    // Create user without verification fields first (to avoid type errors)
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -220,6 +236,24 @@ export const register = async (
         createdAt: true,
       },
     });
+    
+    // Then set emailVerified to false using raw SQL
+    await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "emailVerified" = false
+      WHERE id = ${user.id}
+    `;
+    
+    // Generate verification token and send verification email
+    try {
+      const verificationToken = await createVerificationToken(user.id);
+      await sendVerificationEmail(user.email, verificationToken);
+      console.log(`Verification email sent to ${user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Continue registration process even if email sending fails
+      // We'll handle this case in the frontend
+    }
 
     // Generate tokens with the actual user ID
     const tokens = generateTokens({
@@ -241,6 +275,30 @@ export const register = async (
       WHERE id = ${user.id}
     `;
 
+    // Set secure cookies for tokens
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Set HTTP-only cookie for refresh token (7 days)
+    reply.setCookie('refresh_token', tokens.refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      domain: isProduction ? '.tijara-app.com' : undefined
+    });
+    
+    // Set HTTP-only cookie for access token (15 minutes)
+    reply.setCookie('access_token', tokens.accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      path: '/',
+      maxAge: 15 * 60, // 15 minutes in seconds
+      domain: isProduction ? '.tijara-app.com' : undefined
+    });
+
+    // Still return tokens in response for backward compatibility
     return reply.code(201).send({
       success: true,
       data: {
@@ -371,6 +429,8 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         dateOfBirth: true,
         password: true,
         username: true,
+        street: true,
+        city: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -463,6 +523,60 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         },
       });
     }
+    
+    // Check if email is verified
+    // This will work once the migration is applied
+    try {
+      // @ts-ignore - These fields will exist after migration
+      if (!user.emailVerified) {
+        // Generate a new verification token and send email
+        const verificationToken = await createVerificationToken(user.id);
+        await sendVerificationEmail(user.email, verificationToken);
+        
+        return reply.code(403).send({
+          success: false,
+          error: {
+            code: "EMAIL_NOT_VERIFIED",
+            message: "Please verify your email before logging in. A new verification email has been sent.",
+          },
+        });
+      }
+      
+      // Check if verification is older than 7 days
+      // @ts-ignore - These fields will exist after migration
+      if (user.lastVerifiedAt) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        // @ts-ignore - These fields will exist after migration
+        if (user.lastVerifiedAt < sevenDaysAgo) {
+          // Generate a new verification token and send email
+          const verificationToken = await createVerificationToken(user.id);
+          await sendVerificationEmail(user.email, verificationToken);
+          
+          // Set email as unverified until they verify again
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              // @ts-ignore - These fields will exist after migration
+              emailVerified: false,
+            },
+          });
+          
+          return reply.code(403).send({
+            success: false,
+            error: {
+              code: "VERIFICATION_EXPIRED",
+              message: "Your email verification has expired. A new verification email has been sent.",
+            },
+          });
+        }
+      }
+    } catch (verificationError) {
+      console.error('Error checking email verification:', verificationError);
+      // Continue with login even if verification check fails
+      // This is to ensure backward compatibility until migration is complete
+    }
 
     // Skip resetting failed login attempts since security fields don't exist in DB yet
     // We'll implement this after migration
@@ -497,22 +611,46 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       `User ${user.id} (${user.email}) logged in successfully from IP ${clientIp}`
     );
 
-    return reply
-      .setCookie("jwt", tokens.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict", // Enhanced from 'lax' to 'strict' for better security
-        path: "/",
-        maxAge: 60 * 15, // 15 minutes in seconds, matching token expiry
-      })
-      .send({
-        success: true,
-        data: {
-          tokens: {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-          },
-          user: {
+    // Set secure cookies for tokens
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Set HTTP-only cookie for refresh token (7 days)
+    reply.setCookie('refresh_token', tokens.refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      domain: isProduction ? '.tijara-app.com' : undefined
+    });
+    
+    // Set HTTP-only cookie for access token (15 minutes)
+    reply.setCookie('access_token', tokens.accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      path: '/',
+      maxAge: 15 * 60, // 15 minutes in seconds
+      domain: isProduction ? '.tijara-app.com' : undefined
+    });
+    
+    // For backward compatibility, also set the original jwt cookie
+    reply.setCookie("jwt", tokens.accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      path: "/",
+      maxAge: 60 * 15, // 15 minutes in seconds, matching token expiry
+    });
+    
+    return reply.send({
+      success: true,
+      data: {
+        tokens: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+        },
+        user: {
             id: user.id,
             email: user.email,
             username: user.username,
@@ -524,6 +662,8 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
             bio: user.bio,
             name: user.name,
             dateOfBirth: user.dateOfBirth,
+            street: user.street,
+            city: user.city,
             allowMessaging: user.allowMessaging,
             listingNotifications: user.listingNotifications,
             messageNotifications: user.messageNotifications,

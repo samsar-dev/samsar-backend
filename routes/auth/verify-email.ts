@@ -1,0 +1,141 @@
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { verifyEmail, createVerificationToken, sendVerificationEmail } from '../../utils/email.utils';
+import prisma from '../../src/lib/prismaClient';
+
+// Extended User type with verification fields
+interface UserWithVerification {
+  id: string;
+  email: string;
+  username: string;
+  emailVerified?: boolean;
+  lastVerifiedAt?: Date | null;
+  verificationToken?: string | null;
+  verificationTokenExpires?: Date | null;
+  [key: string]: any; // Allow other properties
+}
+
+interface VerifyEmailParams {
+  token: string;
+}
+
+interface ResendVerificationParams {
+  email: string;
+}
+
+export default async function (fastify: FastifyInstance) {
+  // Verify email endpoint
+  fastify.get<{ Querystring: VerifyEmailParams }>('/verify-email', async (request, reply) => {
+    try {
+      const { token } = request.query;
+
+      if (!token) {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'Verification token is required',
+          },
+        });
+      }
+
+      const verified = await verifyEmail(token);
+
+      if (!verified) {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'Invalid or expired verification token',
+          },
+        });
+      }
+
+      return reply.code(200).send({
+        success: true,
+        message: 'Email verified successfully',
+      });
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      return reply.code(500).send({
+        success: false,
+        error: {
+          code: 'SERVER_ERROR',
+          message: 'Failed to verify email',
+        },
+      });
+    }
+  });
+
+  // Resend verification email endpoint
+  fastify.post<{ Body: ResendVerificationParams }>('/resend-verification', async (request, reply) => {
+    try {
+      const { email } = request.body;
+
+      if (!email) {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: 'MISSING_EMAIL',
+            message: 'Email is required',
+          },
+        });
+      }
+
+      // Find user by email
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        // Return success even if user doesn't exist to prevent email enumeration
+        return reply.code(200).send({
+          success: true,
+          message: 'If your email exists in our system, a verification email has been sent',
+        });
+      }
+
+      // Check if user is already verified and verification is recent
+      // Use raw SQL to check verification status
+      const verificationData = await prisma.$queryRaw<UserWithVerification[]>`
+        SELECT "emailVerified", "lastVerifiedAt"
+        FROM "User"
+        WHERE id = ${user.id}
+        LIMIT 1
+      `;
+      
+      const verificationStatus = verificationData && verificationData.length > 0 ? verificationData[0] : null;
+      
+      if (verificationStatus?.emailVerified && verificationStatus?.lastVerifiedAt) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        if (verificationStatus.lastVerifiedAt > sevenDaysAgo) {
+          return reply.code(200).send({
+            success: true,
+            message: 'Your email is already verified',
+          });
+        }
+      }
+
+      // Generate new verification token
+      const token = await createVerificationToken(user.id);
+
+      // Send verification email
+      await sendVerificationEmail(user.email, token);
+
+      return reply.code(200).send({
+        success: true,
+        message: 'If your email exists in our system, a verification email has been sent',
+      });
+    } catch (error) {
+      console.error('Error resending verification email:', error);
+      return reply.code(500).send({
+        success: false,
+        error: {
+          code: 'SERVER_ERROR',
+          message: 'Failed to resend verification email',
+        },
+      });
+    }
+  });
+}
