@@ -22,8 +22,13 @@ interface ResendVerificationParams {
   email: string;
 }
 
+interface VerifyEmailWithCodeParams {
+  code: string;
+  email: string;
+}
+
 export default async function (fastify: FastifyInstance) {
-  // Verify email endpoint
+  // Verify email endpoint with token (via URL)
   fastify.get<{ Querystring: VerifyEmailParams }>('/verify-email', async (request, reply) => {
     try {
       const { token } = request.query;
@@ -49,6 +54,7 @@ export default async function (fastify: FastifyInstance) {
           },
         });
       }
+    
 
       return reply.code(200).send({
         success: true,
@@ -61,6 +67,73 @@ export default async function (fastify: FastifyInstance) {
         error: {
           code: 'SERVER_ERROR',
           message: 'Failed to verify email',
+        },
+      });
+    }
+  });
+
+  // Verify email with code (via POST)
+  fastify.post<{ Body: VerifyEmailWithCodeParams }>('/verify-email/code', async (request, reply) => {
+    try {
+      const { code, email } = request.body;
+
+      if (!code || !email) {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: 'INVALID_INPUT',
+            message: 'Verification code and email are required',
+          },
+        });
+      }
+
+      // Find user by email first
+      const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          verificationToken: true,
+          // @ts-ignore - verificationCode exists in the Prisma schema
+          verificationCode: true,
+          verificationTokenExpires: true,
+        },
+      });
+
+      if (!user) {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: 'User not found with this email',
+          },
+        });
+      }
+
+      // Verify with the code
+      const verified = await verifyEmail('', code);
+
+      if (!verified) {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: 'INVALID_CODE',
+            message: 'Invalid or expired verification code',
+          },
+        });
+      }
+
+      return reply.code(200).send({
+        success: true,
+        message: 'Email verified successfully',
+      });
+    } catch (error) {
+      console.error('Error verifying email with code:', error);
+      return reply.code(500).send({
+        success: false,
+        error: {
+          code: 'SERVER_ERROR',
+          message: 'An error occurred while verifying your email',
         },
       });
     }

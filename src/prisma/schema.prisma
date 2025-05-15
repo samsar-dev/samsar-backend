@@ -30,7 +30,9 @@ model User {
   emailVerified         Boolean        @default(false)
   lastVerifiedAt        DateTime?
   verificationToken     String?        @unique
+  verificationCode      String?        
   verificationTokenExpires DateTime?
+  accountStatus         String         @default("ACTIVE") // ACTIVE, PENDING, SUSPENDED, DEACTIVATED
   allowMessaging        Boolean        @default(true)
   listingNotifications  Boolean        @default(true)
   messageNotifications  Boolean        @default(true)

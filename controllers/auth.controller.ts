@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
+import { UserWithVerification } from "../utils/email.utils.js";
 // Using proper relative path to fix module resolution
 // @ts-ignore - This module exists but TypeScript can't find it
 import { createVerificationToken, sendVerificationEmail } from "../utils/email.utils";
@@ -214,7 +215,7 @@ export const register = async (
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user with verification fields
+    // Create user with verification fields and set account status to 'PENDING'
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -223,6 +224,9 @@ export const register = async (
         name,
         role: "USER",
         emailVerified: false,
+        // Add account status to indicate pending verification
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: "PENDING",
       },
       select: {
         id: true,
@@ -238,14 +242,17 @@ export const register = async (
       },
     });
     
-
-    
     // Generate verification token and send verification email
     try {
-      const verificationToken = await createVerificationToken(user.id);
-      const emailSent = await sendVerificationEmail(user.email, verificationToken);
+      const verificationInfo = await createVerificationToken(user.id);
+      const emailSent = await sendVerificationEmail(user.email, verificationInfo);
       
       if (!emailSent) {
+        // If email sending fails, delete the user and return an error
+        await prisma.user.delete({
+          where: { id: user.id }
+        });
+        
         return reply.code(500).send({
           success: false,
           error: {
@@ -257,6 +264,11 @@ export const register = async (
       
       console.log(`Verification email sent to ${user.email}`);
     } catch (emailError) {
+      // If verification process fails, delete the user and return an error
+      await prisma.user.delete({
+        where: { id: user.id }
+      });
+      
       console.error('Failed to send verification email:', emailError);
       return reply.code(500).send({
         success: false,
@@ -366,10 +378,10 @@ const authAttempts = new Map<
 
 // Rate limiting configuration
 const AUTH_RATE_LIMITS = {
-  LOGIN_MAX_ATTEMPTS: 5,
-  REGISTRATION_MAX_ATTEMPTS: 3,
-  COOLDOWN_PERIOD_MS: 15 * 60 * 1000, // 15 minutes
-  REGISTRATION_THROTTLE_MS: 30 * 1000, // 30 seconds between registrations
+  LOGIN_MAX_ATTEMPTS: 10,
+  REGISTRATION_MAX_ATTEMPTS: 10,
+  COOLDOWN_PERIOD_MS: 5 * 60 * 1000, // 5 minutes
+  REGISTRATION_THROTTLE_MS: 3 * 1000, // 3 seconds between registrations
 };
 
 // Login User with enhanced security
@@ -453,6 +465,9 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         showEmail: true,
         showOnlineStatus: true,
         showPhoneNumber: true,
+        emailVerified: true,
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: true,
       },
     });
 
@@ -468,6 +483,29 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         }
       : null;
 
+    // Check if email is verified and account status is active
+    if (user && !user.emailVerified) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "EMAIL_NOT_VERIFIED",
+          message: "Please verify your email before logging in. Check your inbox for a verification email or request a new one.",
+        },
+      });
+    }
+
+    // Check if account status is pending
+    // @ts-ignore - accountStatus exists in the Prisma schema
+    if (user && user.accountStatus === "PENDING") {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "ACCOUNT_PENDING",
+          message: "Your account is pending email verification. Please check your inbox for a verification email.",
+        },
+      });
+    }
+    
     // Check if account is locked
     if (userWithSecurity?.accountLocked) {
       const now = new Date();
@@ -537,91 +575,145 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       });
     }
     
+    // Get full user data including verification status
+    const fullUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        emailVerified: true,
+        lastVerifiedAt: true,
+        password: true,
+        createdAt: true,
+        updatedAt: true,
+        phone: true,
+        profilePicture: true,
+        bio: true,
+        name: true,
+        dateOfBirth: true,
+        street: true,
+        city: true,
+        allowMessaging: true,
+        listingNotifications: true,
+        messageNotifications: true,
+        showEmail: true,
+        showOnlineStatus: true,
+        showPhoneNumber: true
+      }
+    });
+
+    if (!fullUser) {
+      return reply.code(404).send({
+        success: false,
+        error: {
+          code: "USER_NOT_FOUND",
+          message: "Invalid email or password",
+        },
+      });
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, fullUser.password);
+    if (!isValidPassword) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "INVALID_CREDENTIALS",
+          message: "Invalid email or password",
+        },
+      });
+    }
+
     // Check if email is verified
-    // This will work once the migration is applied
-    try {
-      // @ts-ignore - These fields will exist after migration
-      if (!user.emailVerified) {
-        // Generate a new verification token and send email
-        const verificationToken = await createVerificationToken(user.id);
-        await sendVerificationEmail(user.email, verificationToken);
-        
-        return reply.code(403).send({
+    if (!fullUser.emailVerified) {
+      // Generate a new verification token and send email
+      const verificationToken = await createVerificationToken(fullUser.id);
+      const emailSent = await sendVerificationEmail(fullUser.email, verificationToken);
+      
+      if (!emailSent) {
+        return reply.code(500).send({
           success: false,
           error: {
-            code: "EMAIL_NOT_VERIFIED",
-            message: "Please verify your email before logging in. A new verification email has been sent.",
+            code: "EMAIL_SEND_FAILED",
+            message: "Failed to send verification email. Please try again later.",
           },
         });
       }
       
-      // Check if verification is older than 7 days
-      // @ts-ignore - These fields will exist after migration
-      if (user.lastVerifiedAt) {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return reply.code(403).send({
+        success: false,
+        error: {
+          code: "EMAIL_NOT_VERIFIED",
+          message: "Please verify your email before logging in. A new verification email has been sent.",
+        },
+      });
+    }
+
+    // Generate tokens
+    const tokens = generateTokens({
+      id: fullUser.id,
+      email: fullUser.email,
+      username: fullUser.username,
+      role: fullUser.role
+    });
+
+    // Check if verification is older than 7 days
+    if (fullUser.lastVerifiedAt) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      if (fullUser.lastVerifiedAt < sevenDaysAgo) {
+        // Generate a new verification token and send email
+        const verificationToken = await createVerificationToken(fullUser.id);
+        const emailSent = await sendVerificationEmail(fullUser.email, verificationToken);
         
-        // @ts-ignore - These fields will exist after migration
-        if (user.lastVerifiedAt < sevenDaysAgo) {
-          // Generate a new verification token and send email
-          const verificationToken = await createVerificationToken(user.id);
-          await sendVerificationEmail(user.email, verificationToken);
-          
-          // Set email as unverified until they verify again
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              // @ts-ignore - These fields will exist after migration
-              emailVerified: false,
-            },
-          });
-          
-          return reply.code(403).send({
+        if (!emailSent) {
+          return reply.code(500).send({
             success: false,
             error: {
-              code: "VERIFICATION_EXPIRED",
-              message: "Your email verification has expired. A new verification email has been sent.",
+              code: "EMAIL_SEND_FAILED",
+              message: "Failed to send verification email. Please try again later.",
             },
           });
         }
+        
+        // Set email as unverified until they verify again
+        await prisma.user.update({
+          where: { id: fullUser.id },
+          data: {
+            emailVerified: false,
+          },
+        });
+        
+        return reply.code(403).send({
+          success: false,
+          error: {
+            code: "VERIFICATION_EXPIRED",
+            message: "Your email verification has expired. A new verification email has been sent.",
+          },
+        });
       }
-    } catch (verificationError) {
-      console.error('Error checking email verification:', verificationError);
-      // Continue with login even if verification check fails
-      // This is to ensure backward compatibility until migration is complete
     }
 
-    // Skip resetting failed login attempts since security fields don't exist in DB yet
-    // We'll implement this after migration
-    console.log(
-      `Successful login for user ${user.email}. Would reset security fields here.`
-    );
+    // Store refresh token in user
+    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    await prisma.user.update({
+      where: { id: fullUser.id },
+      data: {
+        refreshToken: tokens.refreshToken,
+        refreshTokenExpiresAt: expiryDate
+      }
+    });
 
     // Reset login attempts counter for this IP on successful login
     const currentAttempts = authAttempts.get(clientIp)!;
     currentAttempts.loginCount = 0;
 
-    // Generate JWT tokens with enhanced security
-    const tokens = generateTokens({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-    });
-
-    // Store refresh token in user using raw SQL
-    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-    await prisma.$executeRaw`
-      UPDATE "User" 
-      SET "refreshToken" = ${tokens.refreshToken}, 
-          "refreshTokenExpiresAt" = ${expiryDate}
-      WHERE id = ${user.id}
-    `;
-
     // Log successful login for audit purposes
     console.log(
-      `User ${user.id} (${user.email}) logged in successfully from IP ${clientIp}`
+      `User ${fullUser.id} (${fullUser.email}) logged in successfully from IP ${clientIp}`
     );
 
     // Set secure cookies for tokens
@@ -636,7 +728,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
       domain: isProduction ? '.tijara-app.com' : undefined
     });
-    
+
     // Set HTTP-only cookie for access token (15 minutes)
     reply.setCookie('access_token', tokens.accessToken, {
       httpOnly: true,
@@ -656,7 +748,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       maxAge: 60 * 15, // 15 minutes in seconds, matching token expiry
     });
     
-    return reply.send({
+    return reply.code(200).send({
       success: true,
       data: {
         tokens: {
@@ -664,28 +756,28 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
           refreshToken: tokens.refreshToken,
         },
         user: {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            role: user.role,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt,
-            phone: user.phone,
-            profilePicture: user.profilePicture,
-            bio: user.bio,
-            name: user.name,
-            dateOfBirth: user.dateOfBirth,
-            street: user.street,
-            city: user.city,
-            allowMessaging: user.allowMessaging,
-            listingNotifications: user.listingNotifications,
-            messageNotifications: user.messageNotifications,
-            showEmail: user.showEmail,
-            showOnlineStatus: user.showOnlineStatus,
-            showPhoneNumber: user.showPhoneNumber,
-          },
-        },
-      });
+          id: fullUser.id,
+          email: fullUser.email,
+          username: fullUser.username,
+          role: fullUser.role,
+          createdAt: fullUser.createdAt,
+          updatedAt: fullUser.updatedAt,
+          phone: fullUser.phone,
+          profilePicture: fullUser.profilePicture,
+          bio: fullUser.bio,
+          name: fullUser.name,
+          dateOfBirth: fullUser.dateOfBirth,
+          street: fullUser.street,
+          city: fullUser.city,
+          allowMessaging: fullUser.allowMessaging,
+          listingNotifications: fullUser.listingNotifications,
+          messageNotifications: fullUser.messageNotifications,
+          showEmail: fullUser.showEmail,
+          showOnlineStatus: fullUser.showOnlineStatus,
+          showPhoneNumber: fullUser.showPhoneNumber
+        }
+      }
+    });
   } catch (error) {
     console.error("Login error:", error);
     return reply.code(500).send({
@@ -951,6 +1043,103 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
       error: {
         code: "SERVER_ERROR",
         message: "Failed to logout",
+      },
+    });
+  }
+};
+
+// Verify Email with Code
+export const verifyEmailCode = async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const { code } = request.body as { code: string };
+    const { email } = request.body as { email: string };
+
+    if (!code || !email) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: "INVALID_INPUT",
+          message: "Verification code and email are required",
+        },
+      });
+    }
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        verificationToken: true,
+        verificationCode: true,
+        verificationTokenExpires: true,
+      },
+    }) as UserWithVerification;
+
+    if (!user) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: "USER_NOT_FOUND",
+          message: "User not found",
+        },
+      });
+    }
+
+    if (user.emailVerified) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: "ALREADY_VERIFIED",
+          message: "Email is already verified",
+        },
+      });
+    }
+
+    if (!user.verificationCode || user.verificationCode !== code) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: "INVALID_CODE",
+          message: "Invalid verification code",
+        },
+      });
+    }
+
+    if (user.verificationTokenExpires && new Date() > user.verificationTokenExpires) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: "CODE_EXPIRED",
+          message: "Verification code has expired",
+        },
+      });
+    }
+
+    // Update user as verified
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationCode: null,
+        verificationToken: null,
+        verificationTokenExpires: null,
+        lastVerifiedAt: new Date(),
+      } as any,
+    });
+
+    return reply.status(200).send({
+      success: true,
+      message: "Email verified successfully",
+    });
+  } catch (error) {
+    console.error("Error verifying email code:", error);
+    return reply.status(500).send({
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: "Failed to verify email",
       },
     });
   }

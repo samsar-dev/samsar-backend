@@ -6,7 +6,9 @@ import {
   getMe,
   refresh,
   verifyToken,
+  verifyEmailCode,
 } from "../controllers/auth.controller.js";
+import { resendVerification } from "../controllers/resend-verification.controller.js";
 import {
   validate,
   RegisterSchema,
@@ -144,20 +146,45 @@ export default async function authRoutes(fastify: FastifyInstance) {
   );
 
   // Protected routes
+  fastify.post("/logout", { preHandler: authenticate }, logout);
+
+  // Verify email with code route
+  fastify.post("/verify-email/code", {
+    schema: {
+      body: {
+        type: "object",
+        properties: {
+          code: { type: "string", minLength: 6, maxLength: 6 },
+          email: { type: "string", format: "email" }
+        },
+        required: ["code", "email"]
+      }
+    }
+  }, verifyEmailCode);
+
+  // Add resend verification route
   fastify.post(
-    "/logout",
+    "/resend-verification",
     {
-      preHandler: [authenticate],
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            email: { type: "string", format: "email" },
+          },
+          required: ["email"],
+        },
+      },
     },
     async (request, reply) => {
       try {
-        await logout(request, reply);
+        await resendVerification(request, reply);
       } catch (error: any) {
         reply.code(500).send({
           success: false,
           error: {
-            code: "LOGOUT_ERROR",
-            message: error.message || "Logout failed",
+            code: "EMAIL_VERIFICATION_ERROR",
+            message: error.message || "Failed to resend verification email",
           },
         });
       }
