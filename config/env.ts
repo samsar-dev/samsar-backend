@@ -17,6 +17,9 @@ const envSchema = z.object({
   REFRESH_TOKEN_EXPIRY: z.string().default("2592000"),
   BCRYPT_SALT_ROUNDS: z.string().default("12"),
   CORS_ORIGIN: z.string().default("*"),
+  // Email configuration
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default("noreply@tijara.dev"),
 });
 
 const envParse = envSchema.safeParse(process.env);
@@ -47,4 +50,7 @@ export const env = {
   CLOUDFLARE_SECRET_ACCESS_KEY: process.env.CLOUDFLARE_SECRET_ACCESS_KEY,
   CLOUDFLARE_BUCKET_NAME: process.env.CLOUDFLARE_BUCKET_NAME,
   CLOUDFLARE_ENDPOINT: process.env.CLOUDFLARE_ENDPOINT,
+  // Email configuration
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  EMAIL_FROM: process.env.EMAIL_FROM || "noreply@tijara.dev",
 };

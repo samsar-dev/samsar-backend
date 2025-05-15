@@ -214,7 +214,7 @@ export const register = async (
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user without verification fields first (to avoid type errors)
+    // Create user with verification fields
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -222,6 +222,7 @@ export const register = async (
         password: hashedPassword,
         name,
         role: "USER",
+        emailVerified: false,
       },
       select: {
         id: true,
@@ -237,22 +238,33 @@ export const register = async (
       },
     });
     
-    // Then set emailVerified to false using raw SQL
-    await prisma.$executeRaw`
-      UPDATE "User" 
-      SET "emailVerified" = false
-      WHERE id = ${user.id}
-    `;
+
     
     // Generate verification token and send verification email
     try {
       const verificationToken = await createVerificationToken(user.id);
-      await sendVerificationEmail(user.email, verificationToken);
+      const emailSent = await sendVerificationEmail(user.email, verificationToken);
+      
+      if (!emailSent) {
+        return reply.code(500).send({
+          success: false,
+          error: {
+            code: "EMAIL_SEND_FAILED",
+            message: "Failed to send verification email. Please try again.",
+          },
+        });
+      }
+      
       console.log(`Verification email sent to ${user.email}`);
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
-      // Continue registration process even if email sending fails
-      // We'll handle this case in the frontend
+      return reply.code(500).send({
+        success: false,
+        error: {
+          code: "EMAIL_SEND_FAILED",
+          message: "Failed to send verification email. Please try again.",
+        },
+      });
     }
 
     // Generate tokens with the actual user ID
@@ -304,6 +316,7 @@ export const register = async (
       data: {
         user,
         tokens,
+        message: "Registration successful. Please check your email for verification instructions.",
       },
     });
   } catch (error) {

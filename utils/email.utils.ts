@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { config } from '../config/config';
 import prisma from '../src/lib/prismaClient';
 
@@ -56,63 +56,51 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
 
-    // Create a test account if no SMTP credentials are provided
-    let transporter;
-    
-    if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
-      // Use configured SMTP server
-      transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD,
-        },
-      });
-    } else {
-      // Use ethereal for testing
-      const testAccount = await nodemailer.createTestAccount();
-      transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
+    // Initialize Resend API client
+    if (!config.email.resendApiKey) {
+      console.error('Resend API key is missing');
+      return false;
     }
 
-    // Send the email
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || '"Tijara App" <no-reply@tijara-app.com>',
+    const resend = new Resend(config.email.resendApiKey);
+    
+    console.log('Attempting to send email to:', email);
+    
+    // Create HTML email content
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
+        <h2 style="color: #333; text-align: center;">Verify Your Email Address</h2>
+        <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email</a>
+        </div>
+        <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+        <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">${verificationUrl}</p>
+        <p>This verification link will expire in 24 hours.</p>
+        <p>If you didn't sign up for an account, you can safely ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;">
+        <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Tijara App. All rights reserved.</p>
+      </div>
+    `;
+
+    // Send email using Resend
+    const { data, error } = await resend.emails.send({
+      from: config.email.from,
       to: email,
       subject: 'Verify Your Email Address',
+      html: htmlContent,
       text: `Please verify your email address by clicking on the following link: ${verificationUrl}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
-          <h2 style="color: #333; text-align: center;">Verify Your Email Address</h2>
-          <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email</a>
-          </div>
-          <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
-          <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">${verificationUrl}</p>
-          <p>This verification link will expire in 24 hours.</p>
-          <p>If you didn't sign up for an account, you can safely ignore this email.</p>
-          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;">
-          <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Tijara App. All rights reserved.</p>
-        </div>
-      `,
     });
 
-    console.log('Email sent: %s', info.messageId);
-    
-    // Log preview URL for testing environments
-    if (!process.env.SMTP_HOST) {
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    if (error) {
+      console.error('Error sending email with Resend:', error);
+      return false;
     }
+
+    console.log('Email sent successfully:', {
+      id: data?.id,
+      to: email,
+    });
 
     return true;
   } catch (error) {

@@ -21,4 +21,8 @@ export const config = {
   server: {
     port: env.PORT || "5000", // optional
   },
+  email: {
+    resendApiKey: env.RESEND_API_KEY,
+    from: env.EMAIL_FROM
+  },
 };
