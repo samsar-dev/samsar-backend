@@ -633,35 +633,8 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       });
     }
 
-    // Check if email is verified
-    if (!fullUser.emailVerified) {
-      // Generate a new verification token and send email
-      const verificationToken = await createVerificationToken(fullUser.id);
-      const emailSent = await sendVerificationEmail(
-        fullUser.email,
-        verificationToken,
-      );
-
-      if (!emailSent) {
-        return reply.code(500).send({
-          success: false,
-          error: {
-            code: "EMAIL_SEND_FAILED",
-            message:
-              "Failed to send verification email. Please try again later.",
-          },
-        });
-      }
-
-      return reply.code(403).send({
-        success: false,
-        error: {
-          code: "EMAIL_NOT_VERIFIED",
-          message:
-            "Please verify your email before logging in. A new verification email has been sent.",
-        },
-      });
-    }
+    // Email verification check removed to allow login without verification
+    // Users can now log in whether their email is verified or not
 
     // Generate tokens
     const tokens = generateTokens({
@@ -671,48 +644,8 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       role: fullUser.role,
     });
 
-    // Check if verification is older than 7 days
-    if (fullUser.lastVerifiedAt) {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      if (fullUser.lastVerifiedAt < sevenDaysAgo) {
-        // Generate a new verification token and send email
-        const verificationToken = await createVerificationToken(fullUser.id);
-        const emailSent = await sendVerificationEmail(
-          fullUser.email,
-          verificationToken,
-        );
-
-        if (!emailSent) {
-          return reply.code(500).send({
-            success: false,
-            error: {
-              code: "EMAIL_SEND_FAILED",
-              message:
-                "Failed to send verification email. Please try again later.",
-            },
-          });
-        }
-
-        // Set email as unverified until they verify again
-        await prisma.user.update({
-          where: { id: fullUser.id },
-          data: {
-            emailVerified: false,
-          },
-        });
-
-        return reply.code(403).send({
-          success: false,
-          error: {
-            code: "VERIFICATION_EXPIRED",
-            message:
-              "Your email verification has expired. A new verification email has been sent.",
-          },
-        });
-      }
-    }
+    // Periodic verification check removed
+    // Users no longer need to re-verify their email periodically
 
     // Store refresh token in user
     const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
