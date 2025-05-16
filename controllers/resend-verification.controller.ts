@@ -1,9 +1,15 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import prisma from "../src/lib/prismaClient.js";
-import { createVerificationToken, sendVerificationEmail } from "../utils/email.utils.js";
+import {
+  createVerificationToken,
+  sendVerificationEmail,
+} from "../utils/email.utils.js";
 
 // Resend verification email
-export const resendVerification = async (request: FastifyRequest, reply: FastifyReply) => {
+export const resendVerification = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     const { email } = request.body as { email: string };
 

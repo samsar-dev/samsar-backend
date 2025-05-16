@@ -1,7 +1,7 @@
-import { randomBytes } from 'crypto';
-import { Resend } from 'resend';
-import { config } from '../config/config.js';
-import prisma from '../src/lib/prismaClient.js';
+import { randomBytes } from "crypto";
+import { Resend } from "resend";
+import { config } from "../config/config.js";
+import prisma from "../src/lib/prismaClient.js";
 
 // Extended User type with verification fields
 export interface UserWithVerification {
@@ -22,7 +22,7 @@ export interface UserWithVerification {
  * @returns {string} The generated token
  */
 export const generateVerificationToken = (): string => {
-  return randomBytes(32).toString('hex');
+  return randomBytes(32).toString("hex");
 };
 
 /**
@@ -39,7 +39,9 @@ export const generateVerificationCode = (): string => {
  * @param userId The ID of the user
  * @returns {Promise<string>} The generated verification token
  */
-export const createVerificationToken = async (userId: string): Promise<{token: string, code: string}> => {
+export const createVerificationToken = async (
+  userId: string,
+): Promise<{ token: string; code: string }> => {
   const token = generateVerificationToken();
   const code = generateVerificationCode();
   const expires = new Date();
@@ -53,15 +55,15 @@ export const createVerificationToken = async (userId: string): Promise<{token: s
       // @ts-ignore - verificationCode exists in the Prisma schema
       verificationCode: code,
       verificationTokenExpires: expires,
-      emailVerified: false
-    }
+      emailVerified: false,
+    },
   });
 
-  console.log('Created verification token and code:', {
+  console.log("Created verification token and code:", {
     userId,
     token,
     code,
-    expires
+    expires,
   });
 
   return { token, code };
@@ -73,18 +75,25 @@ export const createVerificationToken = async (userId: string): Promise<{token: s
  * @param token The verification token
  * @returns {Promise<boolean>} Whether the email was sent successfully
  */
-export const sendVerificationEmail = async (email: string, tokenInfo: {token: string, code: string}): Promise<boolean> => {
+export const sendVerificationEmail = async (
+  email: string,
+  tokenInfo: { token: string; code: string },
+): Promise<boolean> => {
   const { token, code } = tokenInfo;
   try {
     // Get the first URL from the comma-separated list or use localhost
-    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0];
+    const frontendUrl = (
+      process.env.FRONTEND_URL || "http://localhost:5173"
+    ).split(",")[0];
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
 
     // Check if we're in development mode and should bypass email sending
-    const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === undefined;
-    
+    const isDevelopment =
+      process.env.NODE_ENV === "development" ||
+      process.env.NODE_ENV === undefined;
+
     // Validate the token exists
-    const user = await prisma.user.findUnique({
+    const user = (await prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
@@ -92,44 +101,44 @@ export const sendVerificationEmail = async (email: string, tokenInfo: {token: st
         verificationTokenExpires: true,
         // @ts-ignore - verificationCode exists in the Prisma schema
         verificationCode: true as const, // Add type assertion for verificationCode
-      }
-    }) as UserWithVerification;
+      },
+    })) as UserWithVerification;
 
     if (!user?.verificationToken || user.verificationToken !== token) {
-      console.error('Invalid verification token');
+      console.error("Invalid verification token");
       return false;
     }
 
-    console.log('Using frontend URL:', frontendUrl);
-    console.log('Using verification token:', token);
-    console.log('Verification code:', code);
-    
+    console.log("Using frontend URL:", frontendUrl);
+    console.log("Using verification token:", token);
+    console.log("Verification code:", code);
+
     // DEVELOPMENT MODE BYPASS
     // In development, log the verification details but don't try to send an email
     if (isDevelopment) {
-      console.log('DEVELOPMENT MODE: Email sending bypassed');
-      console.log('----------------------------------------');
-      console.log('VERIFICATION DETAILS (USE THESE TO VERIFY):');
-      console.log('Email:', email);
-      console.log('Verification Code:', code);
-      console.log('Verification Token:', token);
-      console.log('Verification URL:', verificationUrl);
-      console.log('----------------------------------------');
+      console.log("DEVELOPMENT MODE: Email sending bypassed");
+      console.log("----------------------------------------");
+      console.log("VERIFICATION DETAILS (USE THESE TO VERIFY):");
+      console.log("Email:", email);
+      console.log("Verification Code:", code);
+      console.log("Verification Token:", token);
+      console.log("Verification URL:", verificationUrl);
+      console.log("----------------------------------------");
       // Return true to indicate success without actually sending an email
       return true;
     }
-    
+
     // PRODUCTION EMAIL SENDING
     // Initialize Resend API client
     if (!config.email.resendApiKey) {
-      console.error('Resend API key is missing');
+      console.error("Resend API key is missing");
       return false;
     }
 
     const resend = new Resend(config.email.resendApiKey);
-    
-    console.log('Attempting to send email to:', email);
-    
+
+    console.log("Attempting to send email to:", email);
+
     // Create HTML email content with verification code
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
@@ -152,28 +161,31 @@ export const sendVerificationEmail = async (email: string, tokenInfo: {token: st
     `;
 
     // Send email using Resend
-    console.log('Sending email with Resend using API key:', config.email.resendApiKey);
+    console.log(
+      "Sending email with Resend using API key:",
+      config.email.resendApiKey,
+    );
     const { data, error } = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: "onboarding@resend.dev",
       to: email,
-      subject: 'Verify Your Email Address',
+      subject: "Verify Your Email Address",
       html: htmlContent,
       text: `Your verification code is: ${code}\n\nOr verify your email address by clicking on the following link: ${verificationUrl}`,
     });
 
     if (error) {
-      console.error('Error sending email with Resend:', error);
+      console.error("Error sending email with Resend:", error);
       return false;
     }
 
-    console.log('Email sent successfully:', {
+    console.log("Email sent successfully:", {
       id: data?.id,
       to: email,
     });
 
     return true;
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    console.error("Error sending verification email:", error);
     return false;
   }
 };
@@ -183,35 +195,38 @@ export const sendVerificationEmail = async (email: string, tokenInfo: {token: st
  * @param token The verification token
  * @returns {Promise<boolean>} Whether the verification was successful
  */
-export const verifyEmail = async (token: string, code?: string): Promise<boolean> => {
+export const verifyEmail = async (
+  token: string,
+  code?: string,
+): Promise<boolean> => {
   try {
     // Find user with verification token or code
     let user: UserWithVerification | null = null;
-    
+
     if (code) {
       // Try to verify with code
-      const users = await prisma.user.findMany({
+      const users = (await prisma.user.findMany({
         where: {
           // @ts-ignore - verificationCode exists in the Prisma schema
           verificationCode: code,
           verificationTokenExpires: {
-            gt: new Date()
-          }
+            gt: new Date(),
+          },
         },
-        take: 1
-      }) as unknown as UserWithVerification[];
+        take: 1,
+      })) as unknown as UserWithVerification[];
       user = users.length > 0 ? users[0] : null;
     } else {
       // Verify with token
-      const users = await prisma.user.findMany({
+      const users = (await prisma.user.findMany({
         where: {
           verificationToken: token,
           verificationTokenExpires: {
-            gt: new Date()
-          }
+            gt: new Date(),
+          },
         },
-        take: 1
-      }) as unknown as UserWithVerification[];
+        take: 1,
+      })) as unknown as UserWithVerification[];
       user = users.length > 0 ? users[0] : null;
     }
 
@@ -231,13 +246,13 @@ export const verifyEmail = async (token: string, code?: string): Promise<boolean
         verificationCode: null,
         verificationTokenExpires: null,
         // @ts-ignore - accountStatus exists in the Prisma schema
-        accountStatus: "ACTIVE"
-      }
+        accountStatus: "ACTIVE",
+      },
     });
 
     return true;
   } catch (error) {
-    console.error('Error verifying email:', error);
+    console.error("Error verifying email:", error);
     return false;
   }
 };
@@ -257,7 +272,7 @@ export const needsReVerification = async (userId: string): Promise<boolean> => {
       WHERE id = ${userId}
       LIMIT 1
     `;
-    
+
     const user = users && users.length > 0 ? users[0] : null;
 
     if (!user) {
@@ -280,7 +295,7 @@ export const needsReVerification = async (userId: string): Promise<boolean> => {
 
     return user.lastVerifiedAt < sevenDaysAgo;
   } catch (error) {
-    console.error('Error checking verification status:', error);
+    console.error("Error checking verification status:", error);
     return true; // Default to requiring verification on error
   }
 };

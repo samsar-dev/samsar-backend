@@ -3,9 +3,12 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
 import { UserWithVerification } from "../utils/email.utils.js";
-// Using proper relative path to fix module resolution
-// @ts-ignore - This module exists but TypeScript can't find it
-import { createVerificationToken, sendVerificationEmail } from "../utils/email.utils";
+import {
+  createVerificationToken,
+  sendVerificationEmail,
+  generateVerificationCode,
+} from "../utils/email.utils.js";
+import { sendPasswordChangeEmail } from "../utils/passwordEmail.utils.js";
 
 // Add to the imports
 
@@ -53,11 +56,11 @@ const generateTokens = (user: {
       exp: now + 60 * 15, // 15 minutes in seconds
     },
     jwtSecret,
-    { 
-      algorithm: 'HS256',
-      audience: 'tijara-app',
-      issuer: 'tijara-api'
-    }
+    {
+      algorithm: "HS256",
+      audience: "tijara-app",
+      issuer: "tijara-api",
+    },
   );
 
   // Refresh token with longer expiry (7 days)
@@ -69,11 +72,11 @@ const generateTokens = (user: {
       exp: now + 60 * 60 * 24 * 7, // 7 days in seconds
     },
     jwtSecret,
-    { 
-      algorithm: 'HS256',
-      audience: 'tijara-app',
-      issuer: 'tijara-api'
-    }
+    {
+      algorithm: "HS256",
+      audience: "tijara-app",
+      issuer: "tijara-api",
+    },
   );
 
   return { accessToken, refreshToken };
@@ -82,7 +85,7 @@ const generateTokens = (user: {
 // Register a New User
 export const register = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     // Get client IP for rate limiting
@@ -114,7 +117,7 @@ export const register = async (
 
       if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
         const remainingTime = Math.ceil(
-          (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
+          (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000,
         ); // minutes
         return reply.code(429).send({
           success: false,
@@ -122,7 +125,7 @@ export const register = async (
             code: "RATE_LIMIT_EXCEEDED",
             message: `Too many registration attempts. Please try again in ${remainingTime} minutes.`,
             retryAfter: new Date(
-              Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
+              Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed),
             ),
           },
         });
@@ -137,7 +140,7 @@ export const register = async (
       const waitTime = Math.ceil(
         (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
           timeSinceLastRegistration) /
-          1000
+          1000,
       );
       return reply.code(429).send({
         success: false,
@@ -147,7 +150,7 @@ export const register = async (
           retryAfter: new Date(
             Date.now() +
               (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
-                timeSinceLastRegistration)
+                timeSinceLastRegistration),
           ),
         },
       });
@@ -241,18 +244,21 @@ export const register = async (
         createdAt: true,
       },
     });
-    
+
     // Generate verification token and send verification email
     try {
       const verificationInfo = await createVerificationToken(user.id);
-      const emailSent = await sendVerificationEmail(user.email, verificationInfo);
-      
+      const emailSent = await sendVerificationEmail(
+        user.email,
+        verificationInfo,
+      );
+
       if (!emailSent) {
         // If email sending fails, delete the user and return an error
         await prisma.user.delete({
-          where: { id: user.id }
+          where: { id: user.id },
         });
-        
+
         return reply.code(500).send({
           success: false,
           error: {
@@ -261,15 +267,15 @@ export const register = async (
           },
         });
       }
-      
+
       console.log(`Verification email sent to ${user.email}`);
     } catch (emailError) {
       // If verification process fails, delete the user and return an error
       await prisma.user.delete({
-        where: { id: user.id }
+        where: { id: user.id },
       });
-      
-      console.error('Failed to send verification email:', emailError);
+
+      console.error("Failed to send verification email:", emailError);
       return reply.code(500).send({
         success: false,
         error: {
@@ -300,26 +306,26 @@ export const register = async (
     `;
 
     // Set secure cookies for tokens
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+
     // Set HTTP-only cookie for refresh token (7 days)
-    reply.setCookie('refresh_token', tokens.refreshToken, {
+    reply.setCookie("refresh_token", tokens.refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
-      path: '/',
+      sameSite: isProduction ? "strict" : "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-      domain: isProduction ? '.tijara-app.com' : undefined
+      domain: isProduction ? ".tijara-app.com" : undefined,
     });
-    
+
     // Set HTTP-only cookie for access token (15 minutes)
-    reply.setCookie('access_token', tokens.accessToken, {
+    reply.setCookie("access_token", tokens.accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
-      path: '/',
+      sameSite: isProduction ? "strict" : "lax",
+      path: "/",
       maxAge: 15 * 60, // 15 minutes in seconds
-      domain: isProduction ? '.tijara-app.com' : undefined
+      domain: isProduction ? ".tijara-app.com" : undefined,
     });
 
     // Still return tokens in response for backward compatibility
@@ -328,7 +334,8 @@ export const register = async (
       data: {
         user,
         tokens,
-        message: "Registration successful. Please check your email for verification instructions.",
+        message:
+          "Registration successful. Please check your email for verification instructions.",
       },
     });
   } catch (error) {
@@ -409,7 +416,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
       const remainingTime = Math.ceil(
-        (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
+        (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000,
       ); // minutes
       return reply.code(429).send({
         success: false,
@@ -417,7 +424,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
           code: "RATE_LIMIT_EXCEEDED",
           message: `Too many failed login attempts. Please try again in ${remainingTime} minutes.`,
           retryAfter: new Date(
-            Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
+            Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed),
           ),
         },
       });
@@ -438,7 +445,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     // Add a small delay to prevent timing attacks (helps hide if an email exists or not)
     await new Promise((resolve) =>
-      setTimeout(resolve, 100 + Math.random() * 200)
+      setTimeout(resolve, 100 + Math.random() * 200),
     );
 
     // Find the user by email - only select fields that definitely exist in the database
@@ -483,29 +490,29 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         }
       : null;
 
-    // Check if email is verified and account status is active
-    if (user && !user.emailVerified) {
-      return reply.code(401).send({
-        success: false,
-        error: {
-          code: "EMAIL_NOT_VERIFIED",
-          message: "Please verify your email before logging in. Check your inbox for a verification email or request a new one.",
-        },
-      });
-    }
+    // Email verification check removed to allow login without verification
+    // if (user && !user.emailVerified) {
+    //   return reply.code(401).send({
+    //     success: false,
+    //     error: {
+    //       code: "EMAIL_NOT_VERIFIED",
+    //       message: "Please verify your email before logging in. Check your inbox for a verification email or request a new one.",
+    //     },
+    //   });
+    // }
 
-    // Check if account status is pending
+    // Account status check removed to allow login regardless of status
     // @ts-ignore - accountStatus exists in the Prisma schema
-    if (user && user.accountStatus === "PENDING") {
-      return reply.code(401).send({
-        success: false,
-        error: {
-          code: "ACCOUNT_PENDING",
-          message: "Your account is pending email verification. Please check your inbox for a verification email.",
-        },
-      });
-    }
-    
+    // if (user && user.accountStatus === "PENDING") {
+    //   return reply.code(401).send({
+    //     success: false,
+    //     error: {
+    //       code: "ACCOUNT_PENDING",
+    //       message: "Your account is pending email verification. Please check your inbox for a verification email.",
+    //     },
+    //   });
+    // }
+
     // Check if account is locked
     if (userWithSecurity?.accountLocked) {
       const now = new Date();
@@ -515,7 +522,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       ) {
         const minutesRemaining = Math.ceil(
           (userWithSecurity.accountLockedUntil.getTime() - now.getTime()) /
-            60000
+            60000,
         );
         return reply.code(401).send({
           success: false,
@@ -561,7 +568,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
       // Just log the attempt for now
       console.log(
-        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`
+        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`,
       );
 
       // We'll implement account locking after migration
@@ -574,7 +581,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         },
       });
     }
-    
+
     // Get full user data including verification status
     const fullUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -600,8 +607,8 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         messageNotifications: true,
         showEmail: true,
         showOnlineStatus: true,
-        showPhoneNumber: true
-      }
+        showPhoneNumber: true,
+      },
     });
 
     if (!fullUser) {
@@ -630,23 +637,28 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     if (!fullUser.emailVerified) {
       // Generate a new verification token and send email
       const verificationToken = await createVerificationToken(fullUser.id);
-      const emailSent = await sendVerificationEmail(fullUser.email, verificationToken);
-      
+      const emailSent = await sendVerificationEmail(
+        fullUser.email,
+        verificationToken,
+      );
+
       if (!emailSent) {
         return reply.code(500).send({
           success: false,
           error: {
             code: "EMAIL_SEND_FAILED",
-            message: "Failed to send verification email. Please try again later.",
+            message:
+              "Failed to send verification email. Please try again later.",
           },
         });
       }
-      
+
       return reply.code(403).send({
         success: false,
         error: {
           code: "EMAIL_NOT_VERIFIED",
-          message: "Please verify your email before logging in. A new verification email has been sent.",
+          message:
+            "Please verify your email before logging in. A new verification email has been sent.",
         },
       });
     }
@@ -656,29 +668,33 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       id: fullUser.id,
       email: fullUser.email,
       username: fullUser.username,
-      role: fullUser.role
+      role: fullUser.role,
     });
 
     // Check if verification is older than 7 days
     if (fullUser.lastVerifiedAt) {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
+
       if (fullUser.lastVerifiedAt < sevenDaysAgo) {
         // Generate a new verification token and send email
         const verificationToken = await createVerificationToken(fullUser.id);
-        const emailSent = await sendVerificationEmail(fullUser.email, verificationToken);
-        
+        const emailSent = await sendVerificationEmail(
+          fullUser.email,
+          verificationToken,
+        );
+
         if (!emailSent) {
           return reply.code(500).send({
             success: false,
             error: {
               code: "EMAIL_SEND_FAILED",
-              message: "Failed to send verification email. Please try again later.",
+              message:
+                "Failed to send verification email. Please try again later.",
             },
           });
         }
-        
+
         // Set email as unverified until they verify again
         await prisma.user.update({
           where: { id: fullUser.id },
@@ -686,12 +702,13 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
             emailVerified: false,
           },
         });
-        
+
         return reply.code(403).send({
           success: false,
           error: {
             code: "VERIFICATION_EXPIRED",
-            message: "Your email verification has expired. A new verification email has been sent.",
+            message:
+              "Your email verification has expired. A new verification email has been sent.",
           },
         });
       }
@@ -703,8 +720,8 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       where: { id: fullUser.id },
       data: {
         refreshToken: tokens.refreshToken,
-        refreshTokenExpiresAt: expiryDate
-      }
+        refreshTokenExpiresAt: expiryDate,
+      },
     });
 
     // Reset login attempts counter for this IP on successful login
@@ -713,41 +730,41 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     // Log successful login for audit purposes
     console.log(
-      `User ${fullUser.id} (${fullUser.email}) logged in successfully from IP ${clientIp}`
+      `User ${fullUser.id} (${fullUser.email}) logged in successfully from IP ${clientIp}`,
     );
 
     // Set secure cookies for tokens
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+
     // Set HTTP-only cookie for refresh token (7 days)
-    reply.setCookie('refresh_token', tokens.refreshToken, {
+    reply.setCookie("refresh_token", tokens.refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
-      path: '/',
+      sameSite: isProduction ? "strict" : "lax",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-      domain: isProduction ? '.tijara-app.com' : undefined
+      domain: isProduction ? ".tijara-app.com" : undefined,
     });
 
     // Set HTTP-only cookie for access token (15 minutes)
-    reply.setCookie('access_token', tokens.accessToken, {
+    reply.setCookie("access_token", tokens.accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
-      path: '/',
+      sameSite: isProduction ? "strict" : "lax",
+      path: "/",
       maxAge: 15 * 60, // 15 minutes in seconds
-      domain: isProduction ? '.tijara-app.com' : undefined
+      domain: isProduction ? ".tijara-app.com" : undefined,
     });
-    
+
     // For backward compatibility, also set the original jwt cookie
     reply.setCookie("jwt", tokens.accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: isProduction ? "strict" : "lax",
       path: "/",
       maxAge: 60 * 15, // 15 minutes in seconds, matching token expiry
     });
-    
+
     return reply.code(200).send({
       success: true,
       data: {
@@ -774,9 +791,9 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
           messageNotifications: fullUser.messageNotifications,
           showEmail: fullUser.showEmail,
           showOnlineStatus: fullUser.showOnlineStatus,
-          showPhoneNumber: fullUser.showPhoneNumber
-        }
-      }
+          showPhoneNumber: fullUser.showPhoneNumber,
+        },
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -863,7 +880,7 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
 // Refresh Token
 export const verifyToken = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const token = request.headers.authorization?.split(" ")[1];
@@ -880,7 +897,7 @@ export const verifyToken = async (
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET as string
+        process.env.JWT_SECRET as string,
       ) as JWTUser;
       const user = await prisma.user.findUnique({
         where: { id: decoded.sub },
@@ -929,7 +946,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
     // Verify the refresh token
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_SECRET as string
+      process.env.JWT_SECRET as string,
     ) as JWTUser;
 
     // Find the user with matching refresh token
@@ -1049,7 +1066,10 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
 };
 
 // Verify Email with Code
-export const verifyEmailCode = async (request: FastifyRequest, reply: FastifyReply) => {
+export const verifyEmailCode = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     const { code } = request.body as { code: string };
     const { email } = request.body as { email: string };
@@ -1065,7 +1085,7 @@ export const verifyEmailCode = async (request: FastifyRequest, reply: FastifyRep
     }
 
     // Find user by email
-    const user = await prisma.user.findUnique({
+    const user = (await prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
@@ -1075,7 +1095,7 @@ export const verifyEmailCode = async (request: FastifyRequest, reply: FastifyRep
         verificationCode: true,
         verificationTokenExpires: true,
       },
-    }) as UserWithVerification;
+    })) as UserWithVerification;
 
     if (!user) {
       return reply.status(404).send({
@@ -1107,7 +1127,10 @@ export const verifyEmailCode = async (request: FastifyRequest, reply: FastifyRep
       });
     }
 
-    if (user.verificationTokenExpires && new Date() > user.verificationTokenExpires) {
+    if (
+      user.verificationTokenExpires &&
+      new Date() > user.verificationTokenExpires
+    ) {
       return reply.status(400).send({
         success: false,
         error: {
@@ -1140,6 +1163,160 @@ export const verifyEmailCode = async (request: FastifyRequest, reply: FastifyRep
       error: {
         code: "SERVER_ERROR",
         message: "Failed to verify email",
+      },
+    });
+  }
+};
+
+// Send verification code for password change
+export const sendPasswordChangeVerification = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  try {
+    // Get user from authenticated request
+    const user = request.user as { id: string; email: string };
+
+    if (!user || !user.id) {
+      return reply.status(401).send({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to request a password change",
+        },
+      });
+    }
+
+    // Generate a verification code
+    const verificationCode = generateVerificationCode();
+
+    // Store the verification code in the database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        // @ts-ignore - verificationCode exists in the Prisma schema
+        verificationCode: verificationCode,
+        verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+      },
+    });
+
+    // Send password change verification email
+    const emailSent = await sendPasswordChangeEmail(
+      user.email,
+      verificationCode,
+    );
+
+    if (!emailSent) {
+      return reply.status(500).send({
+        success: false,
+        error: {
+          code: "EMAIL_SEND_FAILED",
+          message: "Failed to send verification email. Please try again later.",
+        },
+      });
+    }
+
+    return reply.status(200).send({
+      success: true,
+      message: "Verification code sent to your email",
+    });
+  } catch (error) {
+    console.error("Error sending password change verification:", error);
+    return reply.status(500).send({
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: "Failed to send verification email",
+      },
+    });
+  }
+};
+
+// Change password with verification code
+export const changePasswordWithVerification = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  try {
+    // Get user from authenticated request
+    const user = request.user as { id: string; email: string };
+
+    if (!user || !user.id) {
+      return reply.status(401).send({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to change your password",
+        },
+      });
+    }
+
+    // Get request body
+    const { currentPassword, newPassword, verificationCode } = request.body as {
+      currentPassword: string;
+      newPassword: string;
+      verificationCode: string;
+    };
+
+    // Find user with verification code
+    const userWithVerification = await prisma.user.findFirst({
+      where: {
+        id: user.id,
+        verificationCode: verificationCode,
+      },
+    });
+
+    if (!userWithVerification || !userWithVerification.verificationCode) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: "INVALID_CODE",
+          message: "Invalid verification code",
+        },
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      userWithVerification.password,
+    );
+
+    if (!isPasswordValid) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: "INVALID_PASSWORD",
+          message: "Current password is incorrect",
+        },
+      });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user password and clear verification code
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        verificationCode: null,
+        updatedAt: new Date(), // Use updatedAt to track password change time
+      },
+    });
+
+    return reply.status(200).send({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Error changing password with verification:", error);
+    return reply.status(500).send({
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: "Failed to change password",
       },
     });
   }

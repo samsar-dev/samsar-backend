@@ -52,7 +52,7 @@ export const handlePriceChange = async ({
         data: {
           type: "PRICE_UPDATE",
           content: `Price reduced for ${title} from ${oldPrice} to ${newPrice} (${percentReduction.toFixed(
-            2
+            2,
           )}% off)`,
           userId: favorite.userId,
           relatedListingId: listingId,
@@ -65,7 +65,7 @@ export const handlePriceChange = async ({
 
       console.log(
         `Created notification for user ${favorite.userId}:`,
-        notification
+        notification,
       );
 
       // Send real-time notification to the user if they are online

@@ -23,6 +23,6 @@ export const config = {
   },
   email: {
     resendApiKey: env.RESEND_API_KEY,
-    from: env.EMAIL_FROM
+    from: env.EMAIL_FROM,
   },
 };

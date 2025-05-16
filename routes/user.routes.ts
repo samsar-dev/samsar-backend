@@ -21,24 +21,27 @@ export default async function (fastify: FastifyInstance) {
     return async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         // Check if the controller is deleteUser to handle it specially
-        if (controller.name === 'deleteUser') {
-          console.log('Handling delete user request');
+        if (controller.name === "deleteUser") {
+          console.log("Handling delete user request");
         }
-        
+
         await controller(request, reply);
-        
+
         // Don't log success for delete operations as they've already sent a response
-        if (!reply.sent && controller.name !== 'deleteUser') {
+        if (!reply.sent && controller.name !== "deleteUser") {
           console.log("Operation completed successfully", controller.name);
         }
       } catch (error) {
-        console.error(`Error in ${controller.name || 'controller'}:`, error);
-        
+        console.error(`Error in ${controller.name || "controller"}:`, error);
+
         // Only send error response if reply hasn't been sent yet
         if (!reply.sent) {
           reply.code(500).send({
             success: false,
-            error: error instanceof Error ? error.message : "An unknown error occurred",
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
           });
         }
       }
@@ -84,12 +87,18 @@ export default async function (fastify: FastifyInstance) {
         } else if (part.type === "field") {
           // Process form fields
           const fieldValue = await part.value;
-          
+
           // Handle empty fields for optional profile data
           // Empty strings should be converted to undefined to remove the field
-          const optionalFields = ['bio', 'phone', 'dateOfBirth', 'street', 'city'];
-          
-          if (optionalFields.includes(part.fieldname) && fieldValue === '') {
+          const optionalFields = [
+            "bio",
+            "phone",
+            "dateOfBirth",
+            "street",
+            "city",
+          ];
+
+          if (optionalFields.includes(part.fieldname) && fieldValue === "") {
             // Set to undefined to remove the field completely
             formData[part.fieldname] = undefined;
           } else {

@@ -7,6 +7,8 @@ import {
   refresh,
   verifyToken,
   verifyEmailCode,
+  sendPasswordChangeVerification,
+  changePasswordWithVerification,
 } from "../controllers/auth.controller.js";
 import { resendVerification } from "../controllers/resend-verification.controller.js";
 import {
@@ -149,18 +151,51 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post("/logout", { preHandler: authenticate }, logout);
 
   // Verify email with code route
-  fastify.post("/verify-email/code", {
-    schema: {
-      body: {
-        type: "object",
-        properties: {
-          code: { type: "string", minLength: 6, maxLength: 6 },
-          email: { type: "string", format: "email" }
+  fastify.post(
+    "/verify-email/code",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            code: { type: "string", minLength: 6, maxLength: 6 },
+            email: { type: "string", format: "email" },
+          },
+          required: ["code", "email"],
         },
-        required: ["code", "email"]
-      }
-    }
-  }, verifyEmailCode);
+      },
+    },
+    verifyEmailCode,
+  );
+
+  // Send verification code for password change
+  fastify.post(
+    "/send-password-change-verification",
+    {
+      preHandler: authenticate,
+    },
+    sendPasswordChangeVerification,
+  );
+
+  // Change password with verification code
+  fastify.post(
+    "/change-password",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            currentPassword: { type: "string" },
+            newPassword: { type: "string", minLength: 8 },
+            verificationCode: { type: "string", minLength: 6, maxLength: 6 },
+          },
+          required: ["currentPassword", "newPassword", "verificationCode"],
+        },
+      },
+      preHandler: authenticate,
+    },
+    changePasswordWithVerification,
+  );
 
   // Add resend verification route
   fastify.post(

@@ -43,7 +43,7 @@ interface UserPublicDetailsParams {
  */
 export const getUserProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -88,7 +88,7 @@ export const getUserProfile = async (
  */
 export const getUserPublicDetails = async (
   request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const userId = request.params.id;
@@ -136,7 +136,7 @@ export const getUserPublicDetails = async (
  */
 export const updateProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -187,7 +187,7 @@ export const updateProfile = async (
       updates.email = email.trim();
     }
     // Only validate phone if it's provided and not empty
-    if (phone !== undefined && phone !== '' && !/[0-9]/.test(phone)) {
+    if (phone !== undefined && phone !== "" && !/[0-9]/.test(phone)) {
       return reply.status(400).send({
         success: false,
         error: "Phone number is invalid",
@@ -197,26 +197,26 @@ export const updateProfile = async (
     }
     // Handle fields that can be completely removed when empty
     if (username) updates.username = username.trim();
-    
+
     // For optional fields, use undefined to remove them completely when empty
     if (phone !== undefined) {
-      updates.phone = phone === '' ? undefined : phone.trim();
+      updates.phone = phone === "" ? undefined : phone.trim();
     }
-    
+
     if (bio !== undefined) {
-      updates.bio = bio === '' ? undefined : bio.trim();
+      updates.bio = bio === "" ? undefined : bio.trim();
     }
-    
+
     if (dateOfBirth !== undefined) {
-      updates.dateOfBirth = dateOfBirth === '' ? undefined : dateOfBirth.trim();
+      updates.dateOfBirth = dateOfBirth === "" ? undefined : dateOfBirth.trim();
     }
-    
+
     if (street !== undefined) {
-      updates.street = street === '' ? undefined : street.trim();
+      updates.street = street === "" ? undefined : street.trim();
     }
-    
+
     if (city !== undefined) {
-      updates.city = city === '' ? undefined : city.trim();
+      updates.city = city === "" ? undefined : city.trim();
     }
 
     if (password) {
@@ -233,7 +233,7 @@ export const updateProfile = async (
       // Check if current password is correct
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password
+        user.password,
       );
       if (!isPasswordValid) {
         return reply.status(401).send({
@@ -312,7 +312,7 @@ export const updateProfile = async (
  */
 export const getUserListings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const listings = await prisma.listing.findMany({
@@ -348,24 +348,22 @@ interface DeleteUserRequest {
 
 export const deleteUser = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     console.log("Delete user request received");
     console.log("Request user:", request.user);
-    
-    const body = await request.body as DeleteUserRequest;
+
+    const body = (await request.body) as DeleteUserRequest;
     console.log("Request body received:", { ...body, password: "[REDACTED]" });
     const { password } = body;
 
     if (!password) {
-      return reply
-        .status(400)
-        .send({ 
-          success: false, 
-          error: "Password is required", 
-          status: 400 
-        });
+      return reply.status(400).send({
+        success: false,
+        error: "Password is required",
+        status: 400,
+      });
     }
 
     const user = await prisma.user.findUnique({
@@ -380,13 +378,11 @@ export const deleteUser = async (
     // Verify the provided password matches the hashed password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return reply
-        .status(401)
-        .send({ 
-          success: false, 
-          error: "Invalid password", 
-          status: 401 
-        });
+      return reply.status(401).send({
+        success: false,
+        error: "Invalid password",
+        status: 401,
+      });
     }
 
     // Delete in proper order to respect foreign key constraints
@@ -394,24 +390,21 @@ export const deleteUser = async (
       // Step 1: Get all the user's listings
       const userListings = await prisma.listing.findMany({
         where: { userId: user.id },
-        select: { id: true }
+        select: { id: true },
       });
-      
-      const listingIds = userListings.map(listing => listing.id);
+
+      const listingIds = userListings.map((listing) => listing.id);
       console.log(`Found ${listingIds.length} listings to delete`);
-      
+
       // Step 2: Get all user's messages
       const userMessages = await prisma.message.findMany({
-        where: { 
-          OR: [
-            { senderId: user.id },
-            { recipientId: user.id }
-          ]
+        where: {
+          OR: [{ senderId: user.id }, { recipientId: user.id }],
         },
-        select: { id: true }
+        select: { id: true },
       });
-      const messageIds = userMessages.map(msg => msg.id);
-      
+      const messageIds = userMessages.map((msg) => msg.id);
+
       // Step 3: Delete all notifications
       await prisma.notification.deleteMany({
         where: {
@@ -419,88 +412,83 @@ export const deleteUser = async (
             { userId: user.id },
             { relatedUserId: user.id },
             { relatedListingId: { in: listingIds } },
-            { relatedMessageId: { in: messageIds } }
-          ]
-        }
+            { relatedMessageId: { in: messageIds } },
+          ],
+        },
       });
-      console.log('Deleted all notifications');
-      
+      console.log("Deleted all notifications");
+
       // Step 4: Delete messages
       await prisma.message.deleteMany({
-        where: { 
-          OR: [
-            { senderId: user.id },
-            { recipientId: user.id }
-          ]
-        }
-      });
-      console.log('Deleted all user messages');
-      
-      // Step 5: Delete favorites
-      await prisma.favorite.deleteMany({ 
         where: {
-          OR: [
-            { userId: user.id },
-            { listingId: { in: listingIds } }
-          ]
-        }
+          OR: [{ senderId: user.id }, { recipientId: user.id }],
+        },
       });
-      console.log('Deleted all favorites');
-      
+      console.log("Deleted all user messages");
+
+      // Step 5: Delete favorites
+      await prisma.favorite.deleteMany({
+        where: {
+          OR: [{ userId: user.id }, { listingId: { in: listingIds } }],
+        },
+      });
+      console.log("Deleted all favorites");
+
       // Step 6: Delete listing-related data
       if (listingIds.length > 0) {
         // Delete VehicleDetails and RealEstateDetails first (they have foreign key constraints)
         await prisma.vehicleDetails.deleteMany({
-          where: { listingId: { in: listingIds } }
+          where: { listingId: { in: listingIds } },
         });
-        
+
         await prisma.realEstateDetails.deleteMany({
-          where: { listingId: { in: listingIds } }
+          where: { listingId: { in: listingIds } },
         });
-        
+
         // Delete other listing-related data
         await prisma.image.deleteMany({
-          where: { listingId: { in: listingIds } }
+          where: { listingId: { in: listingIds } },
         });
-        
+
         await prisma.attribute.deleteMany({
-          where: { listingId: { in: listingIds } }
+          where: { listingId: { in: listingIds } },
         });
-        
+
         await prisma.feature.deleteMany({
-          where: { listingId: { in: listingIds } }
+          where: { listingId: { in: listingIds } },
         });
-        console.log('Deleted all listing-related data');
+        console.log("Deleted all listing-related data");
       }
-      
+
       // Step 7: Handle conversations
       // First find user's conversations
       const userConversations = await prisma.conversation.findMany({
         where: {
-          participants: { some: { id: user.id } }
+          participants: { some: { id: user.id } },
         },
         include: {
-          participants: true
-        }
+          participants: true,
+        },
       });
-      
+
       // Find single-participant conversations (only the user)
       const singleParticipantConvIds = userConversations
-        .filter(conv => conv.participants.length === 1)
-        .map(conv => conv.id);
-      
+        .filter((conv) => conv.participants.length === 1)
+        .map((conv) => conv.id);
+
       // Delete single-participant conversations
       if (singleParticipantConvIds.length > 0) {
         await prisma.conversation.deleteMany({
-          where: { id: { in: singleParticipantConvIds } }
+          where: { id: { in: singleParticipantConvIds } },
         });
-        console.log('Deleted orphaned conversations');
+        console.log("Deleted orphaned conversations");
       }
-      
+
       // For multi-participant conversations, disconnect the user
-      const multiParticipantConvs = userConversations
-        .filter(conv => conv.participants.length > 1);
-      
+      const multiParticipantConvs = userConversations.filter(
+        (conv) => conv.participants.length > 1,
+      );
+
       // Disconnect user from each conversation individually
       for (const conv of multiParticipantConvs) {
         try {
@@ -508,26 +496,29 @@ export const deleteUser = async (
             where: { id: conv.id },
             data: {
               participants: {
-                disconnect: { id: user.id }
-              }
-            }
+                disconnect: { id: user.id },
+              },
+            },
           });
         } catch (err) {
-          console.error(`Failed to disconnect user from conversation ${conv.id}:`, err);
+          console.error(
+            `Failed to disconnect user from conversation ${conv.id}:`,
+            err,
+          );
           // Continue with other operations even if this fails
         }
       }
-      console.log('Updated conversations');
-      
+      console.log("Updated conversations");
+
       // Step 8: Delete listings
-      await prisma.listing.deleteMany({ 
-        where: { userId: user.id } 
+      await prisma.listing.deleteMany({
+        where: { userId: user.id },
       });
-      console.log('Deleted all listings');
-      
+      console.log("Deleted all listings");
+
       // Step 9: Finally delete the user
       await prisma.user.delete({ where: { id: user.id } });
-      console.log('Deleted user account');
+      console.log("Deleted user account");
 
       reply.status(200).send({
         success: true,
@@ -535,18 +526,16 @@ export const deleteUser = async (
         status: 200,
       });
     } catch (deleteError) {
-      console.error('Error during deletion process:', deleteError);
+      console.error("Error during deletion process:", deleteError);
       throw deleteError;
     }
   } catch (error) {
     console.error("Delete error:", error);
-    reply
-      .status(500)
-      .send({ 
-        success: false, 
-        error: error instanceof Error ? error.message : "Error deleting user", 
-        status: 500 
-      });
+    reply.status(500).send({
+      success: false,
+      error: error instanceof Error ? error.message : "Error deleting user",
+      status: 500,
+    });
   }
 };
 
@@ -555,7 +544,7 @@ export const deleteUser = async (
  */
 export const getUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = (await prisma.user.findUnique({
@@ -690,7 +679,7 @@ export const getUserSettings = async (
 
 export const updateUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     console.log("Request body:", request);

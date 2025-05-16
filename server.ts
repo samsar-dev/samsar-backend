@@ -147,41 +147,41 @@ await fastify.register(rateLimit, {
     "x-ratelimit-limit": true,
     "x-ratelimit-remaining": true,
     "x-ratelimit-reset": true,
-    "retry-after": true
-  }
+    "retry-after": true,
+  },
 });
 
 // Additional strict rate limits for sensitive endpoints
 fastify.after(() => {
   // Auth endpoints (login, register, password reset)
   fastify.route({
-    url: '/auth/*',
-    method: ['POST'],
+    url: "/auth/*",
+    method: ["POST"],
     config: {
       rateLimit: {
         max: 10,
-        timeWindow: '5 minutes',
+        timeWindow: "5 minutes",
         errorResponseBuilder: () => ({
           statusCode: 429,
-          error: 'Too Many Requests',
-          message: 'Too many login attempts, please try again later'
-        })
-      }
+          error: "Too Many Requests",
+          message: "Too many login attempts, please try again later",
+        }),
+      },
     },
-    handler: (_, reply) => reply.send()
+    handler: (_, reply) => reply.send(),
   });
 
   // Profile update endpoints
   fastify.route({
-    url: '/users/profile',
-    method: ['PUT', 'PATCH'],
+    url: "/users/profile",
+    method: ["PUT", "PATCH"],
     config: {
       rateLimit: {
         max: 20,
-        timeWindow: '10 minutes'
-      }
+        timeWindow: "10 minutes",
+      },
     },
-    handler: (_, reply) => reply.send()
+    handler: (_, reply) => reply.send(),
   });
 });
 
@@ -192,9 +192,7 @@ await fastify.register(import("@fastify/etag"), {
 
 // CORS
 await fastify.register(cors, {
-  origin: process.env.NODE_ENV === "development" 
-    ? true // Allow all origins in development
-    : ["https://tijara-frontend.vercel.app", "https://tijara-frontend-production.up.railway.app"], // Explicitly allow production origins
+  origin: true, // Allow all origins in development
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: [
