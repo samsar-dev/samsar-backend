@@ -44,7 +44,7 @@ const generateTokens = (user: {
   const CurrentDate = new Date();
   const now = Math.floor(CurrentDate.getTime() / 1000);
 
-  // Access token with shorter expiry (15 minutes)
+  // Access token with 30-day expiry
   const accessToken = jwt.sign(
     {
       sub: user.id,
@@ -53,7 +53,7 @@ const generateTokens = (user: {
       role: user.role,
       type: "access",
       iat: now,
-      exp: now + 60 * 15, // 15 minutes in seconds
+      exp: now + 60 * 60 * 24 * 30, // 30 days in seconds
     },
     jwtSecret,
     {
@@ -63,13 +63,13 @@ const generateTokens = (user: {
     },
   );
 
-  // Refresh token with longer expiry (7 days)
+  // Refresh token with 60-day expiry
   const refreshToken = jwt.sign(
     {
       sub: user.id,
       type: "refresh",
       iat: now,
-      exp: now + 60 * 60 * 24 * 7, // 7 days in seconds
+      exp: now + 60 * 60 * 24 * 60, // 60 days in seconds
     },
     jwtSecret,
     {
@@ -78,6 +78,19 @@ const generateTokens = (user: {
       issuer: "tijara-api",
     },
   );
+  
+  // Set secure, httpOnly cookie with SameSite=None and Secure flags for production
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax' as const,
+    maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+    path: '/',
+  };
+  
+  // In your login/register response, you'll need to set this cookie
+  // Example: reply.setCookie('jwt', refreshToken, cookieOptions);
 
   return { accessToken, refreshToken };
 };
@@ -689,13 +702,24 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       domain: isProduction ? ".tijara-app.com" : undefined,
     });
 
-    // For backward compatibility, also set the original jwt cookie
-    reply.setCookie("jwt", tokens.accessToken, {
+    // Set secure HTTP-only cookie with refresh token (30 days)
+    reply.setCookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+      domain: isProduction ? ".tijara-app.com" : undefined,
+    });
+    
+    // Set access token in cookie (short-lived, 30 days)
+    reply.setCookie("accessToken", tokens.accessToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? "strict" : "lax",
       path: "/",
-      maxAge: 60 * 15, // 15 minutes in seconds, matching token expiry
+      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+      domain: isProduction ? ".tijara-app.com" : undefined,
     });
 
     return reply.code(200).send({
@@ -929,19 +953,42 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       role: user.role,
     });
 
-    // Update user with new refresh token
-    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // Update user with new refresh token (60-day expiry)
+    const refreshTokenExpiry = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // 60 days
     await prisma.$executeRaw`
       UPDATE "User" 
       SET "refreshToken" = ${tokens.refreshToken}, 
-          "refreshTokenExpiresAt" = ${expiryDate}
-      WHERE id = ${user.id}
+          "refreshTokenExpiresAt" = ${refreshTokenExpiry}
+      WHERE "id" = ${user.id}
     `;
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Set secure HTTP-only cookie with refresh token (30 days)
+    reply.setCookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+      domain: isProduction ? ".tijara-app.com" : undefined,
+    });
+    
+    // Set access token in cookie (30 days)
+    reply.setCookie("accessToken", tokens.accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "strict" : "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+      domain: isProduction ? ".tijara-app.com" : undefined,
+    });
 
     return reply.send({
       success: true,
       data: {
-        tokens,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       },
     });
   } catch (error) {
@@ -977,8 +1024,21 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
       WHERE id = ${request.user.id}
     `;
 
-    // Clear the JWT cookie
-    reply.clearCookie("jwt", { path: "/" });
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // Clear all auth cookies
+    const cookieOptions = {
+      path: "/",
+      domain: isProduction ? ".tijara-app.com" : undefined,
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: isProduction ? 'none' : 'lax',
+    } as const;
+
+    // Clear all authentication cookies
+    reply.clearCookie("accessToken", cookieOptions);
+    reply.clearCookie("refreshToken", cookieOptions);
+    reply.clearCookie("jwt", cookieOptions);
 
     return reply.send({
       success: true,
