@@ -1508,7 +1508,9 @@ export default async function (fastify: FastifyInstance) {
   // This might require using @fastify/multipart plugin
   fastify.put<{ Params: { id: string } }>(
     "/:id",
-    {}, // Remove preHandler until middleware is adapted for Fastify
+    {
+      preHandler: processImagesMiddleware,
+    },
     handleAuthRoute(
       async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
         try {
@@ -1536,28 +1538,60 @@ export default async function (fastify: FastifyInstance) {
             existingImages?: any[];
           };
 
-          const objDetails = JSON.parse(details);
-
-          const vehicleDetails = objDetails.vehicles
-            ? objDetails.vehicles
-            : undefined;
-          const realEstateDetails = objDetails.realEstate
-            ? objDetails.realEstate
-            : undefined;
-
+          console.log('🔍 [DEBUG] Details before processing:', details);
+          
+          // Handle details whether it's already parsed or still a string
+          const objDetails = typeof details === 'string' ? JSON.parse(details) : details;
+          
+          console.log('🔍 [DEBUG] Processed details:', objDetails);
+          
+          const vehicleDetails = objDetails?.vehicles;
+          const realEstateDetails = objDetails?.realEstate;
+          
+          console.log('🔍 [DEBUG] Extracted details:', { vehicleDetails, realEstateDetails });
           const newImages = req.processedImages || [];
-          const parsedExistingImages =
-            typeof existingImages === "string"
-              ? JSON.parse(existingImages)
-              : existingImages;
+          console.log('🔍 [DEBUG] New images:', newImages);
+          
+          // Parse and validate existing images
+          let parsedExistingImages = [];
+          if (existingImages) {
+            try {
+              parsedExistingImages = typeof existingImages === 'string'
+                ? JSON.parse(existingImages)
+                : Array.isArray(existingImages)
+                  ? existingImages
+                  : [];
+              console.log('🔍 [DEBUG] Parsed existing images:', parsedExistingImages);
+            } catch (error) {
+              console.error('🔍 [DEBUG] Error parsing existing images:', error);
+              parsedExistingImages = [];
+            }
+          }
+
+          // Get current images from the database
+          const currentImages = await prisma.image.findMany({
+            where: { listingId: (req.params as { id: string }).id },
+            select: { url: true }
+          });
+          
+          console.log('🔍 [DEBUG] Current images in DB:', currentImages);
+          console.log('🔍 [DEBUG] Images to keep:', parsedExistingImages);
 
           // First, delete removed images
-          await prisma.image.deleteMany({
-            where: {
-              listingId: (req.params as { id: string }).id,
-              url: { notIn: parsedExistingImages },
-            },
-          });
+          if (parsedExistingImages.length === 0) {
+            console.log('🔍 [DEBUG] Deleting all images as no existing images were specified');
+            await prisma.image.deleteMany({
+              where: { listingId: (req.params as { id: string }).id }
+            });
+          } else {
+            console.log('🔍 [DEBUG] Deleting images not in:', parsedExistingImages);
+            await prisma.image.deleteMany({
+              where: {
+                listingId: (req.params as { id: string }).id,
+                url: { notIn: parsedExistingImages }
+              }
+            });
+          }
 
           // Update the listing
           const listing = await prisma.listing.update({

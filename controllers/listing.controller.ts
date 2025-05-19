@@ -758,6 +758,10 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
 
 export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
+    console.log('🔍 [updateListing] Request body:', req.body);
+    console.log('🔍 [updateListing] Request files:', (req as any).processedImages);
+    console.log('🔍 [updateListing] Request params:', req.params);
+
     const { id } = req.params as ListingParams;
     const {
       title,
@@ -767,6 +771,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       subCategory,
       location,
       condition,
+      existingImages,
       attributes,
       features,
     } = req.body as {
@@ -777,6 +782,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       subCategory: string;
       location: string;
       condition?: string;
+      existingImages?: string[] | string;
       attributes?: Array<{ name: string; value: string }>;
       features?: Array<{ name: string; value: boolean }>;
     };
@@ -798,6 +804,69 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
         data: null,
       });
     }
+    // Process images - combine existing and new images
+let imagesToCreate: Array<{ url: string; order: number }> = [];
+
+console.log('🔍 [updateListing] Processing images:');
+console.log('- Processed images:', req.processedImages);
+console.log('- Existing images:', existingImages);
+
+// Add processed new images
+if (req.processedImages && req.processedImages.length > 0) {
+  console.log('- Adding new processed images');
+  imagesToCreate = [...req.processedImages];
+}
+
+// Add existing images if provided
+if (existingImages) {
+  console.log('🔍 [DEBUG] existingImages type:', typeof existingImages);
+  console.log('🔍 [DEBUG] existingImages value:', existingImages);
+  console.log('🔍 [DEBUG] Is Array?', Array.isArray(existingImages));
+  
+  try {
+    let existingImagesArray: string[] = [];
+    
+    if (Array.isArray(existingImages)) {
+      console.log('🔍 [DEBUG] Processing as array');
+      existingImagesArray = existingImages;
+    } else if (typeof existingImages === 'string') {
+      console.log('🔍 [DEBUG] Processing as string');
+      if (existingImages.startsWith('[')) {
+        console.log('🔍 [DEBUG] Parsing JSON array string');
+        existingImagesArray = JSON.parse(existingImages);
+      } else {
+        console.log('🔍 [DEBUG] Using as single string');
+        existingImagesArray = [existingImages];
+      }
+    } else {
+      console.log('🔍 [DEBUG] Unknown format:', existingImages);
+      throw new Error(`Invalid existingImages format: ${typeof existingImages}`);
+    }
+
+    console.log('🔍 [DEBUG] Processed array:', existingImagesArray);
+    console.log('🔍 [DEBUG] Array length:', existingImagesArray.length);
+
+    existingImagesArray.forEach((url: string, index: number) => {
+      console.log(`🔍 [DEBUG] Processing URL ${index}:`, url);
+      if (url && typeof url === 'string') {
+        imagesToCreate.push({
+          url,
+          order: imagesToCreate.length + index
+        });
+        console.log('🔍 [DEBUG] Added URL to imagesToCreate');
+      } else {
+        console.log('🔍 [DEBUG] Skipped invalid URL:', url);
+      }
+    });
+  } catch (error) {
+    console.error('Error processing existing images:', error);
+    console.error('existingImages type:', typeof existingImages);
+    console.error('existingImages value:', existingImages);
+    throw new Error('Invalid existingImages format');
+  }
+}
+
+console.log('- Final imagesToCreate:', imagesToCreate);
 
     // Ensure price is a number and handle potential string input
     const newPrice = typeof price === "string" ? parseFloat(price) : price;
@@ -827,10 +896,10 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
               create: features,
             }
           : undefined,
-        images: req.processedImages
+        images: imagesToCreate.length > 0
           ? {
               deleteMany: {},
-              create: req.processedImages.map((img) => ({
+              create: imagesToCreate.map((img) => ({
                 url: img.url,
                 order: img.order,
               })),

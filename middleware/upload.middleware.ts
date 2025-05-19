@@ -100,10 +100,21 @@ export const processImagesMiddleware = async (
     const formData: Record<string, any> = {};
     let index = 0;
 
+    console.log('🔍 Request headers:', request.headers);
+    console.log('🔍 Request method:', request.method);
+    console.log('🔍 Initial request body:', request.body);
+
     // Process all parts (files and fields)
     const parts = await request.parts();
+    console.log('🔍 Found multipart parts');
 
     for await (const part of parts) {
+      console.log('🔍 Processing part:', {
+        type: part.type,
+        fieldname: part.fieldname,
+        filename: part.type === 'file' ? part.filename : undefined,
+        mimetype: part.type === 'file' ? part.mimetype : undefined
+      });
       if (part.type === "file" && isImage(part.mimetype)) {
         // Process image file
         console.log(
@@ -157,28 +168,49 @@ export const processImagesMiddleware = async (
         uploadedFiles.push(url);
       } else if (part.type === "field") {
         // Process form field
-        const value = await part.value;
-        if (typeof value === "string") {
-          try {
-            // Try to parse as JSON if it looks like a JSON string
-            formData[part.fieldname] =
-              value.startsWith("{") || value.startsWith("[")
-                ? JSON.parse(value)
-                : value;
-          } catch {
-            // If parsing fails, use the raw value
-            formData[part.fieldname] = value;
+        const fieldValue = await part.value;
+        if (typeof fieldValue !== 'string') {
+          console.error('🔍 Field value is not a string:', part.fieldname);
+          continue;
+        }
+        
+        console.log('🔍 Processing field:', part.fieldname, fieldValue);
+        
+        try {
+          // Try to parse as JSON if it looks like JSON
+          if (fieldValue.startsWith('[') || fieldValue.startsWith('{')) {
+            try {
+              formData[part.fieldname] = JSON.parse(fieldValue);
+              console.log('🔍 Successfully parsed JSON for', part.fieldname);
+            } catch (error) {
+              console.error('🔍 Failed to parse JSON for', part.fieldname, error);
+              formData[part.fieldname] = fieldValue;
+            }
+          } else {
+            formData[part.fieldname] = fieldValue;
           }
+        } catch (error) {
+          console.error('🔍 Error processing field', part.fieldname, error);
+          formData[part.fieldname] = fieldValue;
         }
       }
     }
 
-    // Attach processed data to request
     request.processedImages = processedImages;
     request.uploadedFiles = uploadedFiles;
-    request.body = formData; // Replace the entire body to avoid circular references
+    
+    console.log('🔍 Form data collected:', formData);
 
-    console.log("Processed request body:", JSON.stringify(formData, null, 2));
+    // Merge formData with existing body instead of replacing it
+    const mergedBody = {
+      ...(typeof request.body === 'object' ? request.body : {}),
+      ...formData
+    } as Record<string, any>;
+
+    console.log('🔍 Final merged body:', mergedBody);
+    request.body = mergedBody;
+
+    console.log("Processed request body:", JSON.stringify(request.body, null, 2));
     console.log("Processed images:", processedImages);
   } catch (error) {
     console.error("❌ Error in processImagesMiddleware:", error);
