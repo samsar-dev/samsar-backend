@@ -527,7 +527,7 @@ enum ListingStatus {
 }
 
 enum ListingAction {
-  SELL
+  SALE
   RENT
 }
 

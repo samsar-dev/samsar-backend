@@ -383,7 +383,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         location,
         condition,
         status: ListingStatus.ACTIVE,
-        listingAction: listingAction || ListingAction.SELL,
+        listingAction: listingAction || ListingAction.SALE,
         user: {
           connect: {
             id: userId,

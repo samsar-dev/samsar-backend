@@ -15,7 +15,7 @@ export interface ListingCreateInput {
   location: string;
   images: string[];
   details: ListingDetails;
-  listingAction?: "sell" | "rent";
+  listingAction?: "sale" | "rent";
 }
 
 export interface ListingUpdateInput
@@ -196,7 +196,7 @@ export interface ListingBase {
   updatedAt: Date;
   userId: string;
   details: ListingDetails;
-  listingAction?: "sell" | "rent";
+  listingAction?: "sale" | "rent";
   status: ListingStatus;
 }
 
