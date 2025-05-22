@@ -266,6 +266,8 @@ export default async function (fastify: FastifyInstance) {
             id: listing.id,
             title: listing.title,
             price: listing.price,
+            status: listing.status,
+            listingAction: listing.listingAction,
             category: {
               mainCategory: listing.mainCategory,
               subCategory: listing.subCategory,
