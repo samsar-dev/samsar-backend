@@ -172,7 +172,15 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/send-password-change-verification",
     {
-      preHandler: authenticate,
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            email: { type: "string", format: "email" },
+          },
+          required: ["email"],
+        },
+      },
     },
     sendPasswordChangeVerification,
   );

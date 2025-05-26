@@ -1167,15 +1167,30 @@ export const sendPasswordChangeVerification = async (
   reply: FastifyReply,
 ) => {
   try {
-    // Get user from authenticated request
-    const user = request.user as { id: string; email: string };
+    // Get email from request body
+    const { email } = request.body as { email: string };
 
-    if (!user || !user.id) {
-      return reply.status(401).send({
+    if (!email) {
+      return reply.status(400).send({
         success: false,
         error: {
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to request a password change",
+          code: "VALIDATION_ERROR",
+          message: "Email is required",
+        },
+      });
+    }
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return reply.status(404).send({
+        success: false,
+        error: {
+          code: "USER_NOT_FOUND",
+          message: "No account found with this email",
         },
       });
     }
@@ -1185,7 +1200,7 @@ export const sendPasswordChangeVerification = async (
 
     // Store the verification code in the database
     await prisma.user.update({
-      where: { id: user.id },
+      where: { email },
       data: {
         // @ts-ignore - verificationCode exists in the Prisma schema
         verificationCode: verificationCode,
@@ -1195,7 +1210,7 @@ export const sendPasswordChangeVerification = async (
 
     // Send password change verification email
     const emailSent = await sendPasswordChangeEmail(
-      user.email,
+      email,
       verificationCode,
     );
 
