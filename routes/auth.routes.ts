@@ -196,11 +196,20 @@ export default async function authRoutes(fastify: FastifyInstance) {
             currentPassword: { type: "string" },
             newPassword: { type: "string", minLength: 8 },
             verificationCode: { type: "string", minLength: 6, maxLength: 6 },
+            email: { type: "string", format: "email" },
           },
-          required: ["currentPassword", "newPassword", "verificationCode"],
+          oneOf: [
+            {
+              required: ["currentPassword", "newPassword", "verificationCode"],
+              not: { required: ["email"] },
+            },
+            {
+              required: ["email", "newPassword", "verificationCode"],
+              not: { required: ["currentPassword"] },
+            },
+          ],
         },
       },
-      preHandler: authenticate,
     },
     changePasswordWithVerification,
   );

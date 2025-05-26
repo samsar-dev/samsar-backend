@@ -1246,56 +1246,70 @@ export const changePasswordWithVerification = async (
   reply: FastifyReply,
 ) => {
   try {
-    // Get user from authenticated request
-    const user = request.user as { id: string; email: string };
-
-    if (!user || !user.id) {
-      return reply.status(401).send({
-        success: false,
-        error: {
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to change your password",
-        },
-      });
-    }
-
     // Get request body
-    const { currentPassword, newPassword, verificationCode } = request.body as {
-      currentPassword: string;
+    const { currentPassword, newPassword, verificationCode, email } = request.body as {
+      currentPassword?: string;
       newPassword: string;
       verificationCode: string;
+      email?: string;
     };
 
-    // Find user with verification code
-    const userWithVerification = await prisma.user.findFirst({
-      where: {
-        id: user.id,
-        verificationCode: verificationCode,
-      },
-    });
+    let userToUpdate;
 
-    if (!userWithVerification || !userWithVerification.verificationCode) {
+    // Check if this is a password reset (unauthenticated) or password change (authenticated)
+    if (email) {
+      // Password reset flow - find user by email and verification code
+      userToUpdate = await prisma.user.findFirst({
+        where: {
+          email,
+          verificationCode,
+        },
+      });
+    } else {
+      // Password change flow - find user by ID and verification code
+      const authenticatedUser = request.user as { id: string; email: string };
+      if (!authenticatedUser?.id) {
+        return reply.status(401).send({
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "You must be logged in to change your password",
+          },
+        });
+      }
+
+      userToUpdate = await prisma.user.findFirst({
+        where: {
+          id: authenticatedUser.id,
+          verificationCode,
+        },
+      });
+
+      // For authenticated users, verify current password
+      if (userToUpdate && currentPassword) {
+        const isPasswordValid = await bcrypt.compare(
+          currentPassword,
+          userToUpdate.password,
+        );
+
+        if (!isPasswordValid) {
+          return reply.status(400).send({
+            success: false,
+            error: {
+              code: "INVALID_PASSWORD",
+              message: "Current password is incorrect",
+            },
+          });
+        }
+      }
+    }
+
+    if (!userToUpdate || !userToUpdate.verificationCode) {
       return reply.status(400).send({
         success: false,
         error: {
           code: "INVALID_CODE",
           message: "Invalid verification code",
-        },
-      });
-    }
-
-    // Verify current password
-    const isPasswordValid = await bcrypt.compare(
-      currentPassword,
-      userWithVerification.password,
-    );
-
-    if (!isPasswordValid) {
-      return reply.status(400).send({
-        success: false,
-        error: {
-          code: "INVALID_PASSWORD",
-          message: "Current password is incorrect",
         },
       });
     }
@@ -1306,7 +1320,7 @@ export const changePasswordWithVerification = async (
 
     // Update user password and clear verification code
     await prisma.user.update({
-      where: { id: user.id },
+      where: { id: userToUpdate.id },
       data: {
         password: hashedPassword,
         verificationCode: null,
