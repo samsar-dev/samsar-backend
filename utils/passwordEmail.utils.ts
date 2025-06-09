@@ -68,10 +68,22 @@ export const sendPasswordChangeEmail = async (
     // Send email using Resend
     console.log(
       "Sending password change email with Resend using API key:",
-      config.email.resendApiKey,
+      config.email.resendApiKey ? '***' + config.email.resendApiKey.slice(-4) : 'not set'
     );
+    
+    // Use configured from email or default to a valid domain
+    const fromEmail = config.email.from || 'noreply@samsar.app';
+    
+    // Validate email format
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      console.error('Invalid email address format:', email);
+      return false;
+    }
+    
+    console.log(`Sending password change email from ${fromEmail} to ${email}`);
+    
     const { data, error } = await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: fromEmail,
       to: email,
       subject: "Password Change Verification",
       html: htmlContent,
