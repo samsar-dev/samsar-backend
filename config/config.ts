@@ -6,6 +6,13 @@ if (!jwtSecret) {
   console.warn("⚠️ JWT_SECRET is missing from environment variables.");
 }
 
+// Debug log environment variables
+console.log('Environment variables loaded:', {
+  NODE_ENV: process.env.NODE_ENV,
+  EMAIL_FROM: process.env.EMAIL_FROM,
+  HAS_RESEND_API_KEY: !!process.env.RESEND_API_KEY
+});
+
 export const config = {
   jwtSecret: jwtSecret || "fallback-secret", // local fallback only
   cloudflare: {
@@ -22,7 +29,7 @@ export const config = {
     port: env.PORT || "5000", // optional
   },
   email: {
-    resendApiKey: env.RESEND_API_KEY,
-    from: env.EMAIL_FROM,
+    resendApiKey: process.env.RESEND_API_KEY || env.RESEND_API_KEY,
+    from: process.env.EMAIL_FROM || env.EMAIL_FROM || 'noreply@samsar.app',
   },
 };

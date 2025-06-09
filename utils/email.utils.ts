@@ -166,6 +166,14 @@ export const sendVerificationEmail = async (
       config.email.resendApiKey ? '***' + config.email.resendApiKey.slice(-4) : 'not set'
     );
     
+    // Debug log the config
+    console.log('Current email config:', {
+      hasResendApiKey: !!config.email.resendApiKey,
+      fromEmail: config.email.from,
+      envEmailFrom: process.env.EMAIL_FROM,
+      nodeEnv: process.env.NODE_ENV
+    });
+
     // Use configured from email or default to a valid domain
     const fromEmail = config.email.from || 'noreply@samsar.app';
     

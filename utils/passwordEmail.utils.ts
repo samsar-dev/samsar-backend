@@ -65,6 +65,14 @@ export const sendPasswordChangeEmail = async (
       </div>
     `;
 
+    // Debug log the config
+    console.log('Password email config:', {
+      hasResendApiKey: !!config.email.resendApiKey,
+      fromEmail: config.email.from,
+      envEmailFrom: process.env.EMAIL_FROM,
+      nodeEnv: process.env.NODE_ENV
+    });
+
     // Send email using Resend
     console.log(
       "Sending password change email with Resend using API key:",
