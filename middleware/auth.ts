@@ -5,11 +5,13 @@ import { env } from "../config/env.js";
 import { AuthRequest, User, UserPayload } from "../types/auth.js";
 
 // Add JWT payload type
+import { UserRole } from "../types/auth.js";
+
 interface JWTPayload {
   id: string;
   email: string;
   username: string;
-  role: "USER" | "ADMIN";
+  role: UserRole;
   exp: number;
 }
 

@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import prisma from "../src/lib/prismaClient.js";
 import {
   login,
   register,
@@ -212,6 +213,79 @@ export default async function authRoutes(fastify: FastifyInstance) {
       },
     },
     changePasswordWithVerification,
+  );
+
+  // Email verification with token
+  fastify.get(
+    "/verify-email",
+    {
+      schema: {
+        querystring: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' }
+          },
+          required: ['token']
+        }
+      }
+    },
+    async (request, reply) => {
+      try {
+        const { token } = request.query as { token: string };
+        
+        // Find user by verification token
+        const user = await prisma.user.findFirst({
+          where: { verificationToken: token },
+        });
+
+        if (!user) {
+          return reply.status(400).send({
+            success: false,
+            error: {
+              code: 'INVALID_TOKEN',
+              message: 'Invalid or expired verification token',
+            },
+          });
+        }
+
+        // Check if token is expired
+        if (user.verificationTokenExpires && new Date() > user.verificationTokenExpires) {
+          return reply.status(400).send({
+            success: false,
+            error: {
+              code: 'TOKEN_EXPIRED',
+              message: 'Verification token has expired',
+            },
+          });
+        }
+
+        // Update user as verified
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerified: true,
+            verificationToken: null,
+            verificationCode: null,
+            verificationTokenExpires: null,
+            lastVerifiedAt: new Date(),
+          } as any,
+        });
+
+        return reply.status(200).send({
+          success: true,
+          message: 'Email verified successfully',
+        });
+      } catch (error) {
+        console.error('Error verifying email with token:', error);
+        return reply.status(500).send({
+          success: false,
+          error: {
+            code: 'SERVER_ERROR',
+            message: 'Failed to verify email',
+          },
+        });
+      }
+    },
   );
 
   // Add resend verification route

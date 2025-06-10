@@ -1,11 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { UserRole } from '../types/auth.js';
 
 const prisma = new PrismaClient();
 
 interface UserWithListings {
   id: string;
-  role: 'USER' | 'ADMIN';
+  role: UserRole;
   maxListings: number | null;
   listingRestriction: string | null;
 }
@@ -37,8 +38,8 @@ export const checkListingPermission = async (request: FastifyRequest, reply: Fas
       where: { userId }
     });
 
-    // Admins bypass the check
-    if (user.role === 'ADMIN') {
+    // Allow admins and moderators to bypass restrictions
+    if (user.role === 'ADMIN' || user.role === 'MODERATOR') {
       return true;
     }
 

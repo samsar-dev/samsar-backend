@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 interface UserWithListings {
   id: string;
-  role: 'USER' | 'ADMIN';
+  role: 'FREE_USER' | 'PREMIUM_USER' | 'BUSINESS_USER' | 'ADMIN' | 'MODERATOR';
   maxListings: number | null;
   listingRestriction: string | null;
 }
@@ -36,9 +36,11 @@ export const getListingPermission = async (request: FastifyRequest, reply: Fasti
       where: { userId }
     });
 
-    // Admins can always create listings
+    // Admins and moderators can always create listings
     const isAdmin = user.role === 'ADMIN';
-    const canCreate = isAdmin || (user.maxListings !== null ? listingCount < user.maxListings : false);
+    const isModerator = user.role === 'MODERATOR';
+    const canCreate = isAdmin || isModerator || 
+                     (user.maxListings !== null ? listingCount < user.maxListings : false);
 
     return {
       canCreate,

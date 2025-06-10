@@ -7,12 +7,15 @@ export interface AuthSocket extends Socket {
   user?: any; // Use a specific type instead of 'any' if you know the structure of 'user'
 }
 
+// User role type that matches Prisma schema
+export type UserRole = "FREE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
+
 // Core user payload decoded from JWT
 export interface UserPayload {
   id: string;
   email: string;
   username: string;
-  role: "USER" | "ADMIN";
+  role: UserRole;
   exp: number; // expires at
 }
 
@@ -42,7 +45,7 @@ export interface User {
   id: string;
   email: string;
   username: string;
-  role: "USER" | "ADMIN";
+  role: UserRole;
   refreshToken?: string;
   refreshTokenExpiresAt?: Date;
   name?: string;

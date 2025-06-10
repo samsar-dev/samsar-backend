@@ -26,11 +26,13 @@ declare module "fastify" {
   }
 }
 
+import { UserRole } from '../types/auth.js';
+
 interface AuthenticatedUser {
   id: string;
   username: string;
   email: string;
-  role: "USER" | "ADMIN";
+  role: UserRole;
 }
 
 interface ListingResponse {
