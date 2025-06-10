@@ -306,6 +306,15 @@ async function startServer() {
     await prisma.$connect();
     console.log("✅ Connected to database");
 
+    // Register contact routes
+    const { default: contactRoutes } = await import("./routes/contact.routes.js");
+    await fastify.register(contactRoutes);
+
+    // Register listing permission routes
+    const { default: listingPermissionRoutes } = await import("./routes/listingPermission.routes.js");
+    await fastify.register(listingPermissionRoutes, { prefix: "/api" });
+    console.log("✅ Contact routes registered");
+
     const port = Number(process.env.PORT || 5000);
     await fastify.listen({ port, host: "0.0.0.0" });
 
