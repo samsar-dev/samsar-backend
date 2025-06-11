@@ -282,6 +282,13 @@ export const register = async (
       }
 
       console.log(`Verification email sent to ${user.email}`);
+
+      // Respond success without generating tokens until email is verified
+      return reply.code(201).send({
+        success: true,
+        message:
+          "Registration successful. Please check your email to verify your account before logging in.",
+      });
     } catch (emailError) {
       // If verification process fails, delete the user and return an error
       await prisma.user.delete({
@@ -299,58 +306,58 @@ export const register = async (
     }
 
     // Generate tokens with the actual user ID
-    const tokens = generateTokens({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-    });
+    // const tokens = generateTokens({
+    //   id: user.id,
+    //   email: user.email,
+    //   username: user.username,
+    //   role: user.role,
+    // });
 
     // Update user with the correct refresh token
-    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    // const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     // Using raw SQL to update the user with the refresh token
     // This is a workaround for the Prisma type issues
-    await prisma.$executeRaw`
-      UPDATE "User" 
-      SET "refreshToken" = ${tokens.refreshToken}, 
-          "refreshTokenExpiresAt" = ${expiryDate}
-      WHERE id = ${user.id}
-    `;
+    // await prisma.$executeRaw`
+    //   UPDATE "User" 
+    //   SET "refreshToken" = ${tokens.refreshToken}, 
+    //       "refreshTokenExpiresAt" = ${expiryDate}
+    //   WHERE id = ${user.id}
+    // `;
 
     // Set secure cookies for tokens
-    const isProduction = process.env.NODE_ENV === "production";
+    // const isProduction = process.env.NODE_ENV === "production";
 
-    // Set HTTP-only cookie for refresh token (7 days)
-    reply.setCookie("refresh_token", tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
-    });
+    // // Set HTTP-only cookie for refresh token (7 days)
+    // reply.setCookie("refresh_token", tokens.refreshToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: isProduction ? "strict" : "lax",
+    //   path: "/",
+    //   maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    //   domain: isProduction ? ".tijara-app.com" : undefined,
+    // });
 
-    // Set HTTP-only cookie for access token (15 minutes)
-    reply.setCookie("access_token", tokens.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
-      path: "/",
-      maxAge: 15 * 60, // 15 minutes in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
-    });
+    // // Set HTTP-only cookie for access token (15 minutes)
+    // reply.setCookie("access_token", tokens.accessToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: isProduction ? "strict" : "lax",
+    //   path: "/",
+    //   maxAge: 15 * 60, // 15 minutes in seconds
+    //   domain: isProduction ? ".tijara-app.com" : undefined,
+    // });
 
-    // Still return tokens in response for backward compatibility
-    return reply.code(201).send({
-      success: true,
-      data: {
-        user,
-        tokens,
-        message:
-          "Registration successful. Please check your email for verification instructions.",
-      },
-    });
+    // // Still return tokens in response for backward compatibility
+    // return reply.code(201).send({
+    //   success: true,
+    //   data: {
+    //     user,
+    //     tokens,
+    //     message:
+    //       "Registration successful. Please check your email for verification instructions.",
+    //   },
+    // });
   } catch (error) {
     console.error("Registration error:", error);
     return reply.code(500).send({
@@ -501,28 +508,30 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         }
       : null;
 
-    // Email verification check removed to allow login without verification
-    // if (user && !user.emailVerified) {
-    //   return reply.code(401).send({
-    //     success: false,
-    //     error: {
-    //       code: "EMAIL_NOT_VERIFIED",
-    //       message: "Please verify your email before logging in. Check your inbox for a verification email or request a new one.",
-    //     },
-    //   });
-    // }
+    // Enforce email verification before allowing login
+    if (user && !user.emailVerified) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "EMAIL_NOT_VERIFIED",
+          message:
+            "Please verify your email before logging in. Check your inbox for a verification email or request a new one.",
+        },
+      });
+    }
 
-    // Account status check removed to allow login regardless of status
+    // Enforce account status check
     // @ts-ignore - accountStatus exists in the Prisma schema
-    // if (user && user.accountStatus === "PENDING") {
-    //   return reply.code(401).send({
-    //     success: false,
-    //     error: {
-    //       code: "ACCOUNT_PENDING",
-    //       message: "Your account is pending email verification. Please check your inbox for a verification email.",
-    //     },
-    //   });
-    // }
+    if (user && user.accountStatus === "PENDING") {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "ACCOUNT_PENDING",
+          message:
+            "Your account is pending email verification. Please check your inbox for a verification email.",
+        },
+      });
+    }
 
     // Check if account is locked
     if (userWithSecurity?.accountLocked) {
@@ -643,9 +652,6 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         },
       });
     }
-
-    // Email verification check removed to allow login without verification
-    // Users can now log in whether their email is verified or not
 
     // Generate tokens
     const tokens = generateTokens({
@@ -832,7 +838,7 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
   }
 };
 
-// Refresh Token
+// Verify Token
 export const verifyToken = async (
   request: FastifyRequest,
   reply: FastifyReply,
@@ -1140,6 +1146,7 @@ export const verifyEmailCode = async (
         verificationToken: null,
         verificationTokenExpires: null,
         lastVerifiedAt: new Date(),
+        accountStatus: 'ACTIVE', // activate account after successful code verification
       } as any,
     });
 

@@ -233,6 +233,16 @@ export default async function authRoutes(fastify: FastifyInstance) {
       try {
         const { token } = request.query as { token: string };
         
+        if (!token) {
+          return reply.status(400).send({
+            success: false,
+            error: {
+              code: 'MISSING_TOKEN',
+              message: 'Verification token is required',
+            },
+          });
+        }
+        
         // Find user by verification token
         const user = await prisma.user.findFirst({
           where: { verificationToken: token },
@@ -248,6 +258,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           });
         }
 
+
         // Check if token is expired
         if (user.verificationTokenExpires && new Date() > user.verificationTokenExpires) {
           return reply.status(400).send({
@@ -259,8 +270,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
           });
         }
 
+        // Check if already verified
+        if (user.emailVerified) {
+          return reply.status(200).send({
+            success: true,
+            message: 'Email is already verified',
+          });
+        }
+
+
         // Update user as verified
-        await prisma.user.update({
+        const updatedUser = await prisma.user.update({
           where: { id: user.id },
           data: {
             emailVerified: true,
@@ -268,12 +288,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
             verificationCode: null,
             verificationTokenExpires: null,
             lastVerifiedAt: new Date(),
+            accountStatus: 'ACTIVE', // Ensure account is activated
           } as any,
         });
 
         return reply.status(200).send({
           success: true,
           message: 'Email verified successfully',
+          data: {
+            email: updatedUser.email,
+            emailVerified: updatedUser.emailVerified,
+          }
         });
       } catch (error) {
         console.error('Error verifying email with token:', error);
@@ -281,7 +306,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
           success: false,
           error: {
             code: 'SERVER_ERROR',
-            message: 'Failed to verify email',
+            message: 'Failed to verify email. Please try again later.',
           },
         });
       }
