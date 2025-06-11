@@ -9,8 +9,12 @@ import {
   generateVerificationCode,
 } from "../utils/email.utils.js";
 import { sendPasswordChangeEmail } from "../utils/passwordEmail.utils.js";
-
-// Add to the imports
+// Temporary email utilities (new implementation)
+import {
+  createVerificationToken as verifyTokenTemp,
+  sendVerificationEmail as sendEmail,
+  generateVerificationCode as generateCodeTemp,
+} from "../utils/email.temp.utils.js";
 
 // Define JWT user interface
 interface JWTUser {
@@ -260,8 +264,9 @@ export const register = async (
 
     // Generate verification token and send verification email
     try {
-      const verificationInfo = await createVerificationToken(user.id);
-      const emailSent = await sendVerificationEmail(
+      // Using temporary email utilities
+      const verificationInfo = await verifyTokenTemp(user.id);
+      const emailSent = await sendEmail(
         user.email,
         verificationInfo,
       );
