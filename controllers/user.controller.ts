@@ -603,80 +603,6 @@ export const getUserSettings = async (
 /**
  * Update user settings
  */
-// export const updateUserSettings = async (
-//   request: FastifyRequest,
-//   reply: FastifyReply,
-// ) => {
-//   try {
-//     const { preferences } = request.body as any;
-
-//     // Validate preferences structure
-//     if (!preferences || typeof preferences !== "object") {
-//       return reply.status(400).send({
-//         success: false,
-//         error: "Invalid preferences format",
-//         status: 400,
-//         data: null,
-//       });
-//     }
-
-//     // Ensure preferences has the correct structure
-//     const defaultPreferences: UserPreferences = {
-//       language: "en",
-//       theme: "light",
-//       notifications: {
-//         email: true,
-//         push: true,
-//         sms: false,
-//         enabledTypes: [],
-//         emailNotifications: {
-//           newMessage: true,
-//           listingUpdates: true,
-//           promotions: true,
-//         },
-//       },
-//       currency: "USD",
-//       timezone: "UTC",
-//       dateFormat: "MM/DD/YYYY",
-//     };
-
-//     // Merge with defaults to ensure all required fields are present
-//     const updatedPreferences = {
-//       ...defaultPreferences,
-//       ...preferences,
-//       notifications: {
-//         ...defaultPreferences.notifications,
-//         ...(preferences.notifications || {}),
-//         emailNotifications: {
-//           ...defaultPreferences.notifications.emailNotifications,
-//           ...(preferences.notifications?.emailNotifications || {}),
-//         },
-//       },
-//     } as UserPreferences;
-
-//     const updatedUser = await prisma.user.update({
-//       where: { id: (request.user as any).id },
-//       data: {
-//         preferences: updatedPreferences,
-//       },
-//     });
-
-//     reply.status(200).send({
-//       success: true,
-//       data: updatedUser,
-//       status: 200,
-//     });
-//   } catch (error) {
-//     console.error("Settings update error:", error);
-//     reply.status(500).send({
-//       success: false,
-//       error: "Error updating user settings",
-//       status: 500,
-//       data: null,
-//     });
-//   }
-// };
-
 export const updateUserSettings = async (
   request: FastifyRequest,
   reply: FastifyReply,
@@ -741,5 +667,81 @@ export const updateUserSettings = async (
       status: 500,
       data: null,
     });
+  }
+};
+
+// -------------------------------
+// Admin: Get all users summary
+// -------------------------------
+/**
+ * Get list of all users (admin only)
+ */
+export const getAllUsersAdmin = async (
+  _request: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  try {
+    // Select only required fields plus listings count
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        subscriptionStatus: true,
+        role: true,
+        createdAt: true,
+        _count: {
+          select: { listings: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const formatted = users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      phone: u.phone,
+      subscriptionStatus: u.subscriptionStatus,
+      role: u.role,
+      listings: u._count.listings,
+      createdAt: u.createdAt,
+    }));
+
+    return reply.send({ success: true, data: formatted });
+  } catch (error) {
+    console.error("Error fetching users list:", error);
+    return reply.code(500).send({
+      success: false,
+      error: "Failed to fetch users list",
+    });
+  }
+};
+
+// Admin: Update user role
+export const updateUserRoleAdmin = async (
+  request: FastifyRequest<{ Params: { id: string }; Body: { role: string } }>,
+  reply: FastifyReply,
+) => {
+  const { id } = request.params;
+  const { role } = request.body;
+
+  const allowedRoles = [
+    "FREE_USER",
+    "PREMIUM_USER",
+    "BUSINESS_USER",
+    "ADMIN",
+    "MODERATOR",
+  ];
+
+  if (!allowedRoles.includes(role)) {
+    return reply.code(400).send({ success: false, error: "Invalid role" });
+  }
+
+  try {
+    await prisma.user.update({ where: { id }, data: { role: role as any } });
+    return reply.send({ success: true });
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    return reply.code(500).send({ success: false, error: "Update failed" });
   }
 };

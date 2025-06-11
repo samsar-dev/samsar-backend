@@ -253,6 +253,7 @@ fastify.get("/api/health", async (_, reply) => {
 // -----------------
 import { AuthSocket, UserPayload } from "types/auth.js";
 import cacheControl from "./middleware/cache.middleware.js";
+import adminRoutes from "./routes/admin.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import listingRoutes from "./routes/listing.routes.js";
 import messageRoutes from "./routes/message.routes.js";
@@ -272,6 +273,7 @@ await fastify.register(userRoutes, { prefix: "/api/users" });
 await fastify.register(messageRoutes, { prefix: "/api/messages" });
 await fastify.register(uploadRoutes, { prefix: "/api/uploads" });
 await fastify.register(notificationRoutes, { prefix: "/api/notifications" });
+await fastify.register(adminRoutes, { prefix: "/api/admin" });
 
 // Error handling
 fastify.setErrorHandler((error, _, reply) => {

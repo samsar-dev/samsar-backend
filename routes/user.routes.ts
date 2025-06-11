@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate, isAdmin } from "../middleware/auth.js";
 import {
   updateProfile,
   getUserProfile,
@@ -8,6 +8,7 @@ import {
   updateUserSettings,
   getUserPublicDetails,
   deleteUser,
+  getAllUsersAdmin,
 } from "../controllers/user.controller.js";
 import {
   processImagesMiddleware,
@@ -173,4 +174,6 @@ export default async function (fastify: FastifyInstance) {
 
   // Get user's listings
   fastify.get("/listings", createFastifyHandler(getUserListings));
+
+  // (admin users list handled in separate admin.routes)
 }
