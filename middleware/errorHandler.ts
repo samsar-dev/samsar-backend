@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
+import { APIError } from "../types/api";
 
 interface CustomError extends Error {
   status?: number;
+  code?: string;
+  details?: Record<string, unknown>;
 }
 
 // Typed error handler
@@ -13,9 +16,16 @@ const errorHandler: ErrorRequestHandler = (
 ) => {
   console.error("💥 Error Handler:", err.stack);
 
-  res.status(err.status || 500).json({
+  const error: APIError = {
+    code: err.code || "INTERNAL_ERROR",
     message: err.message || "Internal Server Error",
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    details: err.details || undefined
+  };
+
+  res.status(err.status || 500).json({
+    success: false,
+    error,
+    status: err.status || 500
   });
 };
 

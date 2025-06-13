@@ -1,7 +1,13 @@
+export interface APIError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
 export interface APIResponse<T> {
   success: boolean;
   data: T | null;
-  error?: string | string[];
+  error?: APIError;
   status?: number;
 }
 
