@@ -39,6 +39,7 @@ model User {
   showEmail             Boolean        @default(true)
   showOnlineStatus      Boolean        @default(true)
   showPhoneNumber       Boolean        @default(true)
+  lastActiveAt         DateTime?      @map("last_active_at")
   maxListings          Int            @default(1)
   listingRestriction   String         @default("NONE") // NONE, MOBILE_RESTRICTED, FULL_ACCESS
   subscriptionId        String?

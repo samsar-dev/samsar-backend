@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { authenticate } from "../middleware/auth.js";
+import { updateLastActive } from "../src/middleware/activity.js";
 import {
   getNotifications,
   markAsRead,
@@ -50,13 +51,22 @@ export default async function (fastify: FastifyInstance) {
   );
 
   // Get all notifications for the authenticated user
-  fastify.get("/", createFastifyHandler(getNotifications));
+  fastify.get("/", {
+    preHandler: [authenticate, updateLastActive],
+    handler: createFastifyHandler(getNotifications),
+  });
 
   // Mark a specific notification as read
-  fastify.put("/:id/read", createFastifyHandler(markAsRead));
+  fastify.put("/:id/read", {
+    preHandler: [authenticate, updateLastActive],
+    handler: createFastifyHandler(markAsRead),
+  });
 
   // Mark all notifications as read
-  fastify.put("/read-all", createFastifyHandler(markAllAsRead));
+  fastify.put("/read-all", {
+    preHandler: [authenticate, updateLastActive],
+    handler: createFastifyHandler(markAllAsRead)
+  });
 
   // Delete a specific notification
   fastify.delete("/:id", createFastifyHandler(deleteNotification));
