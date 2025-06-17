@@ -8,49 +8,51 @@ datasource db {
 }
 
 model User {
-  id                    String         @id @default(cuid())
-  email                 String         @unique
-  name                  String?
-  username              String         @unique
-  password              String
-  profilePicture        String?
-  bio                   String?
-  location              String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
-  role                  UserRole       @default(FREE_USER)
-  preferences           Json?
-  city                  String?
-  dateOfBirth           String?
-  street                String?
-  refreshToken          String?
-  refreshTokenExpiresAt DateTime?
-  phone                 String?
+  id                       String         @id @default(cuid())
+  email                    String         @unique
+  name                     String?
+  username                 String         @unique
+  password                 String
+  profilePicture           String?
+  bio                      String?
+  location                 String?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  role                     UserRole       @default(FREE_USER)
+  preferences              Json?
+  city                     String?
+  dateOfBirth              String?
+  street                   String?
+  refreshToken             String?
+  refreshTokenExpiresAt    DateTime?
+  phone                    String?
   // Email verification fields
-  emailVerified         Boolean        @default(false)
-  lastVerifiedAt        DateTime?
-  verificationToken     String?        @unique
-  verificationCode      String?        
+  emailVerified            Boolean        @default(false)
+  lastVerifiedAt           DateTime?
+  verificationToken        String?        @unique
+  verificationCode         String?
   verificationTokenExpires DateTime?
-  accountStatus         String         @default("ACTIVE") // ACTIVE, PENDING, SUSPENDED, DEACTIVATED
-  allowMessaging        Boolean        @default(true)
-  listingNotifications  Boolean        @default(true)
-  messageNotifications  Boolean        @default(true)
-  showEmail             Boolean        @default(true)
-  showOnlineStatus      Boolean        @default(true)
-  showPhoneNumber       Boolean        @default(true)
-  maxListings          Int            @default(1)
-  listingRestriction   String         @default("NONE") // NONE, MOBILE_RESTRICTED, FULL_ACCESS
-  subscriptionId        String?
-  subscriptionStatus   String?        @default("INACTIVE") // ACTIVE, CANCELED, EXPIRED
-  subscriptionEndsAt    DateTime?
-  favorites            Favorite[]
-  listings              Listing[]      @relation("UserListings")
-  receivedMessages      Message[]      @relation("ReceivedMessages")
-  sentMessages          Message[]      @relation("SentMessages")
-  relatedNotifications  Notification[] @relation("RelatedNotifications")
-  notifications         Notification[]
-  conversations         Conversation[] @relation("UserConversations")
+  accountStatus            String         @default("ACTIVE") // ACTIVE, PENDING, SUSPENDED, DEACTIVATED
+  allowMessaging           Boolean        @default(true)
+  listingNotifications     Boolean        @default(true)
+  messageNotifications     Boolean        @default(true)
+  loginNotifications       Boolean        @default(false)
+  privateProfile           Boolean        @default(false)
+  showEmail                Boolean        @default(true)
+  showOnlineStatus         Boolean        @default(true)
+  showPhoneNumber          Boolean        @default(true)
+  maxListings              Int            @default(1)
+  listingRestriction       String         @default("NONE") // NONE, MOBILE_RESTRICTED, FULL_ACCESS
+  subscriptionId           String?
+  subscriptionStatus       String?        @default("INACTIVE") // ACTIVE, CANCELED, EXPIRED
+  subscriptionEndsAt       DateTime?
+  favorites                Favorite[]
+  listings                 Listing[]      @relation("UserListings")
+  receivedMessages         Message[]      @relation("ReceivedMessages")
+  sentMessages             Message[]      @relation("SentMessages")
+  relatedNotifications     Notification[] @relation("RelatedNotifications")
+  notifications            Notification[]
+  conversations            Conversation[] @relation("UserConversations")
 
   @@index([refreshToken])
 }
