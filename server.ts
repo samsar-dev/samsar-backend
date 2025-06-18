@@ -21,6 +21,7 @@ import {
 } from "./constants/socketEvent.js";
 import { newMessages } from "./controllers_sockets/newMessages.js";
 import { handlePriceChange } from "./controllers_sockets/priceChange.js";
+import { updateLastActive } from "./src/middleware/activity.js";
 
 // Store connected users
 
@@ -183,6 +184,11 @@ fastify.after(() => {
     },
     handler: (_, reply) => reply.send(),
   });
+});
+
+// Add activity tracking middleware
+fastify.addHook('onRequest', async (request, reply) => {
+  await updateLastActive(request, reply);
 });
 
 // Add ETag support for efficient caching

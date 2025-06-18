@@ -3,6 +3,9 @@ import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
 import { env } from "../config/env.js";
 import { AuthRequest, User, UserPayload } from "../types/auth.js";
+import { PrismaClient } from "@prisma/client";
+
+const prismaClient = new PrismaClient();
 
 // Add JWT payload type
 import { UserRole } from "../types/auth.js";
@@ -100,6 +103,23 @@ export const authenticate = async (
           message: "User not found",
         },
       });
+    }
+
+    // If we get here, the token is valid
+    // Attach the user to the request object
+    (request as any).user = user;
+
+    // Update last active timestamp
+    try {
+      if (user?.id) {
+        await prismaClient.user.update({
+          where: { id: user.id },
+          data: { lastActiveAt: new Date() },
+        });
+      }
+    } catch (error) {
+      console.error('Error updating last_active_at:', error);
+      // Don't fail the request if this update fails
     }
 
     // Set UserPayload for controllers that use req.user

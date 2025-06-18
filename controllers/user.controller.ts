@@ -681,31 +681,53 @@ export const getAllUsersAdmin = async (
   reply: FastifyReply,
 ) => {
   try {
-    // Select only required fields plus listings count
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        phone: true,
-        subscriptionStatus: true,
-        role: true,
-        createdAt: true,
-        _count: {
-          select: { listings: true },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    // Get users with their listing counts using Prisma's query builder
+    const users = await prisma.$queryRaw`
+      SELECT 
+        u.id, 
+        u.email, 
+        u.phone, 
+        u."subscriptionStatus" as "subscriptionStatus", 
+        u.role, 
+        u."createdAt" as "createdAt", 
+        u."last_active_at" as "lastActiveAt",
+        COUNT(l.id)::int as "listingsCount"
+      FROM "User" u
+      LEFT JOIN "Listing" l ON u.id = l."userId"
+      GROUP BY u.id, u.email, u.phone, u."subscriptionStatus", u.role, u."createdAt", u."last_active_at"
+      ORDER BY u."createdAt" DESC
+    ` as Array<{
+      id: string;
+      email: string;
+      phone: string | null;
+      subscriptionStatus: string | null;
+      role: string;
+      createdAt: Date;
+      lastActiveAt: Date | null;
+      listingsCount: number;
+    }>;
 
-    const formatted = users.map((u) => ({
-      id: u.id,
-      email: u.email,
-      phone: u.phone,
-      subscriptionStatus: u.subscriptionStatus,
-      role: u.role,
-      listings: u._count.listings,
-      createdAt: u.createdAt,
-    }));
+    // Transform the data to include the isOnline flag
+    const now = new Date();
+    const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+    
+    console.log('Current time:', now.toISOString());
+    console.log('15 minutes ago:', fifteenMinutesAgo.toISOString());
+    
+    const formatted = users.map((u) => {
+      const lastActive = u.lastActiveAt ? new Date(u.lastActiveAt) : null;
+      const isOnline = lastActive ? lastActive > fifteenMinutesAgo : false;
+      
+      console.log(`User ${u.email}:`);
+      console.log('  Last active:', lastActive?.toISOString() || 'Never');
+      console.log('  Is online:', isOnline);
+      
+      return {
+        ...u,
+        lastActiveAt: lastActive?.toISOString(),
+        isOnline
+      };
+    });
 
     return reply.send({ success: true, data: formatted });
   } catch (error) {

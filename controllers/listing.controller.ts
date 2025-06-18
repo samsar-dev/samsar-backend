@@ -43,6 +43,8 @@ interface ListingResponse {
   mainCategory: string;
   subCategory: string;
   location: string;
+  latitude: number;
+  longitude: number;
   condition?: string;
   status: string;
   listingAction?: string;
@@ -185,6 +187,8 @@ type ListingCreateBody = {
   mainCategory: string;
   subCategory: string;
   location: string;
+  latitude: number;
+  longitude: number;
   condition?: string;
   details?: {
     vehicles?: Partial<{
@@ -216,6 +220,8 @@ const formatListingResponse = (
     mainCategory: listing.mainCategory,
     subCategory: listing.subCategory,
     location: listing.location,
+    latitude: listing.latitude,
+    longitude: listing.longitude,
     condition: listing.condition || undefined,
     status: listing.status,
     listingAction: listing.listingAction || undefined,
@@ -322,6 +328,15 @@ const validateListingData = (data: any): string[] => {
     errors.push("Location is required");
   }
 
+  if (
+    data.latitude === undefined ||
+    data.longitude === undefined ||
+    isNaN(parseFloat(data.latitude)) ||
+    isNaN(parseFloat(data.longitude))
+  ) {
+    errors.push("Valid latitude and longitude are required");
+  }
+
   return errors;
 };
 
@@ -338,6 +353,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       mainCategory,
       subCategory,
       location,
+      latitude,
+      longitude,
       condition,
       details,
       listingAction,
@@ -383,6 +400,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         subCategory,
         category: JSON.stringify({ mainCategory, subCategory }),
         location,
+        latitude: typeof latitude === 'string' ? parseFloat(latitude) : latitude,
+        longitude: typeof longitude === 'string' ? parseFloat(longitude) : longitude,
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
@@ -772,6 +791,8 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       mainCategory,
       subCategory,
       location,
+      latitude,
+      longitude,
       condition,
       existingImages,
       attributes,
@@ -783,6 +804,8 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       mainCategory: string;
       subCategory: string;
       location: string;
+      latitude: number | string;
+      longitude: number | string;
       condition?: string;
       existingImages?: string[] | string;
       attributes?: Array<{ name: string; value: string }>;
@@ -885,6 +908,8 @@ console.log('- Final imagesToCreate:', imagesToCreate);
         mainCategory,
         subCategory,
         location,
+        latitude: typeof latitude === 'string' ? parseFloat(latitude) : latitude,
+        longitude: typeof longitude === 'string' ? parseFloat(longitude) : longitude,
         condition,
         attributes: attributes
           ? {
