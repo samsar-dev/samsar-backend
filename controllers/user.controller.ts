@@ -608,7 +608,7 @@ export const updateUserSettings = async (
   reply: FastifyReply
 ) => {
   try {
-    console.log("Request body:", request);
+    console.log("Request body:", request.body);
     const { notifications, privacy } = request.body as any;
 
     // Validate required fields
@@ -631,10 +631,6 @@ export const updateUserSettings = async (
     }
 
     // Update user
-    enum profileVisibility {
-      Private = "private",
-      Public = "public",
-    }
     const updatedUser = await prisma.user.update({
       where: { id: (request.user as any).id },
       data: {
@@ -642,11 +638,8 @@ export const updateUserSettings = async (
         listingNotifications: notifications?.listingUpdates ?? true,
         messageNotifications: notifications?.newInboxMessages ?? true,
         loginNotifications: notifications.loginNotifications ?? false,
-        privateProfile:
-          notifications.privateProfile === profileVisibility.Private
-            ? true
-            : false,
         // Flatten privacy settings
+        privateProfile: privacy.profileVisibility === "private" ? true : false,
         allowMessaging: privacy?.allowMessaging ?? true,
         showEmail: privacy?.showEmail ?? true,
         showOnlineStatus: privacy?.showOnlineStatus ?? true,
