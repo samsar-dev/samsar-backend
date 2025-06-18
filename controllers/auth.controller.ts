@@ -64,7 +64,7 @@ const generateTokens = (user: {
       algorithm: "HS256",
       audience: "tijara-app",
       issuer: "tijara-api",
-    },
+    }
   );
 
   // Refresh token with 60-day expiry
@@ -80,7 +80,7 @@ const generateTokens = (user: {
       algorithm: "HS256",
       audience: "tijara-app",
       issuer: "tijara-api",
-    },
+    }
   );
 
   // Set secure, httpOnly cookie with SameSite=None and Secure flags for production
@@ -102,7 +102,7 @@ const generateTokens = (user: {
 // Register a New User
 export const register = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     // Get client IP for rate limiting
@@ -134,7 +134,7 @@ export const register = async (
 
       if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
         const remainingTime = Math.ceil(
-          (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000,
+          (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
         ); // minutes
         return reply.code(429).send({
           success: false,
@@ -142,7 +142,7 @@ export const register = async (
             code: "RATE_LIMIT_EXCEEDED",
             message: `Too many registration attempts. Please try again in ${remainingTime} minutes.`,
             retryAfter: new Date(
-              Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed),
+              Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
             ),
           },
         });
@@ -157,7 +157,7 @@ export const register = async (
       const waitTime = Math.ceil(
         (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
           timeSinceLastRegistration) /
-          1000,
+          1000
       );
       return reply.code(429).send({
         success: false,
@@ -167,7 +167,7 @@ export const register = async (
           retryAfter: new Date(
             Date.now() +
               (AUTH_RATE_LIMITS.REGISTRATION_THROTTLE_MS -
-                timeSinceLastRegistration),
+                timeSinceLastRegistration)
           ),
         },
       });
@@ -436,7 +436,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     if (timeElapsed < AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS) {
       const remainingTime = Math.ceil(
-        (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000,
+        (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed) / 60000
       ); // minutes
       return reply.code(429).send({
         success: false,
@@ -444,7 +444,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
           code: "RATE_LIMIT_EXCEEDED",
           message: `Too many failed login attempts. Please try again in ${remainingTime} minutes.`,
           retryAfter: new Date(
-            Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed),
+            Date.now() + (AUTH_RATE_LIMITS.COOLDOWN_PERIOD_MS - timeElapsed)
           ),
         },
       });
@@ -466,7 +466,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     // Add a small delay to prevent timing attacks (helps hide if an email exists or not)
     await new Promise((resolve) =>
-      setTimeout(resolve, 100 + Math.random() * 200),
+      setTimeout(resolve, 100 + Math.random() * 200)
     );
 
     // Find the user by email - only select fields that definitely exist in the database
@@ -490,9 +490,11 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         allowMessaging: true,
         listingNotifications: true,
         messageNotifications: true,
+        loginNotifications: true,
         showEmail: true,
         showOnlineStatus: true,
         showPhoneNumber: true,
+        privateProfile: true,
         emailVerified: true,
         // @ts-ignore - accountStatus exists in the Prisma schema
         accountStatus: true,
@@ -545,7 +547,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       ) {
         const minutesRemaining = Math.ceil(
           (userWithSecurity.accountLockedUntil.getTime() - now.getTime()) /
-            60000,
+            60000
         );
         return reply.code(401).send({
           success: false,
@@ -591,7 +593,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
       // Just log the attempt for now
       console.log(
-        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`,
+        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`
       );
 
       // We'll implement account locking after migration
@@ -611,26 +613,29 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       select: {
         id: true,
         email: true,
-        username: true,
-        role: true,
-        emailVerified: true,
-        lastVerifiedAt: true,
-        password: true,
-        createdAt: true,
-        updatedAt: true,
+        name: true,
         phone: true,
         profilePicture: true,
         bio: true,
-        name: true,
         dateOfBirth: true,
+        password: true,
+        username: true,
         street: true,
         city: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
         allowMessaging: true,
         listingNotifications: true,
         messageNotifications: true,
+        loginNotifications: true,
         showEmail: true,
         showOnlineStatus: true,
         showPhoneNumber: true,
+        privateProfile: true,
+        emailVerified: true,
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: true,
       },
     });
 
@@ -683,7 +688,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
     // Log successful login for audit purposes
     console.log(
-      `User ${fullUser.id} (${fullUser.email}) logged in successfully from IP ${clientIp}`,
+      `User ${fullUser.id} (${fullUser.email}) logged in successfully from IP ${clientIp}`
     );
 
     // Set secure cookies for tokens
@@ -756,12 +761,16 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
           dateOfBirth: fullUser.dateOfBirth,
           street: fullUser.street,
           city: fullUser.city,
+
+          // Settings related fields
           allowMessaging: fullUser.allowMessaging,
           listingNotifications: fullUser.listingNotifications,
           messageNotifications: fullUser.messageNotifications,
+          loginNotifications: fullUser.loginNotifications,
           showEmail: fullUser.showEmail,
           showOnlineStatus: fullUser.showOnlineStatus,
           showPhoneNumber: fullUser.showPhoneNumber,
+          privateProfile: fullUser.privateProfile,
         },
       },
     });
@@ -850,7 +859,7 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
 // Verify Token
 export const verifyToken = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const token = request.headers.authorization?.split(" ")[1];
@@ -867,7 +876,7 @@ export const verifyToken = async (
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET as string,
+        process.env.JWT_SECRET as string
       ) as JWTUser;
       const user = await prisma.user.findUnique({
         where: { id: decoded.sub },
@@ -916,7 +925,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
     // Verify the refresh token
     const decoded = jwt.verify(
       refreshToken,
-      process.env.JWT_SECRET as string,
+      process.env.JWT_SECRET as string
     ) as JWTUser;
 
     // Find the user with matching refresh token
@@ -1074,7 +1083,7 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
 // Verify Email with Code
 export const verifyEmailCode = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const { code } = request.body as { code: string };
@@ -1178,7 +1187,7 @@ export const verifyEmailCode = async (
 // Send verification code for password change
 export const sendPasswordChangeVerification = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     // Get email from request body
@@ -1254,7 +1263,7 @@ export const sendPasswordChangeVerification = async (
 // Change password with verification code
 export const changePasswordWithVerification = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     // Get request body
@@ -1301,7 +1310,7 @@ export const changePasswordWithVerification = async (
       if (userToUpdate && currentPassword) {
         const isPasswordValid = await bcrypt.compare(
           currentPassword,
-          userToUpdate.password,
+          userToUpdate.password
         );
 
         if (!isPasswordValid) {
