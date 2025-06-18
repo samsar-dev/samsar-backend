@@ -843,6 +843,8 @@ export default async function (fastify: FastifyInstance) {
           mainCategory,
           subCategory,
           location = "",
+          latitude = 0,  // Default to 0 if not provided
+          longitude = 0, // Default to 0 if not provided
           listingAction,
           details,
         } = body;
@@ -893,6 +895,8 @@ export default async function (fastify: FastifyInstance) {
             description,
             price: Number(price),
             location,
+            latitude: Number(latitude) || 0,  // Ensure it's a number, default to 0
+            longitude: Number(longitude) || 0, // Ensure it's a number, default to 0
             category: mainCategory, // For backwards compatibility
             mainCategory,
             subCategory,

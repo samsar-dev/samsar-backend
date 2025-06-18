@@ -8,24 +8,27 @@ datasource db {
 }
 
 model User {
-  id                       String         @id @default(cuid())
-  email                    String         @unique
-  name                     String?
-  username                 String         @unique
-  password                 String
-  profilePicture           String?
-  bio                      String?
-  location                 String?
-  createdAt                DateTime       @default(now())
-  updatedAt                DateTime       @updatedAt
-  role                     UserRole       @default(FREE_USER)
-  preferences              Json?
-  city                     String?
-  dateOfBirth              String?
-  street                   String?
-  refreshToken             String?
-  refreshTokenExpiresAt    DateTime?
-  phone                    String?
+  id                    String         @id @default(cuid())
+  email                 String         @unique
+  name                  String?
+  username              String         @unique
+  password              String
+  profilePicture        String?
+  bio                   String?
+  location              String?
+  latitude              Float?
+  longitude             Float?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  role                  UserRole       @default(FREE_USER)
+  preferences           Json?
+  city                  String?
+  dateOfBirth           String?
+  street                String?
+  refreshToken          String?
+  refreshTokenExpiresAt DateTime?
+  lastActiveAt         DateTime? @map("last_active_at")
+  phone                 String?
   // Email verification fields
   emailVerified            Boolean        @default(false)
   lastVerifiedAt           DateTime?
@@ -66,6 +69,8 @@ model Listing {
   mainCategory      String
   subCategory       String
   location          String
+  latitude          Float
+  longitude         Float
   condition         String?
   listingAction     String?
   status            String             @default("ACTIVE")
