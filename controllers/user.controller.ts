@@ -547,6 +547,7 @@ export const getUserSettings = async (
   reply: FastifyReply
 ) => {
   try {
+    // Get the user
     const user = (await prisma.user.findUnique({
       where: { id: (request.user as any).id },
     })) as UserWithPreferences;
@@ -560,35 +561,52 @@ export const getUserSettings = async (
       });
     }
 
-    // Initialize default preferences
-    const defaultPreferences: UserPreferences = {
-      language: "en",
-      theme: "light",
-      notifications: {
-        email: true,
-        push: true,
-        sms: false,
-        enabledTypes: [],
-        emailNotifications: {
-          newMessage: true,
-          listingUpdates: true,
-          promotions: false,
-        },
-      },
-      currency: "USD",
-      timezone: "UTC",
-      dateFormat: "MM/DD/YYYY",
-      autoLocalization: true,
-    };
-
-    // Use the stored preferences or default ones
-    const userPreferences = user.preferences || defaultPreferences;
-
     reply.status(200).send({
       success: true,
-      data: { preferences: userPreferences },
+      data: {
+        userSettings: {
+          allowMessaging: user.allowMessaging,
+          listingNotifications: user.listingNotifications,
+          messageNotifications: user.messageNotifications,
+          loginNotifications: user.loginNotifications,
+          showEmail: user.showEmail,
+          showOnlineStatus: user.showOnlineStatus,
+          showPhoneNumber: user.showPhoneNumber,
+          privateProfile: user.privateProfile,
+        },
+      },
       status: 200,
     });
+
+    // // Initialize default preferences
+    // const defaultPreferences: UserPreferences = {
+    //   language: "en",
+    //   theme: "light",
+    //   notifications: {
+    //     email: true,
+    //     push: true,
+    //     sms: false,
+    //     enabledTypes: [],
+    //     emailNotifications: {
+    //       newMessage: true,
+    //       listingUpdates: true,
+    //       promotions: false,
+    //     },
+    //   },
+    //   currency: "USD",
+    //   timezone: "UTC",
+    //   dateFormat: "MM/DD/YYYY",
+    //   autoLocalization: true,
+    // };
+
+    // // Use the stored preferences or default ones
+    // const userPreferences = user.preferences || defaultPreferences;
+
+    // reply.status(200).send({
+    //   success: true,
+    //   data: { preferences: userPreferences },
+    //   status: 200,
+    // });
   } catch (error) {
     console.error("Error fetching user settings:", error);
     reply.status(500).send({
@@ -684,7 +702,7 @@ export const getAllUsersAdmin = async (
 ) => {
   try {
     // Get users with their listing counts using Prisma's query builder
-    const users = await prisma.$queryRaw`
+    const users = (await prisma.$queryRaw`
       SELECT 
         u.id, 
         u.email, 
@@ -698,7 +716,7 @@ export const getAllUsersAdmin = async (
       LEFT JOIN "Listing" l ON u.id = l."userId"
       GROUP BY u.id, u.email, u.phone, u."subscriptionStatus", u.role, u."createdAt", u."last_active_at"
       ORDER BY u."createdAt" DESC
-    ` as Array<{
+    `) as Array<{
       id: string;
       email: string;
       phone: string | null;
@@ -712,22 +730,22 @@ export const getAllUsersAdmin = async (
     // Transform the data to include the isOnline flag
     const now = new Date();
     const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
-    
-    console.log('Current time:', now.toISOString());
-    console.log('15 minutes ago:', fifteenMinutesAgo.toISOString());
-    
+
+    console.log("Current time:", now.toISOString());
+    console.log("15 minutes ago:", fifteenMinutesAgo.toISOString());
+
     const formatted = users.map((u) => {
       const lastActive = u.lastActiveAt ? new Date(u.lastActiveAt) : null;
       const isOnline = lastActive ? lastActive > fifteenMinutesAgo : false;
-      
+
       console.log(`User ${u.email}:`);
-      console.log('  Last active:', lastActive?.toISOString() || 'Never');
-      console.log('  Is online:', isOnline);
-      
+      console.log("  Last active:", lastActive?.toISOString() || "Never");
+      console.log("  Is online:", isOnline);
+
       return {
         ...u,
         lastActiveAt: lastActive?.toISOString(),
-        isOnline
+        isOnline,
       };
     });
 
