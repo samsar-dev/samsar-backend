@@ -564,16 +564,14 @@ export const getUserSettings = async (
     reply.status(200).send({
       success: true,
       data: {
-        userSettings: {
-          allowMessaging: user.allowMessaging,
-          listingNotifications: user.listingNotifications,
-          messageNotifications: user.messageNotifications,
-          loginNotifications: user.loginNotifications,
-          showEmail: user.showEmail,
-          showOnlineStatus: user.showOnlineStatus,
-          showPhoneNumber: user.showPhoneNumber,
-          privateProfile: user.privateProfile,
-        },
+        allowMessaging: user.allowMessaging,
+        listingNotifications: user.listingNotifications,
+        messageNotifications: user.messageNotifications,
+        loginNotifications: user.loginNotifications,
+        showEmail: user.showEmail,
+        showOnlineStatus: user.showOnlineStatus,
+        showPhoneNumber: user.showPhoneNumber,
+        privateProfile: user.privateProfile,
       },
       status: 200,
     });
