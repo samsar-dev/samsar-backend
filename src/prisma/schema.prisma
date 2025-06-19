@@ -47,6 +47,7 @@ model User {
   subscriptionId        String?
   subscriptionStatus   String?        @default("INACTIVE") // ACTIVE, CANCELED, EXPIRED
   subscriptionEndsAt    DateTime?
+  newsletterSubscribed Boolean?         @default(true)
   favorites            Favorite[]
   listings              Listing[]      @relation("UserListings")
   receivedMessages      Message[]      @relation("ReceivedMessages")

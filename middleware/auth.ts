@@ -2,27 +2,27 @@ import { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
 import { env } from "../config/env.js";
-import { AuthRequest, User, UserPayload } from "../types/auth.js";
+import { AuthRequest, User, UserPayload, UserRole } from "../types/auth.js";
 import { PrismaClient } from "@prisma/client";
 
 const prismaClient = new PrismaClient();
 
-// Add JWT payload type
-import { UserRole } from "../types/auth.js";
+// Export the JWTPayload type for use in other files
+export type JWTPayload = UserPayload;
 
-interface JWTPayload {
-  id: string;
-  email: string;
-  username: string;
-  role: UserRole;
-  exp: number;
-}
+// Fastify types are now extended in types/fastify.d.ts
+// This ensures consistent typing across the application
 
-// Type guard for AuthRequest with more precise type checking
-function hasUser(
-  request: FastifyRequest,
+
+
+// Type guard to check if user is authenticated
+function isAuthenticated(
+  request: FastifyRequest
 ): request is FastifyRequest & { user: UserPayload } {
-  return request.user !== undefined;
+  return !!request.user && 
+         'id' in request.user && 
+         'email' in request.user && 
+         'role' in request.user;
 }
 
 // Rate limiter options for Fastify
@@ -145,23 +145,23 @@ export const authenticate = async (
 // Role middleware for Fastify
 export const isAdmin = async (request: FastifyRequest, reply: FastifyReply) => {
   // Ensure request has user property with correct type
-  if (!hasUser(request)) {
+  if (!isAuthenticated(request)) {
     return reply.status(401).send({
       success: false,
       error: {
         code: "UNAUTHORIZED",
-        message: "Authentication required",
+        message: "You must be logged in to perform this action",
       },
     });
   }
 
   const user = request.user;
-  if (!user || user.role !== "ADMIN") {
+  if (user.role !== "ADMIN") {
     return reply.status(403).send({
       success: false,
       error: {
         code: "FORBIDDEN",
-        message: "Admin access required",
+        message: "Admin privileges required",
       },
     });
   }
@@ -174,12 +174,12 @@ export const isListingOwner = async (
 ) => {
   try {
     // Ensure request has user property with correct type
-    if (!hasUser(request)) {
+    if (!isAuthenticated(request)) {
       return reply.status(401).send({
         success: false,
         error: {
           code: "UNAUTHORIZED",
-          message: "Authentication required",
+          message: "You must be logged in to perform this action",
         },
       });
     }
