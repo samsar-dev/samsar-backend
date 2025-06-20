@@ -250,6 +250,7 @@ import messageRoutes from "./routes/message.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import uploadRoutes from "./routes/uploads.js";
 import userRoutes from "./routes/user.routes.js";
+import newsletterRoutes from "./routes/newsletterRoutes.js";
 import { NewMessageData } from "types/socket.js";
 import { PriceChangeData } from "types/socket.js";
 
@@ -264,6 +265,7 @@ await fastify.register(messageRoutes, { prefix: "/api/messages" });
 await fastify.register(uploadRoutes, { prefix: "/api/uploads" });
 await fastify.register(notificationRoutes, { prefix: "/api/notifications" });
 await fastify.register(adminRoutes, { prefix: "/api/admin" });
+await fastify.register(newsletterRoutes, { prefix: "/api/admin/newsletter" });
 
 // Error handling
 fastify.setErrorHandler((error, _, reply) => {

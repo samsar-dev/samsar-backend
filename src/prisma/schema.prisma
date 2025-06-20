@@ -45,10 +45,7 @@ model User {
   subscriptionId           String?
   subscriptionStatus       String?        @default("INACTIVE")
   subscriptionEndsAt       DateTime?
-  latitude                 Float?
-  longitude                Float?
-  lastActiveAt             DateTime?      @map("last_active_at")
-  newsletterSubscribed     Boolean?       @default(true)
+  newsletterSubscribed Boolean?         @default(true)
   favorites                Favorite[]
   listings                 Listing[]      @relation("UserListings")
   receivedMessages         Message[]      @relation("ReceivedMessages")
