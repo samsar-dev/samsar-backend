@@ -35,8 +35,6 @@ model User {
   allowMessaging           Boolean        @default(true)
   listingNotifications     Boolean        @default(true)
   messageNotifications     Boolean        @default(true)
-  loginNotifications       Boolean        @default(false)
-  privateProfile           Boolean        @default(false)
   showEmail                Boolean        @default(true)
   showOnlineStatus         Boolean        @default(true)
   showPhoneNumber          Boolean        @default(true)
@@ -45,7 +43,12 @@ model User {
   subscriptionId           String?
   subscriptionStatus       String?        @default("INACTIVE")
   subscriptionEndsAt       DateTime?
-  newsletterSubscribed Boolean?         @default(true)
+  latitude                 Float?
+  longitude                Float?
+  last_active_at           DateTime?
+  newsletterSubscribed     Boolean?       @default(true)
+  loginNotifications       Boolean        @default(false)
+  privateProfile           Boolean        @default(false)
   favorites                Favorite[]
   listings                 Listing[]      @relation("UserListings")
   receivedMessages         Message[]      @relation("ReceivedMessages")
