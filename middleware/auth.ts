@@ -114,7 +114,7 @@ export const authenticate = async (
       if (user?.id) {
         await prismaClient.user.update({
           where: { id: user.id },
-          data: { lastActiveAt: new Date() },
+          data: { last_active_at: new Date() },
         });
       }
     } catch (error) {

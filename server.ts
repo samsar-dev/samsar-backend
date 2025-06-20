@@ -215,22 +215,6 @@ await fastify.register(cors, {
   maxAge: 600,
 });
 
-// Remove all onSend hooks to prevent conflicts with route handlers
-// fastify.addHook("onSend", async (request, reply, payload) => {
-//   // Set security headers
-//   reply.header("X-Content-Type-Options", "nosniff");
-//   reply.header("X-Frame-Options", "DENY");
-//   reply.header("X-XSS-Protection", "1; mode=block");
-
-//   // Set proper content type and encoding headers
-//   if (!reply.getHeader('content-type')) {
-//     reply.header('content-type', 'application/json; charset=utf-8');
-//   }
-
-//   // Return payload unchanged - no formatting
-//   return payload;
-// });
-
 // Logging (only development)
 if (process.env.NODE_ENV === "development") {
   fastify.addHook("onRequest", async (request) => {

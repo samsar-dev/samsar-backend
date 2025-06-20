@@ -43,7 +43,7 @@ interface UserPublicDetailsParams {
  */
 export const getUserProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -88,7 +88,7 @@ export const getUserProfile = async (
  */
 export const getUserPublicDetails = async (
   request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const userId = request.params.id;
@@ -136,7 +136,7 @@ export const getUserPublicDetails = async (
  */
 export const updateProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -233,7 +233,7 @@ export const updateProfile = async (
       // Check if current password is correct
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password,
+        user.password
       );
       if (!isPasswordValid) {
         return reply.status(401).send({
@@ -312,7 +312,7 @@ export const updateProfile = async (
  */
 export const getUserListings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     const listings = await prisma.listing.findMany({
@@ -348,7 +348,7 @@ interface DeleteUserRequest {
 
 export const deleteUser = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     console.log("Delete user request received");
@@ -486,7 +486,7 @@ export const deleteUser = async (
 
       // For multi-participant conversations, disconnect the user
       const multiParticipantConvs = userConversations.filter(
-        (conv) => conv.participants.length > 1,
+        (conv) => conv.participants.length > 1
       );
 
       // Disconnect user from each conversation individually
@@ -503,7 +503,7 @@ export const deleteUser = async (
         } catch (err) {
           console.error(
             `Failed to disconnect user from conversation ${conv.id}:`,
-            err,
+            err
           );
           // Continue with other operations even if this fails
         }
@@ -544,9 +544,10 @@ export const deleteUser = async (
  */
 export const getUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
+    // Get the user
     const user = (await prisma.user.findUnique({
       where: { id: (request.user as any).id },
     })) as UserWithPreferences;
@@ -560,35 +561,50 @@ export const getUserSettings = async (
       });
     }
 
-    // Initialize default preferences
-    const defaultPreferences: UserPreferences = {
-      language: "en",
-      theme: "light",
-      notifications: {
-        email: true,
-        push: true,
-        sms: false,
-        enabledTypes: [],
-        emailNotifications: {
-          newMessage: true,
-          listingUpdates: true,
-          promotions: false,
-        },
-      },
-      currency: "USD",
-      timezone: "UTC",
-      dateFormat: "MM/DD/YYYY",
-      autoLocalization: true,
-    };
-
-    // Use the stored preferences or default ones
-    const userPreferences = user.preferences || defaultPreferences;
-
     reply.status(200).send({
       success: true,
-      data: { preferences: userPreferences },
+      data: {
+        allowMessaging: user.allowMessaging,
+        listingNotifications: user.listingNotifications,
+        messageNotifications: user.messageNotifications,
+        loginNotifications: user.loginNotifications,
+        showEmail: user.showEmail,
+        showOnlineStatus: user.showOnlineStatus,
+        showPhoneNumber: user.showPhoneNumber,
+        privateProfile: user.privateProfile,
+      },
       status: 200,
     });
+
+    // // Initialize default preferences
+    // const defaultPreferences: UserPreferences = {
+    //   language: "en",
+    //   theme: "light",
+    //   notifications: {
+    //     email: true,
+    //     push: true,
+    //     sms: false,
+    //     enabledTypes: [],
+    //     emailNotifications: {
+    //       newMessage: true,
+    //       listingUpdates: true,
+    //       promotions: false,
+    //     },
+    //   },
+    //   currency: "USD",
+    //   timezone: "UTC",
+    //   dateFormat: "MM/DD/YYYY",
+    //   autoLocalization: true,
+    // };
+
+    // // Use the stored preferences or default ones
+    // const userPreferences = user.preferences || defaultPreferences;
+
+    // reply.status(200).send({
+    //   success: true,
+    //   data: { preferences: userPreferences },
+    //   status: 200,
+    // });
   } catch (error) {
     console.error("Error fetching user settings:", error);
     reply.status(500).send({
@@ -605,10 +621,10 @@ export const getUserSettings = async (
  */
 export const updateUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
-    console.log("Request body:", request);
+    console.log("Request body:", request.body);
     const { notifications, privacy } = request.body as any;
 
     // Validate required fields
@@ -635,13 +651,15 @@ export const updateUserSettings = async (
       where: { id: (request.user as any).id },
       data: {
         // Flatten notifications
-        listingNotifications: notifications?.listing ?? undefined,
-        messageNotifications: notifications?.message ?? undefined,
+        listingNotifications: notifications?.listingUpdates ?? true,
+        messageNotifications: notifications?.newInboxMessages ?? true,
+        loginNotifications: notifications.loginNotifications ?? false,
         // Flatten privacy settings
-        allowMessaging: privacy?.allowMessaging ?? undefined,
-        showEmail: privacy?.showEmail ?? undefined,
-        showOnlineStatus: privacy?.showOnlineStatus ?? undefined,
-        showPhoneNumber: privacy?.showPhone ?? undefined,
+        privateProfile: privacy.profileVisibility === "private" ? true : false,
+        allowMessaging: privacy?.allowMessaging ?? true,
+        showEmail: privacy?.showEmail ?? true,
+        showOnlineStatus: privacy?.showOnlineStatus ?? true,
+        showPhoneNumber: privacy?.showPhone ?? true,
       },
     });
 
@@ -678,11 +696,11 @@ export const updateUserSettings = async (
  */
 export const getAllUsersAdmin = async (
   _request: FastifyRequest,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   try {
     // Get users with their listing counts using Prisma's query builder
-    const users = await prisma.$queryRaw`
+    const users = (await prisma.$queryRaw`
       SELECT 
         u.id, 
         u.email, 
@@ -696,7 +714,7 @@ export const getAllUsersAdmin = async (
       LEFT JOIN "Listing" l ON u.id = l."userId"
       GROUP BY u.id, u.email, u.phone, u."subscriptionStatus", u.role, u."createdAt", u."last_active_at"
       ORDER BY u."createdAt" DESC
-    ` as Array<{
+    `) as Array<{
       id: string;
       email: string;
       phone: string | null;
@@ -710,22 +728,22 @@ export const getAllUsersAdmin = async (
     // Transform the data to include the isOnline flag
     const now = new Date();
     const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
-    
-    console.log('Current time:', now.toISOString());
-    console.log('15 minutes ago:', fifteenMinutesAgo.toISOString());
-    
+
+    console.log("Current time:", now.toISOString());
+    console.log("15 minutes ago:", fifteenMinutesAgo.toISOString());
+
     const formatted = users.map((u) => {
       const lastActive = u.lastActiveAt ? new Date(u.lastActiveAt) : null;
       const isOnline = lastActive ? lastActive > fifteenMinutesAgo : false;
-      
+
       console.log(`User ${u.email}:`);
-      console.log('  Last active:', lastActive?.toISOString() || 'Never');
-      console.log('  Is online:', isOnline);
-      
+      console.log("  Last active:", lastActive?.toISOString() || "Never");
+      console.log("  Is online:", isOnline);
+
       return {
         ...u,
         lastActiveAt: lastActive?.toISOString(),
-        isOnline
+        isOnline,
       };
     });
 
@@ -742,7 +760,7 @@ export const getAllUsersAdmin = async (
 // Admin: Update user role
 export const updateUserRoleAdmin = async (
   request: FastifyRequest<{ Params: { id: string }; Body: { role: string } }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) => {
   const { id } = request.params;
   const { role } = request.body;

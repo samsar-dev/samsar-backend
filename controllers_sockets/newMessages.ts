@@ -11,6 +11,40 @@ export const newMessages = async ({
   conversationId,
   createdAt,
 }: NewMessageData) => {
+  let messageNotifications = true;
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: recipientId,
+      },
+      select: {
+        messageNotifications: true,
+      },
+    });
+    if (user && user.messageNotifications) {
+      messageNotifications = user.messageNotifications;
+    }
+
+    if (messageNotifications)
+      newMessagesHeplerFun({
+        content,
+        senderId,
+        recipientId,
+        conversationId,
+        createdAt,
+      });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const newMessagesHeplerFun = async ({
+  content,
+  senderId,
+  recipientId,
+  conversationId,
+  createdAt,
+}: NewMessageData) => {
   console.log("New message data:>>>>>>>>>>>>>>>>", {
     content,
     senderId,

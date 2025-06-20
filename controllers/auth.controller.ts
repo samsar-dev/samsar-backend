@@ -13,7 +13,7 @@ import { sendPasswordChangeEmail } from "../utils/passwordEmail.utils.js";
 import {
   createVerificationToken as verifyTokenTemp,
   sendVerificationEmail as sendEmail,
-  generateVerificationCode as generateCodeTemp,
+  sendUserLoginEmail,
 } from "../utils/email.temp.utils.js";
 
 // Define JWT user interface
@@ -82,17 +82,17 @@ const generateTokens = (user: {
       issuer: "tijara-api",
     },
   );
-  
+
   // Set secure, httpOnly cookie with SameSite=None and Secure flags for production
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === "production";
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax' as const,
+    sameSite: isProduction ? "none" : ("lax" as const),
     maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-    path: '/',
+    path: "/",
   };
-  
+
   // In your login/register response, you'll need to set this cookie
   // Example: reply.setCookie('jwt', refreshToken, cookieOptions);
 
@@ -266,10 +266,7 @@ export const register = async (
     try {
       // Using temporary email utilities
       const verificationInfo = await verifyTokenTemp(user.id);
-      const emailSent = await sendEmail(
-        user.email,
-        verificationInfo,
-      );
+      const emailSent = await sendEmail(user.email, verificationInfo);
 
       if (!emailSent) {
         // If email sending fails, delete the user and return an error
@@ -324,8 +321,8 @@ export const register = async (
     // Using raw SQL to update the user with the refresh token
     // This is a workaround for the Prisma type issues
     // await prisma.$executeRaw`
-    //   UPDATE "User" 
-    //   SET "refreshToken" = ${tokens.refreshToken}, 
+    //   UPDATE "User"
+    //   SET "refreshToken" = ${tokens.refreshToken},
     //       "refreshTokenExpiresAt" = ${expiryDate}
     //   WHERE id = ${user.id}
     // `;
@@ -464,6 +461,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
 
   try {
     // Normalize email to lowercase
+    // ?
     const normalizedEmail = email.toLowerCase().trim();
 
     // Add a small delay to prevent timing attacks (helps hide if an email exists or not)
@@ -492,9 +490,11 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
         allowMessaging: true,
         listingNotifications: true,
         messageNotifications: true,
+        loginNotifications: true,
         showEmail: true,
         showOnlineStatus: true,
         showPhoneNumber: true,
+        privateProfile: true,
         emailVerified: true,
         // @ts-ignore - accountStatus exists in the Prisma schema
         accountStatus: true,
@@ -613,26 +613,29 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       select: {
         id: true,
         email: true,
-        username: true,
-        role: true,
-        emailVerified: true,
-        lastVerifiedAt: true,
-        password: true,
-        createdAt: true,
-        updatedAt: true,
+        name: true,
         phone: true,
         profilePicture: true,
         bio: true,
-        name: true,
         dateOfBirth: true,
+        password: true,
+        username: true,
         street: true,
         city: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
         allowMessaging: true,
         listingNotifications: true,
         messageNotifications: true,
+        loginNotifications: true,
         showEmail: true,
         showOnlineStatus: true,
         showPhoneNumber: true,
+        privateProfile: true,
+        emailVerified: true,
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: true,
       },
     });
 
@@ -720,7 +723,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
       domain: isProduction ? ".tijara-app.com" : undefined,
     });
-    
+
     // Set access token in cookie (short-lived, 30 days)
     reply.setCookie("accessToken", tokens.accessToken, {
       httpOnly: true,
@@ -730,6 +733,13 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
       domain: isProduction ? ".tijara-app.com" : undefined,
     });
+
+    if (fullUser.loginNotifications)
+      sendUserLoginEmail({
+        name: fullUser.name,
+        username: fullUser.username,
+        email: fullUser.email,
+      });
 
     return reply.code(200).send({
       success: true,
@@ -752,12 +762,16 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
           dateOfBirth: fullUser.dateOfBirth,
           street: fullUser.street,
           city: fullUser.city,
+
+          // Settings related fields
           allowMessaging: fullUser.allowMessaging,
           listingNotifications: fullUser.listingNotifications,
           messageNotifications: fullUser.messageNotifications,
+          loginNotifications: fullUser.loginNotifications,
           showEmail: fullUser.showEmail,
           showOnlineStatus: fullUser.showOnlineStatus,
           showPhoneNumber: fullUser.showPhoneNumber,
+          privateProfile: fullUser.privateProfile,
         },
       },
     });
@@ -971,8 +985,8 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       WHERE "id" = ${user.id}
     `;
 
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+
     // Set secure HTTP-only cookie with refresh token (30 days)
     reply.setCookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
@@ -982,7 +996,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
       domain: isProduction ? ".tijara-app.com" : undefined,
     });
-    
+
     // Set access token in cookie (30 days)
     reply.setCookie("accessToken", tokens.accessToken, {
       httpOnly: true,
@@ -1033,15 +1047,15 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
       WHERE id = ${request.user.id}
     `;
 
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+
     // Clear all auth cookies
     const cookieOptions = {
       path: "/",
       domain: isProduction ? ".tijara-app.com" : undefined,
       secure: isProduction,
       httpOnly: true,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: isProduction ? "none" : "lax",
     } as const;
 
     // Clear all authentication cookies
@@ -1151,7 +1165,7 @@ export const verifyEmailCode = async (
         verificationToken: null,
         verificationTokenExpires: null,
         lastVerifiedAt: new Date(),
-        accountStatus: 'ACTIVE', // activate account after successful code verification
+        accountStatus: "ACTIVE", // activate account after successful code verification
       } as any,
     });
 
@@ -1219,10 +1233,7 @@ export const sendPasswordChangeVerification = async (
     });
 
     // Send password change verification email
-    const emailSent = await sendPasswordChangeEmail(
-      email,
-      verificationCode,
-    );
+    const emailSent = await sendPasswordChangeEmail(email, verificationCode);
 
     if (!emailSent) {
       return reply.status(500).send({
@@ -1257,12 +1268,13 @@ export const changePasswordWithVerification = async (
 ) => {
   try {
     // Get request body
-    const { currentPassword, newPassword, verificationCode, email } = request.body as {
-      currentPassword?: string;
-      newPassword: string;
-      verificationCode: string;
-      email?: string;
-    };
+    const { currentPassword, newPassword, verificationCode, email } =
+      request.body as {
+        currentPassword?: string;
+        newPassword: string;
+        verificationCode: string;
+        email?: string;
+      };
 
     let userToUpdate;
 
