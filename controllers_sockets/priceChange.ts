@@ -45,7 +45,12 @@ export const handlePriceChange = async ({
     // Create notifications for each user who saved the listing
     for (const favorite of favorites) {
       // Skip notification for the user who made the price change
-      if (favorite.userId === userId) continue;
+      // Skip notification for the user who has off listing notification
+      if (
+        favorite.userId === userId ||
+        favorite.user.listingNotifications === false
+      )
+        continue;
 
       // Create notification in the database
       const notification = await prisma.notification.create({
