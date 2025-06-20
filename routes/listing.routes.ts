@@ -37,7 +37,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string,
+  sortOrder?: string
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -112,11 +112,11 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
 
 // Helper function to handle authenticated routes
 const handleAuthRoute = (
-  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>,
+  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>
 ) => {
   return async (
     request: FastifyRequest,
-    reply: FastifyReply,
+    reply: FastifyReply
   ): Promise<void> => {
     try {
       console.log("Fetching favorite listings...", request);
@@ -402,7 +402,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   fastify.get("/trending", async (_req, reply): Promise<void> => {
@@ -456,6 +456,7 @@ export default async function (fastify: FastifyInstance) {
                 id: true,
                 username: true,
                 profilePicture: true,
+                allowMessaging: true,
               },
             },
             favorites: true,
@@ -489,11 +490,11 @@ export default async function (fastify: FastifyInstance) {
         ) {
           console.log(
             "Formatted listing:",
-            JSON.stringify(formattedListing, null, 2),
+            JSON.stringify(formattedListing, null, 2)
           );
           console.log(
             "Formatted vehicle details:",
-            JSON.stringify(formattedListing.details.vehicles, null, 2),
+            JSON.stringify(formattedListing.details.vehicles, null, 2)
           );
         }
 
@@ -512,7 +513,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   // Get saved listings
@@ -544,7 +545,7 @@ export default async function (fastify: FastifyInstance) {
           });
 
           const formattedListings = savedListings.map((favorite) =>
-            formatListingResponse(favorite.listing),
+            formatListingResponse(favorite.listing)
           );
 
           return reply.send({
@@ -563,8 +564,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Save a listing to favorites
@@ -650,8 +651,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Delete a saved listing
@@ -709,8 +710,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Add save listing
@@ -778,7 +779,7 @@ export default async function (fastify: FastifyInstance) {
                   "Details:",
                   typeof reqBody.details === "string"
                     ? JSON.parse(reqBody.details)
-                    : reqBody.details,
+                    : reqBody.details
                 );
               }
             } catch (detailsError) {
@@ -795,8 +796,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Note: You'll need to adapt upload.array and processImagesMiddleware to work with Fastify
@@ -843,7 +844,7 @@ export default async function (fastify: FastifyInstance) {
           mainCategory,
           subCategory,
           location = "",
-          latitude = 0,  // Default to 0 if not provided
+          latitude = 0, // Default to 0 if not provided
           longitude = 0, // Default to 0 if not provided
           listingAction,
           details,
@@ -895,7 +896,7 @@ export default async function (fastify: FastifyInstance) {
             description,
             price: Number(price),
             location,
-            latitude: Number(latitude) || 0,  // Ensure it's a number, default to 0
+            latitude: Number(latitude) || 0, // Ensure it's a number, default to 0
             longitude: Number(longitude) || 0, // Ensure it's a number, default to 0
             category: mainCategory, // For backwards compatibility
             mainCategory,
@@ -1223,25 +1224,25 @@ export default async function (fastify: FastifyInstance) {
                     size: parsedDetails.realEstate.size?.toString() || null,
                     yearBuilt:
                       parseInt(
-                        parsedDetails.realEstate.yearBuilt?.toString(),
+                        parsedDetails.realEstate.yearBuilt?.toString()
                       ) || null,
                     bedrooms:
                       parseInt(
-                        parsedDetails.realEstate.houseDetails?.bedrooms?.toString(),
+                        parsedDetails.realEstate.houseDetails?.bedrooms?.toString()
                       ) || null,
                     bathrooms:
                       parseInt(
-                        parsedDetails.realEstate.houseDetails?.bathrooms?.toString(),
+                        parsedDetails.realEstate.houseDetails?.bathrooms?.toString()
                       ) || null,
                     totalArea:
                       parseInt(
-                        parsedDetails.realEstate.houseDetails?.totalArea?.toString(),
+                        parsedDetails.realEstate.houseDetails?.totalArea?.toString()
                       ) || null,
                     condition:
                       parsedDetails.realEstate.condition?.toString() || null,
                     parkingSpaces:
                       parseInt(
-                        parsedDetails.realEstate.parkingSpaces?.toString(),
+                        parsedDetails.realEstate.parkingSpaces?.toString()
                       ) || null,
                     constructionType:
                       parsedDetails.realEstate.constructionType || null,
@@ -1302,7 +1303,7 @@ export default async function (fastify: FastifyInstance) {
                     // 🆕 Added fields based on updated schema:
                     livingArea: parsedDetails.realEstate.livingArea
                       ? parseFloat(
-                          parsedDetails.realEstate.livingArea.toString(),
+                          parsedDetails.realEstate.livingArea.toString()
                         )
                       : null,
                     energyFeatures:
@@ -1381,7 +1382,7 @@ export default async function (fastify: FastifyInstance) {
                 "Details:",
                 typeof reqBody.details === "string"
                   ? JSON.parse(reqBody.details)
-                  : reqBody.details,
+                  : reqBody.details
               );
             }
           } catch (detailsError) {
@@ -1396,7 +1397,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   fastify.get<{ Querystring: { page?: string; limit?: string } }>(
@@ -1438,7 +1439,7 @@ export default async function (fastify: FastifyInstance) {
             success: true,
             data: {
               listings: listings.map((listing) =>
-                formatListingResponse(listing),
+                formatListingResponse(listing)
               ),
               total,
               page: Number(page),
@@ -1457,8 +1458,8 @@ export default async function (fastify: FastifyInstance) {
             },
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   fastify.get(
@@ -1504,8 +1505,8 @@ export default async function (fastify: FastifyInstance) {
             },
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // This route has been moved above the authentication middleware to make it public
@@ -1544,32 +1545,40 @@ export default async function (fastify: FastifyInstance) {
             existingImages?: any[];
           };
 
-          console.log('🔍 [DEBUG] Details before processing:', details);
-          
+          console.log("🔍 [DEBUG] Details before processing:", details);
+
           // Handle details whether it's already parsed or still a string
-          const objDetails = typeof details === 'string' ? JSON.parse(details) : details;
-          
-          console.log('🔍 [DEBUG] Processed details:', objDetails);
-          
+          const objDetails =
+            typeof details === "string" ? JSON.parse(details) : details;
+
+          console.log("🔍 [DEBUG] Processed details:", objDetails);
+
           const vehicleDetails = objDetails?.vehicles;
           const realEstateDetails = objDetails?.realEstate;
-          
-          console.log('🔍 [DEBUG] Extracted details:', { vehicleDetails, realEstateDetails });
+
+          console.log("🔍 [DEBUG] Extracted details:", {
+            vehicleDetails,
+            realEstateDetails,
+          });
           const newImages = req.processedImages || [];
-          console.log('🔍 [DEBUG] New images:', newImages);
-          
+          console.log("🔍 [DEBUG] New images:", newImages);
+
           // Parse and validate existing images
           let parsedExistingImages = [];
           if (existingImages) {
             try {
-              parsedExistingImages = typeof existingImages === 'string'
-                ? JSON.parse(existingImages)
-                : Array.isArray(existingImages)
-                  ? existingImages
-                  : [];
-              console.log('🔍 [DEBUG] Parsed existing images:', parsedExistingImages);
+              parsedExistingImages =
+                typeof existingImages === "string"
+                  ? JSON.parse(existingImages)
+                  : Array.isArray(existingImages)
+                    ? existingImages
+                    : [];
+              console.log(
+                "🔍 [DEBUG] Parsed existing images:",
+                parsedExistingImages
+              );
             } catch (error) {
-              console.error('🔍 [DEBUG] Error parsing existing images:', error);
+              console.error("🔍 [DEBUG] Error parsing existing images:", error);
               parsedExistingImages = [];
             }
           }
@@ -1577,25 +1586,30 @@ export default async function (fastify: FastifyInstance) {
           // Get current images from the database
           const currentImages = await prisma.image.findMany({
             where: { listingId: (req.params as { id: string }).id },
-            select: { url: true }
+            select: { url: true },
           });
-          
-          console.log('🔍 [DEBUG] Current images in DB:', currentImages);
-          console.log('🔍 [DEBUG] Images to keep:', parsedExistingImages);
+
+          console.log("🔍 [DEBUG] Current images in DB:", currentImages);
+          console.log("🔍 [DEBUG] Images to keep:", parsedExistingImages);
 
           // First, delete removed images
           if (parsedExistingImages.length === 0) {
-            console.log('🔍 [DEBUG] Deleting all images as no existing images were specified');
+            console.log(
+              "🔍 [DEBUG] Deleting all images as no existing images were specified"
+            );
             await prisma.image.deleteMany({
-              where: { listingId: (req.params as { id: string }).id }
+              where: { listingId: (req.params as { id: string }).id },
             });
           } else {
-            console.log('🔍 [DEBUG] Deleting images not in:', parsedExistingImages);
+            console.log(
+              "🔍 [DEBUG] Deleting images not in:",
+              parsedExistingImages
+            );
             await prisma.image.deleteMany({
               where: {
                 listingId: (req.params as { id: string }).id,
-                url: { notIn: parsedExistingImages }
-              }
+                url: { notIn: parsedExistingImages },
+              },
             });
           }
 
@@ -1659,7 +1673,7 @@ export default async function (fastify: FastifyInstance) {
           return reply.send({
             success: true,
             data: formatListingResponse(
-              listing as unknown as ListingWithRelations,
+              listing as unknown as ListingWithRelations
             ),
             status: 200,
           });
@@ -1675,8 +1689,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   fastify.delete<{ Params: { id: string } }>(
@@ -1767,7 +1781,7 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 }
