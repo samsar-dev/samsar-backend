@@ -1340,12 +1340,14 @@ export const changePasswordWithVerification = async (
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update user password and clear verification code
+    // Update user password, clear verification code, and mark as verified
     await prisma.user.update({
       where: { id: userToUpdate.id },
       data: {
         password: hashedPassword,
         verificationCode: null,
+        emailVerified: true,
+        accountStatus: "ACTIVE",
         updatedAt: new Date(), // Use updatedAt to track password change time
       },
     });
