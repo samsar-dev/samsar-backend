@@ -4,13 +4,8 @@ import { PrismaClient } from '@prisma/client';
 // This import ensures the Fastify type extensions are loaded
 import type { UserPayload } from '../../types/auth.js';
 
-// Extend FastifyRequest interface to include user property
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: UserPayload | undefined;
-    jwtUser: UserPayload | undefined;
-  }
-}
+// Fastify types are extended in types/fastify.d.ts
+// This ensures consistent typing across the application
 
 const prisma = new PrismaClient();
 
@@ -23,7 +18,7 @@ export const updateLastActive = async (
 ) => {
   try {
     // Only process if user is authenticated
-    const userId = req.user?.id || req.jwtUser?.id;
+    const userId = req.user?.id;
     if (!userId) {
       console.log('No user ID found in request');
       return;
