@@ -206,6 +206,8 @@ export interface ListingWithRelations extends ListingBase {
     id: string;
     username: string;
     profilePicture: string | null;
+    allowMessaging: true;
+    privateProfile: true;
   };
   savedBy?: {
     id: string;
