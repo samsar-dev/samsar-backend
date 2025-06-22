@@ -117,3 +117,60 @@ export const sendUserLoginEmail = async (userDetails: {
     return false;
   }
 };
+
+export const sendNewMessageNotificationEmail = async (
+  recipientEmail: string,
+  params: {
+    senderName: string;
+    recipientName: string;
+    conversationId: string;
+  },
+): Promise<boolean> => {
+  const { senderName, recipientName, conversationId } = params;
+
+  try {
+    const messageUrl = `http://localhost:3000/messages/${conversationId}`;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border: 1px solid #ddd; max-width: 600px; margin: auto; border-radius: 8px;">
+        <div style="background-color: #4C14CC; color: white; padding: 20px; border-radius: 6px 6px 0 0; text-align: center;">
+          <h2 style="margin: 0;">New Message Alert</h2>
+        </div>
+
+        <div style="padding: 20px;">
+          <p>Hi ${recipientName},</p>
+          <p><strong>${senderName}</strong> just sent you a new message on <strong>Tijara</strong>.</p>
+          <p>Click the button below to read it:</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${messageUrl}" style="
+              background-color: #4C14CC;
+              color: #ffffff;
+              padding: 12px 24px;
+              border-radius: 30px;
+              text-decoration: none;
+              font-weight: bold;
+              font-size: 16px;
+              display: inline-block;
+            ">Check Message</a>
+          </div>
+
+          <p style="color: #888;">If you’re not expecting this, you can ignore this email.</p>
+          <p style="margin-top: 40px;">– The Tijara Team</p>
+        </div>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: "no-reply@tijara.com",
+      to: recipientEmail,
+      subject: "You've got a new message on Tijara!",
+      html: htmlContent,
+    });
+
+    return true;
+  } catch (error) {
+    console.log(`Error sending new message email: ${error}`);
+    return false;
+  }
+};
