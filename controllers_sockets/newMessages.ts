@@ -2,7 +2,13 @@ import prisma from "../src/lib/prismaClient.js";
 import { io } from "../server.js";
 import { usersSocketId } from "../server.js";
 import { NEW_MESSAGE, NEW_MESSAGE_ALERT } from "../constants/socketEvent.js";
-import { NewMessageData } from "../types/socket.js";
+import {
+  MessageWithSenderAndRecipient,
+  NewMessageData,
+  NotificationWithSenderAndRecipient,
+} from "../types/socket.js";
+import { Prisma } from "@prisma/client";
+import { sendNewMessageNotificationEmail } from "utils/email.temp.utils.js";
 
 export const newMessages = async ({
   content,
@@ -52,8 +58,8 @@ export const newMessagesHeplerFun = async ({
     conversationId,
     createdAt,
   });
-  let messagRresult;
-  let notificationResult;
+  let messagRresult: MessageWithSenderAndRecipient | null = null;
+  let notificationResult: NotificationWithSenderAndRecipient | null = null;
   try {
     messagRresult = await prisma.message.create({
       data: {
@@ -62,6 +68,10 @@ export const newMessagesHeplerFun = async ({
         recipientId: recipientId,
         conversationId: conversationId,
         createdAt: createdAt,
+      },
+      include: {
+        sender: true,
+        recipient: true,
       },
     });
     notificationResult = await prisma.notification.create({
@@ -83,7 +93,7 @@ export const newMessagesHeplerFun = async ({
     console.log("Error creating message:", error);
   }
   const recipientSocketId = usersSocketId.get(recipientId);
-  if (recipientSocketId) {
+  if (recipientSocketId && messagRresult && notificationResult) {
     io.to(recipientSocketId).emit(NEW_MESSAGE, {
       id: messagRresult.id,
       senderId: messagRresult.senderId,
@@ -101,6 +111,12 @@ export const newMessagesHeplerFun = async ({
       read: notificationResult.read,
       userId: recipientId,
       relatedId: notificationResult.relatedId,
+    });
+
+    sendNewMessageNotificationEmail(messagRresult.recipient.email, {
+      senderName: messagRresult.sender.username,
+      recipientName: messagRresult.recipient.username,
+      conversationId: messagRresult.conversationId,
     });
   }
 };
