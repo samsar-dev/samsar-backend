@@ -100,6 +100,8 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
           id: listing.user.id,
           username: listing.user.username,
           profilePicture: listing.user.profilePicture,
+          allowMessaging: listing.user.allowMessaging ?? true,
+          privateProfile: listing.user.privateProfile ?? false,
         }
       : undefined,
     savedBy:
@@ -457,6 +459,7 @@ export default async function (fastify: FastifyInstance) {
                 username: true,
                 profilePicture: true,
                 allowMessaging: true,
+                privateProfile: true,
               },
             },
             favorites: true,
