@@ -568,6 +568,7 @@ export const getUserSettings = async (
         listingNotifications: user.listingNotifications,
         messageNotifications: user.messageNotifications,
         loginNotifications: user.loginNotifications,
+        newsletterSubscribed: user.newsletterSubscribed,
         showEmail: user.showEmail,
         showOnlineStatus: user.showOnlineStatus,
         showPhoneNumber: user.showPhoneNumber,
@@ -651,15 +652,16 @@ export const updateUserSettings = async (
       where: { id: (request.user as any).id },
       data: {
         // Flatten notifications
-        listingNotifications: notifications?.listingUpdates ?? true,
-        messageNotifications: notifications?.newInboxMessages ?? true,
-        loginNotifications: notifications.loginNotifications ?? false,
+        listingNotifications: notifications?.listingUpdates ? true : false,
+        messageNotifications: notifications?.newInboxMessages ? true : false,
+        loginNotifications: notifications.loginNotifications ? true : false,
+        newsletterSubscribed: notifications.newsletterSubscribed ? true : false,
         // Flatten privacy settings
         privateProfile: privacy.profileVisibility === "private" ? true : false,
-        allowMessaging: privacy?.allowMessaging ?? true,
-        showEmail: privacy?.showEmail ?? true,
-        showOnlineStatus: privacy?.showOnlineStatus ?? true,
-        showPhoneNumber: privacy?.showPhone ?? true,
+        allowMessaging: privacy?.allowMessaging ? true : false,
+        showEmail: privacy?.showEmail ? true : false,
+        showOnlineStatus: privacy?.showOnlineStatus ? true : false,
+        showPhoneNumber: privacy?.showPhone ? true : false,
       },
     });
 
