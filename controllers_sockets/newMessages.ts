@@ -8,7 +8,7 @@ import {
   NotificationWithSenderAndRecipient,
 } from "../types/socket.js";
 import { Prisma } from "@prisma/client";
-import { sendNewMessageNotificationEmail } from "utils/email.temp.utils.js";
+import { sendNewMessageNotificationEmail } from "../utils/email.temp.utils.js";
 
 export const newMessages = async ({
   content,
