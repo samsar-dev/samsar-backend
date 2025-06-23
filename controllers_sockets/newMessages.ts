@@ -58,6 +58,7 @@ export const newMessagesHeplerFun = async ({
     conversationId,
     createdAt,
   });
+  if (await isMessageAllow(recipientId)) return;
   let messagRresult: MessageWithSenderAndRecipient | null = null;
   let notificationResult: NotificationWithSenderAndRecipient | null = null;
   try {
@@ -87,6 +88,13 @@ export const newMessagesHeplerFun = async ({
         user: true,
       },
     });
+
+    if (messagRresult)
+      sendNewMessageNotificationEmail(messagRresult.recipient.email, {
+        senderName: messagRresult.sender.username,
+        recipientName: messagRresult.recipient.username,
+        conversationId: messagRresult.conversationId,
+      });
     console.log("Message created:", messagRresult);
     console.log("Notification created:>>>>>>>>>>>>", notificationResult);
   } catch (error) {
@@ -112,11 +120,20 @@ export const newMessagesHeplerFun = async ({
       userId: recipientId,
       relatedId: notificationResult.relatedId,
     });
-
-    sendNewMessageNotificationEmail(messagRresult.recipient.email, {
-      senderName: messagRresult.sender.username,
-      recipientName: messagRresult.recipient.username,
-      conversationId: messagRresult.conversationId,
-    });
   }
 };
+
+async function isMessageAllow(recipientId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: recipientId,
+    },
+    select: {
+      allowMessaging: true,
+    },
+  });
+  if (user?.allowMessaging) {
+    return true;
+  }
+  return false;
+}
