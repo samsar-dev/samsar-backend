@@ -84,7 +84,10 @@ io.use((socket, next) => {
   console.log("Incoming socket headers:", socket.handshake.headers);
   try {
     const tokenWithBearer =
-      socket.handshake.headers.authorization || socket.handshake.auth.token;
+      socket.handshake.headers.authorization ||
+      socket.handshake.auth.token ||
+      socket.handshake.query.token;
+
     if (!tokenWithBearer) {
       return next(new Error("Token missing"));
     }
