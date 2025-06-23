@@ -129,7 +129,8 @@ export const sendNewMessageNotificationEmail = async (
   const { senderName, recipientName, conversationId } = params;
 
   try {
-    const messageUrl = `http://localhost:3000/messages/${conversationId}`;
+    const FrontendBaseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const messageUrl = `${FrontendBaseUrl}/messages/${conversationId}`;
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border: 1px solid #ddd; max-width: 600px; margin: auto; border-radius: 8px;">
