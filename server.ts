@@ -84,7 +84,10 @@ io.use((socket, next) => {
   console.log("Incoming socket headers:", socket.handshake.headers);
   try {
     const tokenWithBearer =
-      socket.handshake.headers.authorization || socket.handshake.auth.token;
+      socket.handshake.headers.authorization ||
+      socket.handshake.auth.token ||
+      socket.handshake.query.token;
+
     if (!tokenWithBearer) {
       return next(new Error("Token missing"));
     }
@@ -187,7 +190,7 @@ fastify.after(() => {
 });
 
 // Add activity tracking middleware
-fastify.addHook('onRequest', async (request, reply) => {
+fastify.addHook("onRequest", async (request, reply) => {
   await updateLastActive(request, reply);
 });
 
@@ -301,11 +304,15 @@ async function startServer() {
     console.log("✅ Connected to database");
 
     // Register contact routes
-    const { default: contactRoutes } = await import("./routes/contact.routes.js");
+    const { default: contactRoutes } = await import(
+      "./routes/contact.routes.js"
+    );
     await fastify.register(contactRoutes);
 
     // Register listing permission routes
-    const { default: listingPermissionRoutes } = await import("./routes/listingPermission.routes.js");
+    const { default: listingPermissionRoutes } = await import(
+      "./routes/listingPermission.routes.js"
+    );
     await fastify.register(listingPermissionRoutes, { prefix: "/api" });
     console.log("✅ Contact routes registered");
 
@@ -313,6 +320,7 @@ async function startServer() {
     await fastify.listen({ port, host: "0.0.0.0" });
 
     console.log(`🚀 Server running on http://localhost:${port}`);
+    console.log("✅ all user sockets:", usersSocketId);
 
     // Socket.io handlers
     io.on("connection", (socket: AuthSocket) => {
@@ -323,6 +331,7 @@ async function startServer() {
       console.log("all user sockets:", usersSocketId);
 
       socket.on(NEW_MESSAGE, (data: NewMessageData) => {
+        console.log("newMessages");
         newMessages(data);
       });
 
