@@ -1,8 +1,10 @@
+// 🌟 Listing Categories
 export enum ListingCategory {
-  VEHICLES = "VEHICLES",
-  REAL_ESTATE = "REAL_ESTATE",
+  VEHICLES = "vehicles",
+  REAL_ESTATE = "realEstate",
 }
 
+// 🌟 Vehicle Types
 export enum VehicleType {
   CAR = "CAR",
   TRUCK = "TRUCK",
@@ -11,9 +13,11 @@ export enum VehicleType {
   MOTORCYCLE = "MOTORCYCLE",
   RV = "RV",
   CONSTRUCTION = "CONSTRUCTION",
+  TRACTOR = "TRACTOR",
   OTHER = "OTHER",
 }
 
+// 🌟 Property Types
 export enum PropertyType {
   HOUSE = "HOUSE",
   APARTMENT = "APARTMENT",
@@ -23,6 +27,7 @@ export enum PropertyType {
   OTHER = "OTHER",
 }
 
+// 🌟 Vehicle Details
 export enum FuelType {
   GASOLINE = "gasoline",
   DIESEL = "diesel",
@@ -40,7 +45,7 @@ export enum TransmissionType {
   SEMI_AUTOMATIC = "semiAutomatic",
   CONTINUOUSLY_VARIABLE = "cvt",
   DUAL_CLUTCH = "dualClutch",
-  OTHER = "other"
+  OTHER = "other",
 }
 
 export enum Condition {
@@ -53,6 +58,54 @@ export enum Condition {
   SALVAGE = "salvage",
 }
 
+// 🌟 Settings Related Enums
+export enum LanguageCode {
+  EN = "en",
+  ES = "es",
+  FR = "fr",
+  DE = "de",
+  AR = "ar",
+}
+// 🌟 Listing Status
+export enum ListingStatus {
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+  SOLD = "sold",
+  RENTED = "rented",
+  PENDING = "pending",
+}
+
+// 🌟 Listing Action Types
+export enum ListingAction {
+  SALE = "SALE",
+  RENT = "RENT",
+}
+
+// 🌟 Report System Enums
+export enum ReportType {
+  USER = "user",
+  LISTING = "listing",
+  MESSAGE = "message",
+  COMMENT = "comment",
+}
+
+export enum ReportStatus {
+  PENDING = "pending",
+  INVESTIGATING = "investigating",
+  RESOLVED = "resolved",
+  DISMISSED = "dismissed",
+}
+
+export enum ReportReason {
+  SPAM = "spam",
+  INAPPROPRIATE = "inappropriate",
+  MISLEADING = "misleading",
+  OFFENSIVE = "offensive",
+  HARASSMENT = "harassment",
+  OTHER = "other",
+}
+
+// 🌟 Notification Types
 export enum NotificationType {
   NEW_MESSAGE = "NEW_MESSAGE",
   LISTING_INTEREST = "LISTING_INTEREST",
