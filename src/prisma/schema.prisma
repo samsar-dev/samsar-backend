@@ -402,6 +402,7 @@ model VehicleDetails {
   trackHoldingAssistant            Boolean?
   tractionControl                  Boolean?
   trafficSignRecognition           Boolean?
+  transmission                    String?
   trunkCapacity                    Float?
   twoZoneClimateControl            Boolean?
   upholsteryMaterial               String?
