@@ -16,7 +16,8 @@
     "declaration": true,
     "sourceMap": true,
     "paths": {
-      "@/*": ["./"]
+      "@/*": ["./src/*"],
+      "@": ["./src"]
     },
     "types": ["node", "express", "multer"],
     "typeRoots": ["./node_modules/@types", "./types"]
