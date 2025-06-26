@@ -85,7 +85,7 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
       : undefined,
     realEstate: listing.realEstateDetails
       ? (filterListingDetails(
-          listing.vehicleDetails,
+          listing.realEstateDetails,
           listing.subCategory,
         ) as RealEstateDetails)
       : undefined,
