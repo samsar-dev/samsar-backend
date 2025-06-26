@@ -11,6 +11,7 @@ import {
   RealEstateDetails,
   VehicleDetails,
 } from "../types/shared.js";
+import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType } from "types/enums.js";
 import { filterListingDetails } from "src/utils/listing.utils.js";
 interface ListingQuery {
@@ -20,10 +21,12 @@ interface ListingQuery {
   sortOrder?: string;
   page?: string;
   limit?: string;
-  location?: string;
   builtYear?: string;
   preview?: string;
   publicAccess?: string;
+  latitude?: string;
+  longitude?: string;
+  radius?: string;
 }
 interface SearchQuery {
   query?: string;
@@ -181,9 +184,12 @@ export default async function (fastify: FastifyInstance) {
         sortOrder,
         page = "1",
         limit = "10",
-        location,
         builtYear,
         preview = "false",
+        publicAccess = "false",
+        latitude,
+        longitude,
+        radius,
       } = req.query as ListingQuery;
 
       // Build where clause for filtering
@@ -193,9 +199,6 @@ export default async function (fastify: FastifyInstance) {
       }
       if (subCategory) {
         where.subCategory = subCategory as string;
-      }
-      if (location) {
-        where.location = location as string;
       }
       // Real estate built year filter (nested)
       if (builtYear) {
@@ -207,123 +210,54 @@ export default async function (fastify: FastifyInstance) {
         };
       }
 
-      // Calculate pagination
-      const skip = (Number(page) - 1) * Number(limit);
-
-      // Get total count for pagination
-      const total = await prisma.listing.count({ where });
-
-      // Determine if we should fetch full data or just preview data
-      const isPreview = preview === "true";
-
-      // Get listings with pagination, sorting, and filtering
-      const listings = await prisma.listing.findMany({
+      // First get all listings that match the basic filters
+      const allListings = await prisma.listing.findMany({
         where,
-        take: Number(limit),
-        skip,
         orderBy: buildOrderBy(sortBy as string, sortOrder as string),
-        include: isPreview
-          ? {
-              // Preview mode - fetch minimal data
-              images: {
-                take: 1, // Only get the first image
-                select: {
-                  url: true,
-                  id: true,
-                },
-              },
-              user: {
-                select: {
-                  id: true,
-                  username: true,
-                },
-              },
-              _count: {
-                select: {
-                  favorites: true,
-                },
-              },
-              vehicleDetails: {
-                select: {
-                  make: true,
-                  model: true,
-                  year: true,
-                  mileage: true,
-                  transmissionType: true,
-                  fuelType: true,
-                },
-              },
-              realEstateDetails: {
-                select: {
-                  size: true,
-                  bedrooms: true,
-                  bathrooms: true,
-                },
-              },
-            }
-          : {
-              // Full data mode
-              images: true,
-              user: {
-                select: {
-                  id: true,
-                  username: true,
-                  profilePicture: true,
-                },
-              },
-              favorites: true,
-              realEstateDetails: true,
-              vehicleDetails: true,
+        include: {
+          images: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              profilePicture: true,
             },
+          },
+          favorites: true,
+          realEstateDetails: true,
+          vehicleDetails: true,
+        },
       });
 
+      // If radius is specified, filter by distance
+      let filteredListings = allListings;
+      if (latitude && longitude && radius) {
+        const centerLat = parseFloat(latitude);
+        const centerLon = parseFloat(longitude);
+        const maxDistance = parseFloat(radius);
+
+        // Filter listings within the specified radius
+        filteredListings = allListings.filter((listing) => {
+          if (!listing.latitude || !listing.longitude) return false;
+          const distance = calculateDistance(
+            centerLat,
+            centerLon,
+            listing.latitude,
+            listing.longitude
+          );
+          return distance <= maxDistance;
+        });
+      }
+
+      // Apply pagination to the filtered results
+      const start = (Number(page) - 1) * Number(limit);
+      const end = start + Number(limit);
+      const paginatedListings = filteredListings.slice(start, end);
+
       // Format listings for response
-      const formattedListings = isPreview
-        ? listings.map((listing: any) => ({
-            id: listing.id,
-            title: listing.title,
-            price: listing.price,
-            status: listing.status,
-            listingAction: listing.listingAction,
-            categtory: {
-              mainCategory: listing.mainCategory,
-              subCategory: listing.subCategory,
-            },
-            location: listing.location,
-            createdAt: listing.createdAt,
-            updatedAt: listing.updatedAt,
-            image: listing.images?.[0]?.url || null,
-            user: {
-              id: listing.user.id,
-              username: listing.user.username,
-            },
-            favoritesCount: listing._count?.favorites || 0,
-            details: {
-              vehicles: listing.vehicleDetails
-                ? {
-                    make: listing.vehicleDetails.make,
-                    model: listing.vehicleDetails.model,
-                    year: listing.vehicleDetails.year,
-                    mileage: listing.vehicleDetails.mileage,
-                    transmissionType: listing.vehicleDetails.transmissionType,
-                    fuelType: listing.vehicleDetails.fuelType,
-                  }
-                : undefined,
-              realEstate: listing.realEstateDetails
-                ? {
-                    totalArea: listing.realEstateDetails.totalArea,
-                    bedrooms: listing.realEstateDetails.bedrooms,
-                    bathrooms: listing.realEstateDetails.bathrooms,
-                    yearBuilt: listing.realEstateDetails.yearBuilt,
-                    floorLevel: listing.realEstateDetails.floorLevel,
-                    isBuildable: listing.realEstateDetails.isBuildable,
-                    usageType: listing.realEstateDetails.usageType,
-                    condition: listing.realEstateDetails.condition,
-                  }
-                : undefined,
-            },
-          }))
-        : listings.map((listing) => formatListingResponse(listing));
+      const formattedListings = paginatedListings.map((listing) =>
+        formatListingResponse(listing)
+      );
 
       console.log("formattedListings: >>>>>>>>>>>> \n", formattedListings);
 
@@ -331,10 +265,10 @@ export default async function (fastify: FastifyInstance) {
         success: true,
         data: {
           items: formattedListings,
-          total,
+          total: filteredListings.length,
           page: Number(page),
           limit: Number(limit),
-          hasMore: total > Number(page) * Number(limit),
+          hasMore: filteredListings.length > end,
         },
         status: 200,
       });
@@ -343,8 +277,7 @@ export default async function (fastify: FastifyInstance) {
       console.error("Error fetching listings:", error);
       return reply.code(500).send({
         success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to fetch listings",
+        error: error instanceof Error ? error.message : "Failed to fetch listings",
         status: 500,
         data: null,
       });
