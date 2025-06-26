@@ -21,7 +21,7 @@ import {
 } from "./constants/socketEvent.js";
 import { newMessages } from "./controllers_sockets/newMessages.js";
 import { handlePriceChange } from "./controllers_sockets/priceChange.js";
-import { updateLastActive } from "./src/middleware/activity.js";
+import { updateLastActive } from "./middleware/activity.js";
 
 // Store connected users
 

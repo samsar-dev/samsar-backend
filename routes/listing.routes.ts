@@ -12,7 +12,7 @@ import {
   VehicleDetails,
 } from "../types/shared.js";
 import { calculateDistance } from "../utils/distance.js";
-import { PropertyType, VehicleType } from "types/enums.js";
+import { PropertyType, VehicleType } from "../types/enums.js";
 import { filterListingDetails } from "src/utils/listing.utils.js";
 interface ListingQuery {
   mainCategory?: string;

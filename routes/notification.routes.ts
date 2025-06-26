@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { authenticate } from "../middleware/auth.js";
-import { updateLastActive } from "../src/middleware/activity.js";
+import { updateLastActive } from "../middleware/activity.js";
 import {
   getNotifications,
   markAsRead,
