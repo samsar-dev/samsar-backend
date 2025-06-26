@@ -1,6 +1,6 @@
-import prismaClient from "../src/lib/prismaClient";
+import prismaClient from "../src/lib/prismaClient.js";
 import { NotificationType as PrismaNotificationType } from "@prisma/client";
-import { NotificationType } from "../types/enums";
+import { NotificationType } from "../types/enums.js";
 
 // Mapping function to convert custom enum to Prisma enum
 const mapNotificationType = (
