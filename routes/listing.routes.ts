@@ -277,7 +277,8 @@ export default async function (fastify: FastifyInstance) {
       console.error("Error fetching listings:", error);
       return reply.code(500).send({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to fetch listings",
+        error:
+          error instanceof Error ? error.message : "Failed to fetch listings",
         status: 500,
         data: null,
       });
@@ -1599,13 +1600,19 @@ export default async function (fastify: FastifyInstance) {
 
               realEstateDetails: realEstateDetails
                 ? {
-                    update: realEstateDetails,
+                    update: filterListingDetails(
+                      realEstateDetails,
+                      realEstateDetails.propertyType
+                    ) as RealEstateDetails,
                   }
                 : undefined,
 
               vehicleDetails: vehicleDetails
                 ? {
-                    update: vehicleDetails,
+                    update: filterListingDetails(
+                      vehicleDetails,
+                      vehicleDetails.vehicleType
+                    ) as VehicleDetails,
                   }
                 : undefined,
             },
