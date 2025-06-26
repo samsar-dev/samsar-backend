@@ -1526,8 +1526,8 @@ export default async function (fastify: FastifyInstance) {
                 typeof existingImages === "string"
                   ? JSON.parse(existingImages)
                   : Array.isArray(existingImages)
-                    ? existingImages
-                    : [];
+                  ? existingImages
+                  : [];
               console.log(
                 "🔍 [DEBUG] Parsed existing images:",
                 parsedExistingImages
