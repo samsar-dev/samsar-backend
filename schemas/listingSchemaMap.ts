@@ -1,16 +1,16 @@
-import { allCarFields } from "./carSchema";
-import { motorcycleFieldNames } from "./motorcycleSchema";
-import { truckFieldNames } from "./truckSchema";
-import { tractorFieldNames } from "./tractorSchema";
-import { constructionFieldNames } from "./constructionSchema";
-import { vanFieldNames } from "./vanSchema";
-import { busFieldNames } from "./busSchema";
+import { allCarFields } from "./carSchema.js";
+import { motorcycleFieldNames } from "./motorcycleSchema.js";
+import { truckFieldNames } from "./truckSchema.js";
+import { tractorFieldNames } from "./tractorSchema.js";
+import { constructionFieldNames } from "./constructionSchema.js";
+import { vanFieldNames } from "./vanSchema.js";
+import { busFieldNames } from "./busSchema.js";
 
-import { houseFieldNames } from "./houseSchema";
-import { apartmentFieldNames } from "./apartmentSchema";
-import { landFieldNames } from "./landSchema";
-import { ListingFieldSchema } from "../types/listings";
-import { PropertyType, VehicleType } from "../types/enums";
+import { houseFieldNames } from "./houseSchema.js";
+import { apartmentFieldNames } from "./apartmentSchema.js";
+import { landFieldNames } from "./landSchema.js";
+import { ListingFieldSchema } from "../types/listings.js";
+import { PropertyType, VehicleType } from "../types/enums.js";
 
 type SchemaMap = {
   [key: string]: string[];
