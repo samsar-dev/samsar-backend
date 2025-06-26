@@ -1,4 +1,9 @@
-import { ListingStatus } from "@prisma/client";
+import {
+  Condition,
+  ListingStatus,
+  TransmissionType,
+  FuelType,
+} from "@prisma/client";
 
 // Shared types that don't fit into a specific category
 export * from "./auth.js";
@@ -63,16 +68,16 @@ export interface VehicleDetails {
   vehicleType: VehicleType;
   make: string;
   model: string;
-  year: string;
-  mileage?: string;
-  fuelType?: string;
-  transmissionType?: string;
+  year: number;
+  mileage?: number;
+  fuelType?: FuelType;
+  transmissionType?: TransmissionType;
   color?: string;
-  condition?: string;
+  condition?: Condition;
   features?: string[];
   interiorColor?: string;
   engine?: string;
-  warranty?: string | number;
+  warranty?: string;
   serviceHistory?: string[];
   previousOwners?: number;
   registrationStatus?: string;
@@ -82,7 +87,7 @@ export interface VehicleDetails {
   seatingCapacity?: number;
   luggageSpace?: number;
   comfortFeatures?: string[];
-  seatType?: string;
+  seatType?: string[];
   seatMaterial?: string;
   wheelchairAccessible?: boolean;
   wheelchairLift?: boolean;
@@ -103,7 +108,7 @@ export interface VehicleDetails {
   certifications?: string[];
   luggageCompartments?: number;
   luggageRacks?: boolean;
-  fuelTankCapacity?: number;
+  fuelTankCapacity?: string;
   // Tractor-specific fields
   hours?: number;
   driveSystem?: string;
@@ -115,7 +120,7 @@ export interface VehicleDetails {
   emissions?: string;
   hydraulicSystem?: string;
   hydraulicFlow?: number;
-  hydraulicOutlets?: string[];
+  hydraulicOutlets?: number;
   ptoSystem?: string[];
   ptoHorsepower?: number;
   frontAttachments?: string[];
@@ -148,9 +153,9 @@ export interface VehicleDetails {
 export interface RealEstateDetails {
   propertyType: PropertyType;
   size?: string;
-  yearBuilt?: string;
-  bedrooms?: string;
-  bathrooms?: string;
+  yearBuilt?: number;
+  bedrooms?: number;
+  bathrooms?: number;
   condition?: string;
   features?: string[];
   floor?: number;

@@ -1,0 +1,16 @@
+export const commonEssentialFields = [
+  "color",
+  "interiorColor",
+  "condition",
+  "previousOwners",
+  "registrationStatus",
+  "engine",
+  "fuelType",
+  "transmissionType",
+  "serviceHistory",
+  "hours",
+  "horsepower",
+  "driveSystem",
+  "emissions",
+  "warranty",
+];

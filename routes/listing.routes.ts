@@ -1,12 +1,19 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-
+import { schemaMap } from "../schemas/listingSchemaMap.js";
 import { Prisma } from "@prisma/client";
 import { authenticate } from "../middleware/auth.js";
 import { processImagesMiddleware } from "../middleware/upload.middleware.js";
 import prisma from "../src/lib/prismaClient.js";
 import { AuthRequest, MultipartAuthRequest } from "../types/auth.js";
-import { ListingDetails, ListingWithRelations } from "../types/shared.js";
+import {
+  ListingDetails,
+  ListingWithRelations,
+  RealEstateDetails,
+  VehicleDetails,
+} from "../types/shared.js";
 import { calculateDistance } from "../utils/distance.js";
+import { PropertyType, VehicleType } from "types/enums.js";
+import { filterListingDetails } from "src/utils/listing.utils.js";
 interface ListingQuery {
   mainCategory?: string;
   subCategory?: string;
@@ -73,9 +80,17 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
   if (!listing) return null;
 
   const details: ListingDetails = {
-    vehicles: listing.vehicleDetails ? listing.vehicleDetails : undefined,
+    vehicles: listing.vehicleDetails
+      ? (filterListingDetails(
+          listing.vehicleDetails,
+          listing.subCategory
+        ) as VehicleDetails)
+      : undefined,
     realEstate: listing.realEstateDetails
-      ? listing.realEstateDetails
+      ? (filterListingDetails(
+          listing.realEstateDetails,
+          listing.subCategory
+        ) as RealEstateDetails)
       : undefined,
   };
 
@@ -244,7 +259,9 @@ export default async function (fastify: FastifyInstance) {
         formatListingResponse(listing)
       );
 
-      return reply.send({
+      console.log("formattedListings: >>>>>>>>>>>> \n", formattedListings);
+
+      reply.send({
         success: true,
         data: {
           items: formattedListings,
@@ -255,11 +272,13 @@ export default async function (fastify: FastifyInstance) {
         },
         status: 200,
       });
+      return;
     } catch (error) {
       console.error("Error fetching listings:", error);
       return reply.code(500).send({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to fetch listings",
+        error:
+          error instanceof Error ? error.message : "Failed to fetch listings",
         status: 500,
         data: null,
       });
@@ -1581,13 +1600,19 @@ export default async function (fastify: FastifyInstance) {
 
               realEstateDetails: realEstateDetails
                 ? {
-                    update: realEstateDetails,
+                    update: filterListingDetails(
+                      realEstateDetails,
+                      realEstateDetails.propertyType
+                    ) as RealEstateDetails,
                   }
                 : undefined,
 
               vehicleDetails: vehicleDetails
                 ? {
-                    update: vehicleDetails,
+                    update: filterListingDetails(
+                      vehicleDetails,
+                      vehicleDetails.vehicleType
+                    ) as VehicleDetails,
                   }
                 : undefined,
             },
