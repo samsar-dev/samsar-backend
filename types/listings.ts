@@ -288,7 +288,7 @@ export interface BaseVehicleDetails {
   previousOwners: number;
   registrationStatus: string;
   serviceHistory: string | boolean;
-  
+
   // Engine & Performance
   engineType: string;
   engineSize: string;
@@ -303,7 +303,7 @@ export interface BaseVehicleDetails {
   fuelTankCapacity?: number | string;
   engineNumber?: string;
   engine?: string;
-  
+
   // Dimensions & Weight
   operatingWeight: number;
   payloadCapacity: number;
@@ -312,10 +312,10 @@ export interface BaseVehicleDetails {
   interiorLength: string;
   wheelSize?: string;
   wheelType?: string;
-  
+
   // Features
   features: VehicleFeatures;
-  
+
   // Additional common fields
   warranty?: string;
   warrantyPeriod?: string;
@@ -337,7 +337,7 @@ export interface BaseVehicleDetails {
   accidentHistory?: boolean;
   ownerManual?: boolean;
   additionalNotes?: string;
-  
+
   // Safety features
   accidentFree?: boolean;
   blindSpotMonitor?: boolean;
@@ -373,7 +373,7 @@ export interface BaseVehicleDetails {
   laneDepartureWarning?: boolean;
   laneKeepAssist?: boolean;
   automaticEmergencyBraking?: boolean;
-  
+
   // Camera and parking
   rearCamera?: boolean;
   camera360?: boolean;
@@ -384,7 +384,7 @@ export interface BaseVehicleDetails {
   parkingAidCamera?: boolean;
   parkingAidSensorsRear?: boolean;
   parkingAidSensorsFront?: boolean;
-  
+
   // Climate control
   climateControl?: boolean | string[];
   heatedSeats?: boolean;
@@ -394,7 +394,7 @@ export interface BaseVehicleDetails {
   airQualitySensor?: boolean;
   airConditioning?: boolean | string;
   twoZoneClimateControl?: boolean;
-  
+
   // Infotainment
   bluetooth?: boolean;
   appleCarPlay?: boolean;
@@ -414,7 +414,7 @@ export interface BaseVehicleDetails {
   soundSystem?: boolean;
   wifiHotspot?: boolean;
   navigationSystem?: string | boolean;
-  
+
   // Lighting
   ledHeadlights?: boolean;
   adaptiveHeadlights?: boolean;
@@ -425,7 +425,7 @@ export interface BaseVehicleDetails {
   daytimeRunningLights?: boolean;
   headlightCleaning?: boolean;
   lightSensor?: boolean;
-  
+
   // Comfort and convenience
   keylessEntry?: boolean;
   sunroof?: boolean;
@@ -453,7 +453,7 @@ export interface BaseVehicleDetails {
   luggageCompartmentSeparation?: boolean;
   summerTires?: boolean;
   powerSteering?: boolean;
-  
+
   // Motorcycle specific
   startType?: string;
   coolingSystem?: string;
@@ -468,7 +468,7 @@ export interface BaseVehicleDetails {
   protectiveEquipment?: string[];
   importStatus?: string;
   serviceHistoryDetails?: string;
-  
+
   // Allow additional dynamic fields
   [key: string]: any;
 }
@@ -490,13 +490,13 @@ export interface CarDetails extends BaseVehicleDetails {
   cargoVolume: number;
   roofHeight: string;
   interiorLength: string;
-  
+
   // Car specific required fields
   bodyType: string;
   bodyStyle: string;
   fuelType: string;
   driveType: string;
-  
+
   // Optional fields from BaseVehicleDetails
   emissionClass?: string;
   fuelEfficiency?: string;
@@ -505,7 +505,7 @@ export interface CarDetails extends BaseVehicleDetails {
   engine?: string;
   wheelSize?: string;
   wheelType?: string;
-  
+
   // Car specific optional fields
   safetyFeatures?: string[];
   comfortFeatures?: string[];
@@ -527,15 +527,23 @@ export interface CarDetails extends BaseVehicleDetails {
   steeringType?: string;
   parkingAssist?: string[];
   climateControl?: string[];
-  
+
   // Features from BaseVehicleDetails
   features: VehicleFeatures;
 }
 
 // Fields to omit from BaseVehicleDetails that we'll redefine in MotorcycleDetails
-type OmittedBaseFields = 'seatType' | 'startType' | 'lighting' | 'comfortFeatures' | 'customParts' | 'modifications' | 'emissions';
+type OmittedBaseFields =
+  | "seatType"
+  | "startType"
+  | "lighting"
+  | "comfortFeatures"
+  | "customParts"
+  | "modifications"
+  | "emissions";
 
-export interface MotorcycleDetails extends Omit<BaseVehicleDetails, OmittedBaseFields> {
+export interface MotorcycleDetails
+  extends Omit<BaseVehicleDetails, OmittedBaseFields> {
   vehicleType: VehicleType.MOTORCYCLE;
   motorcycleType?: string;
   engineType?: string;
@@ -598,11 +606,11 @@ export interface TruckDetails extends BaseVehicleDetails {
   cargoVolume: number;
   roofHeight: string;
   interiorLength: string;
-  
+
   // Truck specific required fields
   truckType: string;
   cabType: string;
-  
+
   // Optional fields from BaseVehicleDetails
   driveType?: string;
   emissionClass?: string;
@@ -612,7 +620,7 @@ export interface TruckDetails extends BaseVehicleDetails {
   engine?: string;
   wheelSize?: string;
   wheelType?: string;
-  
+
   // Optional truck-specific fields
   cargoFeatures?: string[];
   safetyFeatures?: string[];
@@ -633,7 +641,7 @@ export interface TruckDetails extends BaseVehicleDetails {
   towingCapacity?: number;
   gvwr?: number;
   wheelbase?: string;
-  
+
   // Features from BaseVehicleDetails
   features: VehicleFeatures;
 }
@@ -655,10 +663,10 @@ export interface VanDetails extends BaseVehicleDetails {
   cargoVolume: number;
   roofHeight: string;
   interiorLength: string;
-  
+
   // Van specific fields
   vanType: string;
-  
+
   // Optional fields from BaseVehicleDetails
   driveType?: string;
   emissionClass?: string;
@@ -668,7 +676,7 @@ export interface VanDetails extends BaseVehicleDetails {
   engine?: string;
   wheelSize?: string;
   wheelType?: string;
-  
+
   // Van specific optional fields
   cargoFeatures?: string[];
   safetyFeatures?: string[];
@@ -686,7 +694,7 @@ export interface VanDetails extends BaseVehicleDetails {
   wheelbase?: string;
   drivingAssistance?: string[];
   climateControl?: string[];
-  
+
   // Features from BaseVehicleDetails
   features: VehicleFeatures;
 }
@@ -698,7 +706,7 @@ export interface VanDetails extends BaseVehicleDetails {
 export interface BusDetails extends BaseVehicleDetails {
   /** Type of the vehicle, always BUS for BusDetails */
   vehicleType: VehicleType.BUS;
-  
+
   // Required fields from BaseVehicleDetails
   transmissionType: string;
   engineType: string;
@@ -713,10 +721,10 @@ export interface BusDetails extends BaseVehicleDetails {
   cargoVolume: number;
   roofHeight: string;
   interiorLength: string;
-  
+
   // Bus specific required fields
   busType: string;
-  
+
   // Optional fields from BaseVehicleDetails
   driveType?: string;
   emissionClass?: string;
@@ -726,65 +734,71 @@ export interface BusDetails extends BaseVehicleDetails {
   engine?: string;
   wheelSize?: string;
   wheelType?: string;
-  
+
   // Bus specific optional fields
   seatingCapacity?: number;
   luggageSpace?: number;
-  comfortFeatures?: string[] | {
-    comfort?: {
-      recliningSeats?: boolean;
-      footRests?: boolean;
-      armRests?: boolean;
-      trayTables?: boolean;
-      readingLights?: boolean;
-      curtains?: boolean;
-      toilets?: boolean;
-      waterDispenser?: boolean;
-    };
-  };
-  seatType?: 'standard' | 'luxury' | 'sleeper' | 'executive';
-  seatMaterial?: 'fabric' | 'leather' | 'vinyl' | 'other';
+  comfortFeatures?:
+    | string[]
+    | {
+        comfort?: {
+          recliningSeats?: boolean;
+          footRests?: boolean;
+          armRests?: boolean;
+          trayTables?: boolean;
+          readingLights?: boolean;
+          curtains?: boolean;
+          toilets?: boolean;
+          waterDispenser?: boolean;
+        };
+      };
+  seatType?: "standard" | "luxury" | "sleeper" | "executive";
+  seatMaterial?: "fabric" | "leather" | "vinyl" | "other";
   wheelchairAccessible?: boolean;
   wheelchairLift?: boolean;
-  accessibilityFeatures?: string[] | {
-    lowFloor?: boolean;
-    kneeling?: boolean;
-    audioAnnouncements?: boolean;
-    brailleSignage?: boolean;
-    prioritySeating?: boolean;
-    handrails?: boolean;
-  };
+  accessibilityFeatures?:
+    | string[]
+    | {
+        lowFloor?: boolean;
+        kneeling?: boolean;
+        audioAnnouncements?: boolean;
+        brailleSignage?: boolean;
+        prioritySeating?: boolean;
+        handrails?: boolean;
+      };
   emergencyExits?: number;
-  safetyFeatures?: string[] | {
-    airbags?: {
-      frontAirbags?: boolean;
-      sideAirbags?: boolean;
-      curtainAirbags?: boolean;
-    };
-    driverAssist?: {
-      abs?: boolean;
-      laneAssist?: boolean;
-      collisionWarning?: boolean;
-      speedLimiter?: boolean;
-      tirePressureMonitoring?: boolean;
-      reverseCamera?: boolean;
-      blindSpotDetection?: boolean;
-    };
-    emergency?: {
-      fireExtinguisher?: boolean;
-      firstAidKit?: boolean;
-      emergencyHammer?: boolean;
-    };
-  };
-  seatBelts?: 'all' | 'driver' | 'none';
+  safetyFeatures?:
+    | string[]
+    | {
+        airbags?: {
+          frontAirbags?: boolean;
+          sideAirbags?: boolean;
+          curtainAirbags?: boolean;
+        };
+        driverAssist?: {
+          abs?: boolean;
+          laneAssist?: boolean;
+          collisionWarning?: boolean;
+          speedLimiter?: boolean;
+          tirePressureMonitoring?: boolean;
+          reverseCamera?: boolean;
+          blindSpotDetection?: boolean;
+        };
+        emergency?: {
+          fireExtinguisher?: boolean;
+          firstAidKit?: boolean;
+          emergencyHammer?: boolean;
+        };
+      };
+  seatBelts?: "all" | "driver" | "none";
   emissionStandard?: string;
   engineTorque?: string;
   suspension?: string[];
   brakeSystem?: string[];
   entertainmentFeatures?: string[];
-  navigationSystem?: 'built-in' | 'portable' | 'none';
+  navigationSystem?: "built-in" | "portable" | "none";
   communicationSystem?: string[];
-  maintenanceHistory?: 'complete' | 'partial' | 'minimal' | 'unknown' | string;
+  maintenanceHistory?: "complete" | "partial" | "minimal" | "unknown" | string;
   lastInspectionDate?: string;
   warranty?: string;
   certifications?: string[];
@@ -794,15 +808,15 @@ export interface BusDetails extends BaseVehicleDetails {
   numberOfOwners?: number;
   modifications?: string[];
   customFeatures?: string[];
-  airConditioning?: 'none' | 'front' | 'full' | 'zoneControl';
-  
+  airConditioning?: "none" | "front" | "full" | "zoneControl";
+
   // Features from BaseVehicleDetails
   features: VehicleFeatures;
 }
 
 export interface TractorDetails extends BaseVehicleDetails {
   vehicleType: VehicleType.TRACTOR;
-  
+
   // Required fields from BaseVehicleDetails
   transmissionType: string;
   serviceHistory: string | boolean;
@@ -818,11 +832,11 @@ export interface TractorDetails extends BaseVehicleDetails {
   cargoVolume: number;
   roofHeight: string;
   interiorLength: string;
-  
+
   // Tractor specific required fields
   ptoHorsepower: number;
   hydraulicRemotes: number;
-  
+
   // Optional fields from BaseVehicleDetails
   driveType?: string;
   emissionClass?: string;
@@ -832,7 +846,7 @@ export interface TractorDetails extends BaseVehicleDetails {
   engine?: string;
   wheelSize?: string;
   wheelType?: string;
-  
+
   // Tractor specific optional fields
   attachments?: string[];
   tires?: string;
@@ -856,7 +870,7 @@ export interface TractorDetails extends BaseVehicleDetails {
   warranty?: string;
   modifications?: string;
   hours?: number;
-  
+
   // Features from BaseVehicleDetails
   features: VehicleFeatures;
 }
