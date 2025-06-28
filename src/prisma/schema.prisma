@@ -267,7 +267,6 @@ model VehicleDetails {
   customFeatures                   String[]          @default([])
   customsCleared                   Boolean?
   cylinders                        String?
-  engineNumber                        String?
   dabRadio                         Boolean?
   dashCam                          Boolean?
   daytimeRunningLights             Boolean?
@@ -437,7 +436,6 @@ model VehicleDetails {
   truckType                        String?
   hydraulicOutlets                 Int?
   registrationStatus               String?
-  registrationExpiry               String?
   coolingSystem                    String?
   customParts                      String[]          @default([])
   startType                        String[]          @default([])
@@ -448,6 +446,8 @@ model VehicleDetails {
   temperatureRange                 String?
   serviceHistory                   String[]          @default([])
   transmission                     String?
+  registrationExpiry               String?
+  engineNumber                     String?
   listing                          Listing           @relation(fields: [listingId], references: [id])
 }
 

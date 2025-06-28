@@ -1,30 +1,26 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "dist",
-    "rootDir": ".",
-    "baseUrl": ".",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": "./src",
     "allowJs": true,
     "resolveJsonModule": true,
     "noImplicitAny": false,
     "declaration": true,
     "sourceMap": true,
     "paths": {
-      "@/*": ["./"]
+      "@/*": ["./*"]
     },
     "types": ["node", "express", "multer"],
-    "typeRoots": ["./node_modules/@types", "./types"]
+    "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["src/**/*", "server.ts", "build.js", "routes/contact.routes.ts", "controllers/contact.controller.ts", "controllers/listingPermission.controller.ts", "middleware/listingPermission.ts", "routes/listingPermission.routes.ts", "utils/listing.utils.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  }
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

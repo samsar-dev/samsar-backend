@@ -270,6 +270,10 @@ await fastify.register(notificationRoutes, { prefix: "/api/notifications" });
 await fastify.register(adminRoutes, { prefix: "/api/admin" });
 await fastify.register(newsletterRoutes, { prefix: "/api/admin/newsletter" });
 
+// Register location routes
+import locationRoutes from "./routes/location.routes.js";
+await fastify.register(locationRoutes);
+
 // Error handling
 fastify.setErrorHandler((error, _, reply) => {
   console.error(error);
