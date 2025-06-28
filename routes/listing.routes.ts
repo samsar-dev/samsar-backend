@@ -230,14 +230,14 @@ export default async function (fastify: FastifyInstance) {
       });
 
       // If radius is specified, filter by distance
-      let filteredListings = allListings;
+      let filteredListings = allListings || [];
       if (latitude && longitude && radius) {
         const centerLat = parseFloat(latitude);
         const centerLon = parseFloat(longitude);
         const maxDistance = parseFloat(radius);
 
         // Filter listings within the specified radius
-        filteredListings = allListings.filter((listing) => {
+        filteredListings = (allListings || []).filter((listing) => {
           if (!listing.latitude || !listing.longitude) return false;
           const distance = calculateDistance(
             centerLat,
@@ -255,20 +255,19 @@ export default async function (fastify: FastifyInstance) {
       const paginatedListings = filteredListings.slice(start, end);
 
       // Format listings for response
-      const formattedListings = paginatedListings.map((listing) =>
-        formatListingResponse(listing)
-      );
+      const formattedListings = paginatedListings
+        .map((listing) => formatListingResponse(listing))
+        .filter((listing): listing is Exclude<typeof listing, null> => listing !== null);
 
-      console.log("formattedListings: >>>>>>>>>>>> \n", formattedListings);
-
-      reply.send({
+      // Always return a response, even if empty
+      return reply.status(200).send({
         success: true,
         data: {
-          items: formattedListings,
-          total: filteredListings.length,
+          items: formattedListings || [],
+          total: filteredListings.length || 0,
           page: Number(page),
           limit: Number(limit),
-          hasMore: filteredListings.length > end,
+          hasMore: (filteredListings.length || 0) > end,
         },
         status: 200,
       });

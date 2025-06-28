@@ -1,6 +1,16 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { PrismaClient, UserRole } from '@prisma/client';
 
+// Extend FastifyRequest to include user property
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: {
+      id: string;
+      role: UserRole;
+    };
+  }
+}
+
 const prisma = new PrismaClient();
 
 interface UserWithListings {

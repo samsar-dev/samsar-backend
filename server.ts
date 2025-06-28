@@ -244,7 +244,7 @@ fastify.get("/api/health", async (_, reply) => {
 // -----------------
 // Import routes
 // -----------------
-import { AuthSocket, UserPayload } from "types/auth.js";
+import { AuthSocket, UserPayload } from "./types/auth.js";
 import cacheControl from "./middleware/cache.middleware.js";
 import adminRoutes from "./routes/admin.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -254,8 +254,8 @@ import notificationRoutes from "./routes/notification.routes.js";
 import uploadRoutes from "./routes/uploads.js";
 import userRoutes from "./routes/user.routes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
-import { NewMessageData } from "types/socket.js";
-import { PriceChangeData } from "types/socket.js";
+import { NewMessageData } from "./types/socket.js";
+import { PriceChangeData } from "./types/socket.js";
 
 // Add cache middleware
 await fastify.register(cacheControl);
