@@ -36,18 +36,13 @@ export const getListingPermission = async (request: FastifyRequest, reply: Fasti
       where: { userId }
     });
 
-    // Admins and moderators can always create listings
-    const isAdmin = user.role === 'ADMIN';
-    const isModerator = user.role === 'MODERATOR';
-    const canCreate = isAdmin || isModerator || 
-                     (user.maxListings !== null ? listingCount < user.maxListings : false);
-
+    // Temporarily allowing all users to create listings regardless of their role or listing count
     return {
-      canCreate,
+      canCreate: true, // Always allow listing creation
       maxListings: user.maxListings || 1,
       currentListings: listingCount,
       userRole: user.role,
-      listingRestriction: user.listingRestriction || 'NONE'
+      listingRestriction: 'NONE' // Temporarily removing all restrictions
     };
   } catch (error) {
     console.error('Error getting listing permission:', error);
