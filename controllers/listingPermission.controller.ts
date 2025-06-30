@@ -4,7 +4,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 // Extend FastifyRequest to include user property
 declare module 'fastify' {
   interface FastifyRequest {
-    user?: {
+    reqUser?: {
       id: string;
       role: UserRole;
     };
@@ -22,11 +22,11 @@ interface UserWithListings {
 
 export const getListingPermission = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    if (!request.user) {
+    if (!request.reqUser) {
       return reply.status(401).send({ error: 'Unauthorized' });
     }
 
-    const userId = request.user.id;
+    const userId = request.reqUser.id;
     
     const user = await prisma.user.findUnique({
       where: { id: userId },

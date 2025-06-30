@@ -27,6 +27,8 @@ interface ListingQuery {
   latitude?: string;
   longitude?: string;
   radius?: string;
+  minPrice?: string;
+  maxPrice?: string;
 }
 interface SearchQuery {
   query?: string;
@@ -199,6 +201,17 @@ export default async function (fastify: FastifyInstance) {
       }
       if (subCategory) {
         where.subCategory = subCategory as string;
+      }
+      
+      // Add price range filtering
+      if (req.query.minPrice || req.query.maxPrice) {
+        where.price = {};
+        if (req.query.minPrice) {
+          where.price.gte = parseFloat(req.query.minPrice);
+        }
+        if (req.query.maxPrice) {
+          where.price.lte = parseFloat(req.query.maxPrice);
+        }
       }
       // Real estate built year filter (nested)
       if (builtYear) {
