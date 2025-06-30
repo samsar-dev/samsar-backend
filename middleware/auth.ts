@@ -13,16 +13,16 @@ export type JWTPayload = UserPayload;
 // Fastify types are now extended in types/fastify.d.ts
 // This ensures consistent typing across the application
 
-
-
 // Type guard to check if user is authenticated
 function isAuthenticated(
-  request: FastifyRequest
+  request: FastifyRequest,
 ): request is FastifyRequest & { user: UserPayload } {
-  return !!request.user && 
-         'id' in request.user && 
-         'email' in request.user && 
-         'role' in request.user;
+  return (
+    !!request.user &&
+    "id" in request.user &&
+    "email" in request.user &&
+    "role" in request.user
+  );
 }
 
 // Rate limiter options for Fastify
@@ -118,7 +118,7 @@ export const authenticate = async (
         });
       }
     } catch (error) {
-      console.error('Error updating last_active_at:', error);
+      console.error("Error updating last_active_at:", error);
       // Don't fail the request if this update fails
     }
 

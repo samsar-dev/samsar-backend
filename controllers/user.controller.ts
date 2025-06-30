@@ -43,7 +43,7 @@ interface UserPublicDetailsParams {
  */
 export const getUserProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -88,7 +88,7 @@ export const getUserProfile = async (
  */
 export const getUserPublicDetails = async (
   request: FastifyRequest<{ Params: UserPublicDetailsParams }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const userId = request.params.id;
@@ -136,7 +136,7 @@ export const getUserPublicDetails = async (
  */
 export const updateProfile = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const user = await prisma.user.findUnique({
@@ -233,7 +233,7 @@ export const updateProfile = async (
       // Check if current password is correct
       const isPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password
+        user.password,
       );
       if (!isPasswordValid) {
         return reply.status(401).send({
@@ -312,7 +312,7 @@ export const updateProfile = async (
  */
 export const getUserListings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const listings = await prisma.listing.findMany({
@@ -348,7 +348,7 @@ interface DeleteUserRequest {
 
 export const deleteUser = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     console.log("Delete user request received");
@@ -486,7 +486,7 @@ export const deleteUser = async (
 
       // For multi-participant conversations, disconnect the user
       const multiParticipantConvs = userConversations.filter(
-        (conv) => conv.participants.length > 1
+        (conv) => conv.participants.length > 1,
       );
 
       // Disconnect user from each conversation individually
@@ -503,7 +503,7 @@ export const deleteUser = async (
         } catch (err) {
           console.error(
             `Failed to disconnect user from conversation ${conv.id}:`,
-            err
+            err,
           );
           // Continue with other operations even if this fails
         }
@@ -544,7 +544,7 @@ export const deleteUser = async (
  */
 export const getUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     // Get the user
@@ -622,7 +622,7 @@ export const getUserSettings = async (
  */
 export const updateUserSettings = async (
   request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     console.log("Request body:", request.body);
@@ -698,7 +698,7 @@ export const updateUserSettings = async (
  */
 export const getAllUsersAdmin = async (
   _request: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     // Get users with their listing counts using Prisma's query builder
@@ -762,7 +762,7 @@ export const getAllUsersAdmin = async (
 // Admin: Update user role
 export const updateUserRoleAdmin = async (
   request: FastifyRequest<{ Params: { id: string }; Body: { role: string } }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   const { id } = request.params;
   const { role } = request.body;

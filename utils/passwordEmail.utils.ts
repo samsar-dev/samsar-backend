@@ -66,30 +66,32 @@ export const sendPasswordChangeEmail = async (
     `;
 
     // Debug log the config
-    console.log('Password email config:', {
+    console.log("Password email config:", {
       hasResendApiKey: !!config.email.resendApiKey,
       fromEmail: config.email.from,
       envEmailFrom: process.env.EMAIL_FROM,
-      nodeEnv: process.env.NODE_ENV
+      nodeEnv: process.env.NODE_ENV,
     });
 
     // Send email using Resend
     console.log(
       "Sending password change email with Resend using API key:",
-      config.email.resendApiKey ? '***' + config.email.resendApiKey.slice(-4) : 'not set'
+      config.email.resendApiKey
+        ? "***" + config.email.resendApiKey.slice(-4)
+        : "not set",
     );
-    
+
     // Use configured from email or default to a valid domain
-    const fromEmail = config.email.from || 'noreply@samsar.app';
-    
+    const fromEmail = config.email.from || "noreply@samsar.app";
+
     // Validate email format
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      console.error('Invalid email address format:', email);
+      console.error("Invalid email address format:", email);
       return false;
     }
-    
+
     console.log(`Sending password change email from ${fromEmail} to ${email}`);
-    
+
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: email,

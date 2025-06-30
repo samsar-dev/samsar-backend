@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -19,16 +19,16 @@ async function fixLastActiveColumn() {
         END IF;
       END $$;
     `;
-    
+
     // Then add the column with the correct name
     await prisma.$executeRaw`
       ALTER TABLE "User"
       ADD COLUMN IF NOT EXISTS "last_active_at" TIMESTAMP(3);
     `;
-    
-    console.log('Successfully fixed last_active_at column in User table');
+
+    console.log("Successfully fixed last_active_at column in User table");
   } catch (error) {
-    console.error('Error fixing last_active_at column:', error);
+    console.error("Error fixing last_active_at column:", error);
   } finally {
     await prisma.$disconnect();
   }

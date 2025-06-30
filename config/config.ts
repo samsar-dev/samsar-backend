@@ -7,10 +7,10 @@ if (!jwtSecret) {
 }
 
 // Debug log environment variables
-console.log('Environment variables loaded:', {
+console.log("Environment variables loaded:", {
   NODE_ENV: process.env.NODE_ENV,
   EMAIL_FROM: process.env.EMAIL_FROM,
-  HAS_RESEND_API_KEY: !!process.env.RESEND_API_KEY
+  HAS_RESEND_API_KEY: !!process.env.RESEND_API_KEY,
 });
 
 export const config = {
@@ -30,6 +30,6 @@ export const config = {
   },
   email: {
     resendApiKey: process.env.RESEND_API_KEY || env.RESEND_API_KEY,
-    from: process.env.EMAIL_FROM || env.EMAIL_FROM || 'noreply@samsar.app',
+    from: process.env.EMAIL_FROM || env.EMAIL_FROM || "noreply@samsar.app",
   },
 };

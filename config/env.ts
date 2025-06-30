@@ -41,20 +41,20 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV || "production",
   PORT: process.env.PORT || "3000",
   DATABASE_URL: process.env.DATABASE_URL || "",
-  
+
   // Authentication
   JWT_SECRET: process.env.JWT_SECRET || "your-secret-key",
   JWT_EXPIRY: process.env.JWT_EXPIRY || "604800",
   REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || "2592000",
   BCRYPT_SALT_ROUNDS: process.env.BCRYPT_SALT_ROUNDS || "12",
-  
+
   // CORS
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
-  
+
   // Email
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM: process.env.EMAIL_FROM || "noreply@samsar.app",
-  
+
   // Cloudflare
   CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
   CLOUDFLARE_ACCESS_KEY_ID: process.env.CLOUDFLARE_ACCESS_KEY_ID,

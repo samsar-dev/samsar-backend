@@ -65,7 +65,7 @@ export default async function (fastify: FastifyInstance) {
   // Mark all notifications as read
   fastify.put("/read-all", {
     preHandler: [authenticate, updateLastActive],
-    handler: createFastifyHandler(markAllAsRead)
+    handler: createFastifyHandler(markAllAsRead),
   });
 
   // Delete a specific notification

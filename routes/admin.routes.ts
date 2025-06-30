@@ -1,6 +1,14 @@
-import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from "fastify";
+import {
+  FastifyInstance,
+  FastifyPluginOptions,
+  FastifyRequest,
+  FastifyReply,
+} from "fastify";
 import { authenticate, isAdmin } from "../middleware/auth.js";
-import { getAllUsersAdmin, updateUserRoleAdmin } from "../controllers/user.controller.js";
+import {
+  getAllUsersAdmin,
+  updateUserRoleAdmin,
+} from "../controllers/user.controller.js";
 
 export default async function adminRoutes(
   fastify: FastifyInstance,

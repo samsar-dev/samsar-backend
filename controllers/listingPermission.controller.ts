@@ -1,8 +1,8 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { FastifyRequest, FastifyReply } from "fastify";
+import { PrismaClient, UserRole } from "@prisma/client";
 
 // Extend FastifyRequest to include user property
-declare module 'fastify' {
+declare module "fastify" {
   interface FastifyRequest {
     reqUser?: {
       id: string;
@@ -15,35 +15,38 @@ const prisma = new PrismaClient();
 
 interface UserWithListings {
   id: string;
-  role: 'FREE_USER' | 'PREMIUM_USER' | 'BUSINESS_USER' | 'ADMIN' | 'MODERATOR';
+  role: "FREE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
   maxListings: number | null;
   listingRestriction: string | null;
 }
 
-export const getListingPermission = async (request: FastifyRequest, reply: FastifyReply) => {
+export const getListingPermission = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
     if (!request.reqUser) {
-      return reply.status(401).send({ error: 'Unauthorized' });
+      return reply.status(401).send({ error: "Unauthorized" });
     }
 
     const userId = request.reqUser.id;
-    
-    const user = await prisma.user.findUnique({
+
+    const user = (await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         role: true,
         maxListings: true,
-        listingRestriction: true
-      }
-    }) as UserWithListings | null;
+        listingRestriction: true,
+      },
+    })) as UserWithListings | null;
 
     if (!user) {
-      return reply.status(404).send({ error: 'User not found' });
+      return reply.status(404).send({ error: "User not found" });
     }
 
     const listingCount = await prisma.listing.count({
-      where: { userId }
+      where: { userId },
     });
 
     // Temporarily allowing all users to create listings regardless of their role or listing count
@@ -52,10 +55,10 @@ export const getListingPermission = async (request: FastifyRequest, reply: Fasti
       maxListings: user.maxListings || 1,
       currentListings: listingCount,
       userRole: user.role,
-      listingRestriction: 'NONE' // Temporarily removing all restrictions
+      listingRestriction: "NONE", // Temporarily removing all restrictions
     };
   } catch (error) {
-    console.error('Error getting listing permission:', error);
-    return reply.status(500).send({ error: 'Internal server error' });
+    console.error("Error getting listing permission:", error);
+    return reply.status(500).send({ error: "Internal server error" });
   }
 };

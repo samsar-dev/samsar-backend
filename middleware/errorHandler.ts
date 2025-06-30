@@ -19,13 +19,13 @@ const errorHandler: ErrorRequestHandler = (
   const error: APIError = {
     code: err.code || "INTERNAL_ERROR",
     message: err.message || "Internal Server Error",
-    details: err.details || undefined
+    details: err.details || undefined,
   };
 
   res.status(err.status || 500).json({
     success: false,
     error,
-    status: err.status || 500
+    status: err.status || 500,
   });
 };
 

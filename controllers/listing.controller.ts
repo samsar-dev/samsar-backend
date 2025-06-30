@@ -26,7 +26,7 @@ declare module "fastify" {
   }
 }
 
-import { UserRole } from '../types/auth.js';
+import { UserRole } from "../types/auth.js";
 
 interface AuthenticatedUser {
   id: string;
@@ -400,8 +400,10 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         subCategory,
         category: JSON.stringify({ mainCategory, subCategory }),
         location,
-        latitude: typeof latitude === 'string' ? parseFloat(latitude) : latitude,
-        longitude: typeof longitude === 'string' ? parseFloat(longitude) : longitude,
+        latitude:
+          typeof latitude === "string" ? parseFloat(latitude) : latitude,
+        longitude:
+          typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
@@ -779,9 +781,12 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
 
 export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    console.log('🔍 [updateListing] Request body:', req.body);
-    console.log('🔍 [updateListing] Request files:', (req as any).processedImages);
-    console.log('🔍 [updateListing] Request params:', req.params);
+    console.log("🔍 [updateListing] Request body:", req.body);
+    console.log(
+      "🔍 [updateListing] Request files:",
+      (req as any).processedImages,
+    );
+    console.log("🔍 [updateListing] Request params:", req.params);
 
     const { id } = req.params as ListingParams;
     const {
@@ -830,68 +835,70 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       });
     }
     // Process images - combine existing and new images
-let imagesToCreate: Array<{ url: string; order: number }> = [];
+    let imagesToCreate: Array<{ url: string; order: number }> = [];
 
-console.log('🔍 [updateListing] Processing images:');
-console.log('- Processed images:', req.processedImages);
-console.log('- Existing images:', existingImages);
+    console.log("🔍 [updateListing] Processing images:");
+    console.log("- Processed images:", req.processedImages);
+    console.log("- Existing images:", existingImages);
 
-// Add processed new images
-if (req.processedImages && req.processedImages.length > 0) {
-  console.log('- Adding new processed images');
-  imagesToCreate = [...req.processedImages];
-}
-
-// Add existing images if provided
-if (existingImages) {
-  console.log('🔍 [DEBUG] existingImages type:', typeof existingImages);
-  console.log('🔍 [DEBUG] existingImages value:', existingImages);
-  console.log('🔍 [DEBUG] Is Array?', Array.isArray(existingImages));
-  
-  try {
-    let existingImagesArray: string[] = [];
-    
-    if (Array.isArray(existingImages)) {
-      console.log('🔍 [DEBUG] Processing as array');
-      existingImagesArray = existingImages;
-    } else if (typeof existingImages === 'string') {
-      console.log('🔍 [DEBUG] Processing as string');
-      if (existingImages.startsWith('[')) {
-        console.log('🔍 [DEBUG] Parsing JSON array string');
-        existingImagesArray = JSON.parse(existingImages);
-      } else {
-        console.log('🔍 [DEBUG] Using as single string');
-        existingImagesArray = [existingImages];
-      }
-    } else {
-      console.log('🔍 [DEBUG] Unknown format:', existingImages);
-      throw new Error(`Invalid existingImages format: ${typeof existingImages}`);
+    // Add processed new images
+    if (req.processedImages && req.processedImages.length > 0) {
+      console.log("- Adding new processed images");
+      imagesToCreate = [...req.processedImages];
     }
 
-    console.log('🔍 [DEBUG] Processed array:', existingImagesArray);
-    console.log('🔍 [DEBUG] Array length:', existingImagesArray.length);
+    // Add existing images if provided
+    if (existingImages) {
+      console.log("🔍 [DEBUG] existingImages type:", typeof existingImages);
+      console.log("🔍 [DEBUG] existingImages value:", existingImages);
+      console.log("🔍 [DEBUG] Is Array?", Array.isArray(existingImages));
 
-    existingImagesArray.forEach((url: string, index: number) => {
-      console.log(`🔍 [DEBUG] Processing URL ${index}:`, url);
-      if (url && typeof url === 'string') {
-        imagesToCreate.push({
-          url,
-          order: imagesToCreate.length + index
+      try {
+        let existingImagesArray: string[] = [];
+
+        if (Array.isArray(existingImages)) {
+          console.log("🔍 [DEBUG] Processing as array");
+          existingImagesArray = existingImages;
+        } else if (typeof existingImages === "string") {
+          console.log("🔍 [DEBUG] Processing as string");
+          if (existingImages.startsWith("[")) {
+            console.log("🔍 [DEBUG] Parsing JSON array string");
+            existingImagesArray = JSON.parse(existingImages);
+          } else {
+            console.log("🔍 [DEBUG] Using as single string");
+            existingImagesArray = [existingImages];
+          }
+        } else {
+          console.log("🔍 [DEBUG] Unknown format:", existingImages);
+          throw new Error(
+            `Invalid existingImages format: ${typeof existingImages}`,
+          );
+        }
+
+        console.log("🔍 [DEBUG] Processed array:", existingImagesArray);
+        console.log("🔍 [DEBUG] Array length:", existingImagesArray.length);
+
+        existingImagesArray.forEach((url: string, index: number) => {
+          console.log(`🔍 [DEBUG] Processing URL ${index}:`, url);
+          if (url && typeof url === "string") {
+            imagesToCreate.push({
+              url,
+              order: imagesToCreate.length + index,
+            });
+            console.log("🔍 [DEBUG] Added URL to imagesToCreate");
+          } else {
+            console.log("🔍 [DEBUG] Skipped invalid URL:", url);
+          }
         });
-        console.log('🔍 [DEBUG] Added URL to imagesToCreate');
-      } else {
-        console.log('🔍 [DEBUG] Skipped invalid URL:', url);
+      } catch (error) {
+        console.error("Error processing existing images:", error);
+        console.error("existingImages type:", typeof existingImages);
+        console.error("existingImages value:", existingImages);
+        throw new Error("Invalid existingImages format");
       }
-    });
-  } catch (error) {
-    console.error('Error processing existing images:', error);
-    console.error('existingImages type:', typeof existingImages);
-    console.error('existingImages value:', existingImages);
-    throw new Error('Invalid existingImages format');
-  }
-}
+    }
 
-console.log('- Final imagesToCreate:', imagesToCreate);
+    console.log("- Final imagesToCreate:", imagesToCreate);
 
     // Ensure price is a number and handle potential string input
     const newPrice = typeof price === "string" ? parseFloat(price) : price;
@@ -908,8 +915,10 @@ console.log('- Final imagesToCreate:', imagesToCreate);
         mainCategory,
         subCategory,
         location,
-        latitude: typeof latitude === 'string' ? parseFloat(latitude) : latitude,
-        longitude: typeof longitude === 'string' ? parseFloat(longitude) : longitude,
+        latitude:
+          typeof latitude === "string" ? parseFloat(latitude) : latitude,
+        longitude:
+          typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
         attributes: attributes
           ? {
@@ -923,15 +932,16 @@ console.log('- Final imagesToCreate:', imagesToCreate);
               create: features,
             }
           : undefined,
-        images: imagesToCreate.length > 0
-          ? {
-              deleteMany: {},
-              create: imagesToCreate.map((img) => ({
-                url: img.url,
-                order: img.order,
-              })),
-            }
-          : undefined,
+        images:
+          imagesToCreate.length > 0
+            ? {
+                deleteMany: {},
+                create: imagesToCreate.map((img) => ({
+                  url: img.url,
+                  order: img.order,
+                })),
+              }
+            : undefined,
       },
       include: {
         user: {

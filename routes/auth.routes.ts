@@ -221,28 +221,28 @@ export default async function authRoutes(fastify: FastifyInstance) {
     {
       schema: {
         querystring: {
-          type: 'object',
+          type: "object",
           properties: {
-            token: { type: 'string' }
+            token: { type: "string" },
           },
-          required: ['token']
-        }
-      }
+          required: ["token"],
+        },
+      },
     },
     async (request, reply) => {
       try {
         const { token } = request.query as { token: string };
-        
+
         if (!token) {
           return reply.status(400).send({
             success: false,
             error: {
-              code: 'MISSING_TOKEN',
-              message: 'Verification token is required',
+              code: "MISSING_TOKEN",
+              message: "Verification token is required",
             },
           });
         }
-        
+
         // Find user by verification token
         const user = await prisma.user.findFirst({
           where: { verificationToken: token },
@@ -252,20 +252,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
           return reply.status(400).send({
             success: false,
             error: {
-              code: 'INVALID_TOKEN',
-              message: 'Invalid or expired verification token',
+              code: "INVALID_TOKEN",
+              message: "Invalid or expired verification token",
             },
           });
         }
 
-
         // Check if token is expired
-        if (user.verificationTokenExpires && new Date() > user.verificationTokenExpires) {
+        if (
+          user.verificationTokenExpires &&
+          new Date() > user.verificationTokenExpires
+        ) {
           return reply.status(400).send({
             success: false,
             error: {
-              code: 'TOKEN_EXPIRED',
-              message: 'Verification token has expired',
+              code: "TOKEN_EXPIRED",
+              message: "Verification token has expired",
             },
           });
         }
@@ -274,10 +276,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
         if (user.emailVerified) {
           return reply.status(200).send({
             success: true,
-            message: 'Email is already verified',
+            message: "Email is already verified",
           });
         }
-
 
         // Update user as verified
         const updatedUser = await prisma.user.update({
@@ -288,25 +289,25 @@ export default async function authRoutes(fastify: FastifyInstance) {
             verificationCode: null,
             verificationTokenExpires: null,
             lastVerifiedAt: new Date(),
-            accountStatus: 'ACTIVE', // Ensure account is activated
+            accountStatus: "ACTIVE", // Ensure account is activated
           } as any,
         });
 
         return reply.status(200).send({
           success: true,
-          message: 'Email verified successfully',
+          message: "Email verified successfully",
           data: {
             email: updatedUser.email,
             emailVerified: updatedUser.emailVerified,
-          }
+          },
         });
       } catch (error) {
-        console.error('Error verifying email with token:', error);
+        console.error("Error verifying email with token:", error);
         return reply.status(500).send({
           success: false,
           error: {
-            code: 'SERVER_ERROR',
-            message: 'Failed to verify email. Please try again later.',
+            code: "SERVER_ERROR",
+            message: "Failed to verify email. Please try again later.",
           },
         });
       }
