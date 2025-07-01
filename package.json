@@ -8,16 +8,12 @@
     "dev": "tsx watch server.ts",
     "clean": "rimraf dist",
     "generate": "prisma generate",
-    "build": "npm run clean && npm run generate && tsc && node build.js",
-    "upload:favicon": "tsx scripts/uploadFavicon.ts",
+    "build": "npm run clean && npm run generate && tsc",
     "start": "node dist/server.js",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:refresh": "npx prisma generate && npx prisma db push",
-    "postinstall": "npm run build",
-    "railway:deploy": "railway up --detach",
-    "docker:build": "docker build -t your-app-name .",
-    "docker:run": "docker run -p 3000:3000 your-app-name"
+    "postinstall": "npm run build"
   },
   "engines": {
     "node": ">=16.0.0"

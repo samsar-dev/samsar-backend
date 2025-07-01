@@ -1,5 +1,5 @@
 [build]
-  builder = "DOCKERFILE"
+  builder = "nixpacks"
   buildCommand = "npm install && npm run build"
   
 [build.environment]
@@ -12,5 +12,3 @@
   startCommand = "npm start"
   healthcheckPath = "/api/health"
   healthcheckTimeout = 30
-  restartDelay = "5s"
-  restartMaxRetries = 5
