@@ -5,12 +5,12 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch server.ts",
+    "dev": "NODE_OPTIONS='--loader tsx' node --watch server.ts",
     "clean": "rimraf dist",
     "generate": "prisma generate --schema src/prisma/schema.prisma",
-    "build": "npm run clean && npm run generate && tsc && node build.js",
+    "build": "npm run clean && npm run generate && tsc",
     "upload:favicon": "tsx scripts/uploadFavicon.ts",
-    "start": "node dist/server.js",
+    "start": "node --es-module-specifier-resolution=node dist/server.js",
     "db:push": "prisma db push --schema src/prisma/schema.prisma",
     "db:refresh": "npx prisma generate --schema src/prisma/schema.prisma && npx prisma db push --schema src/prisma/schema.prisma",
     "postinstall": "prisma generate && npm run build"
