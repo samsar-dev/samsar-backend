@@ -1,0 +1,616 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String         @id @default(cuid())
+  email                    String         @unique
+  name                     String?
+  username                 String         @unique
+  password                 String
+  profilePicture           String?
+  bio                      String?
+  location                 String?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  role                     UserRole       @default(FREE_USER)
+  preferences              Json?
+  city                     String?
+  dateOfBirth              String?
+  street                   String?
+  refreshToken             String?
+  refreshTokenExpiresAt    DateTime?
+  phone                    String?
+  emailVerified            Boolean        @default(false)
+  lastVerifiedAt           DateTime?
+  verificationToken        String?        @unique
+  verificationCode         String?
+  verificationTokenExpires DateTime?
+  accountStatus            String         @default("ACTIVE")
+  allowMessaging           Boolean        @default(true)
+  listingNotifications     Boolean        @default(true)
+  messageNotifications     Boolean        @default(true)
+  showEmail                Boolean        @default(true)
+  showOnlineStatus         Boolean        @default(true)
+  showPhoneNumber          Boolean        @default(true)
+  maxListings              Int            @default(1)
+  listingRestriction       String         @default("NONE")
+  subscriptionId           String?
+  subscriptionStatus       String?        @default("INACTIVE")
+  subscriptionEndsAt       DateTime?
+  latitude                 Float?
+  longitude                Float?
+  last_active_at           DateTime?
+  newsletterSubscribed     Boolean?       @default(true)
+  loginNotifications       Boolean        @default(false)
+  privateProfile           Boolean        @default(false)
+  favorites                Favorite[]
+  listings                 Listing[]      @relation("UserListings")
+  receivedMessages         Message[]      @relation("ReceivedMessages")
+  sentMessages             Message[]      @relation("SentMessages")
+  relatedNotifications     Notification[] @relation("RelatedNotifications")
+  notifications            Notification[]
+  conversations            Conversation[] @relation("UserConversations")
+
+  @@index([refreshToken])
+}
+
+model Listing {
+  id                String             @id @default(cuid())
+  title             String
+  description       String?
+  price             Float
+  category          String
+  mainCategory      String
+  subCategory       String
+  location          String
+  condition         String?
+  listingAction     String?
+  status            String             @default("ACTIVE")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userId            String
+  bathrooms         Float?
+  bedrooms          Int?
+  color             String?
+  engineNumber      String?
+  engineSize        Float?
+  floors            Int?
+  fuelType          String?
+  interiorColor     String?
+  make              String?
+  mileage           Float?
+  model             String?
+  parkingSpaces     Int?
+  size              Float?
+  transmission      String?
+  utilities         Boolean?
+  year              Int?
+  yearBuilt         Int?
+  latitude          Float
+  longitude         Float
+  attributes        Attribute[]
+  conversations     Conversation[]     @relation("ListingConversations")
+  favorites         Favorite[]
+  features          Feature[]
+  images            Image[]
+  user              User               @relation("UserListings", fields: [userId], references: [id])
+  Message           Message[]
+  notifications     Notification[]     @relation("ListingNotifications")
+  realEstateDetails RealEstateDetails?
+  vehicleDetails    VehicleDetails?
+
+  @@index([userId])
+  @@index([mainCategory])
+}
+
+model Image {
+  id        String  @id @default(cuid())
+  url       String
+  order     Int     @default(0)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+}
+
+model Conversation {
+  id            String    @id @default(cuid())
+  listingId     String?
+  lastMessage   String?
+  lastMessageAt DateTime  @default(now())
+  listing       Listing?  @relation("ListingConversations", fields: [listingId], references: [id])
+  messages      Message[]
+  participants  User[]    @relation("UserConversations")
+
+  @@index([listingId])
+}
+
+model Message {
+  id                    String        @id @default(cuid())
+  content               String
+  senderId              String
+  recipientId           String
+  conversationId        String
+  createdAt             DateTime      @default(now())
+  read                  Boolean       @default(false)
+  listingId             String?
+  relatedNotificationId String?       @unique
+  conversation          Conversation  @relation(fields: [conversationId], references: [id])
+  listing               Listing?      @relation(fields: [listingId], references: [id])
+  recipient             User          @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  notification          Notification? @relation("MessageNotification", fields: [relatedNotificationId], references: [id])
+  sender                User          @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([conversationId])
+  @@index([listingId])
+}
+
+model Notification {
+  id               String           @id @default(cuid())
+  type             NotificationType
+  content          String
+  read             Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  userId           String
+  relatedId        String?
+  relatedListingId String?
+  relatedUserId    String?
+  relatedMessageId String?
+  message          Message?         @relation("MessageNotification")
+  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id])
+  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
+  user             User             @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([relatedListingId])
+  @@index([relatedUserId])
+}
+
+model Attribute {
+  id        String  @id @default(cuid())
+  name      String
+  value     String
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+}
+
+model Feature {
+  id        String  @id @default(cuid())
+  name      String
+  value     Boolean @default(false)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+}
+
+model VehicleDetails {
+  id                               String            @id @default(cuid())
+  vehicleType                      VehicleType
+  make                             String
+  model                            String
+  year                             Int
+  mileage                          Int?
+  fuelType                         FuelType?
+  transmissionType                 TransmissionType?
+  color                            String?
+  condition                        Condition?
+  features                         String[]          @default([])
+  interiorColor                    String?
+  engine                           String?
+  warranty                         String?
+  previousOwners                   Int?
+  listingId                        String            @unique
+  brakeType                        String?
+  engineSize                       String?
+  abs                              Boolean?
+  accessibilityFeatures            String[]          @default([])
+  accidentFree                     Boolean?
+  adaptiveCruiseControl            Boolean?
+  adaptiveHeadlights               Boolean?
+  additionalNotes                  String?
+  airConditioning                  Boolean?
+  airQualitySensor                 Boolean?
+  airbags                          Int?
+  aluminumRims                     Boolean?
+  ambientLighting                  Boolean?
+  androidAuto                      Boolean?
+  androidCar                       Boolean?
+  appleCarPlay                     Boolean?
+  armrest                          Boolean?
+  autoDimmingMirrors               Boolean?
+  automaticDazzlingInteriorMirrors Boolean?
+  automaticEmergencyBraking        Boolean?
+  automaticHighBeams               Boolean?
+  automaticStartStop               Boolean?
+  blindSpotMonitor                 Boolean?
+  bluetooth                        Boolean?
+  bodyStyle                        String?
+  bodyType                         String?
+  brakeSystem                      String[]          @default([])
+  burglarAlarmSystem               Boolean?
+  busType                          String?
+  cabFeatures                      String[]          @default([])
+  camera360                        Boolean?
+  cargoVolume                      Int?
+  cdPlayer                         Boolean?
+  centralLocking                   Boolean?
+  certifications                   String[]          @default([])
+  climateControl                   Boolean?
+  comfortFeatures                  String[]          @default([])
+  communicationSystem              String[]          @default([])
+  cruiseControl                    Boolean?
+  curtainAirbags                   Boolean?
+  customFeatures                   String[]          @default([])
+  customsCleared                   Boolean?
+  cylinders                        String?
+  dabRadio                         Boolean?
+  dashCam                          Boolean?
+  daytimeRunningLights             Boolean?
+  deadAngleAssistant               Boolean?
+  displacement                     String?
+  distanceTempomat                 Boolean?
+  distanceWarning                  Boolean?
+  driveSystem                      String?
+  driveType                        String?
+  driverAirbag                     Boolean?
+  dualZoneClimate                  Boolean?
+  dvdPlayer                        Boolean?
+  electricSeats                    Boolean?
+  electricalSideMirrors            Boolean?
+  electricalSystem                 String?
+  electricalWindowLifter           Boolean?
+  electronics                      String[]          @default([])
+  emergencyBrakeAssist             Boolean?
+  emergencyCallSystem              Boolean?
+  emergencyExits                   Int?
+  emissions                        String?
+  engineConfiguration              String?
+  engineManufacturer               String?
+  engineModel                      String?
+  enginePowerOutput                String?
+  engineSpecs                      String[]          @default([])
+  engineType                       String?
+  entertainmentSystem              String[]          @default([])
+  esp                              Boolean?
+  exteriorFeatures                 String[]          @default([])
+  fatigueWarningSystem             Boolean?
+  fogLights                        Boolean?
+  frameType                        String?
+  frontAirbags                     Boolean?
+  frontAttachments                 String[]          @default([])
+  frontSuspension                  String[]          @default([])
+  fuelTankCapacity                 String?
+  glarelessHighBeam                Boolean?
+  handlebarType                    String?
+  handsFreeCalling                 Boolean?
+  headUpDisplay                    Boolean?
+  headlightCleaning                Boolean?
+  heatedSeats                      Boolean?
+  highBeamAssistant                Boolean?
+  hitchCapacity                    Float?
+  horsepower                       Int?
+  hours                            Int?
+  hydraulicFlow                    Float?
+  hydraulicSystem                  String?
+  immobilizer                      Boolean?
+  importStatus                     String?
+  instrumentCluster                String[]          @default([])
+  insuranceType                    String?
+  integratedMusicStreaming         Boolean?
+  isofix                           Boolean?
+  keylessEntry                     Boolean?
+  kneeAirbags                      Boolean?
+  laneAssist                       Boolean?
+  laneDepartureWarning             Boolean?
+  laneKeepAssist                   Boolean?
+  lastInspectionDate               String?
+  leatherSteeringWheel             Boolean?
+  ledDaytimeRunningLights          Boolean?
+  ledHeadlights                    Boolean?
+  lightSensor                      Boolean?
+  lighting                         String[]          @default([])
+  lightingSystem                   String[]          @default([])
+  luggageCompartmentSeparation     Boolean?
+  luggageCompartments              Int?
+  luggageRacks                     Boolean?
+  luggageSpace                     Float?
+  lumbarSupport                    Boolean?
+  maintenanceHistory               String?
+  modifications                    String?
+  monitor                          String[]          @default([])
+  motorcycleType                   String?
+  mountainDrivingAssistant         Boolean?
+  multifunctionalSteeringWheel     Boolean?
+  navigationSystem                 String?
+  nightVision                      Boolean?
+  onBoardComputer                  Boolean?
+  parkingAid                       Boolean?
+  parkingAidCamera                 Boolean?
+  parkingAidSensorsFront           Boolean?
+  parkingAidSensorsRear            Boolean?
+  parkingAssist                    String[]          @default([])
+  parkingSensors                   Boolean?
+  passengerAirbag                  Boolean?
+  performanceFeatures              String[]          @default([])
+  powerSteering                    Boolean?
+  powerTailgate                    Boolean?
+  precisionFarming                 String[]          @default([])
+  premiumSound                     Boolean?
+  protectiveEquipment              String[]          @default([])
+  ptoHorsepower                    Int?
+  ptoSystem                        String[]          @default([])
+  radio                            Boolean?
+  rainSensingWipers                Boolean?
+  rainSensor                       Boolean?
+  rearAC                           Boolean?
+  rearAttachments                  String[]          @default([])
+  rearCamera                       Boolean?
+  rearSeatEntertainment            Boolean?
+  rearSuspension                   String[]          @default([])
+  remoteStart                      Boolean?
+  riderAids                        String[]          @default([])
+  ridingStyle                      String?
+  roofHeight                       String?
+  roofType                         String?
+  safetyFeatures                   String[]          @default([])
+  seatHeight                       Int?
+  seating                          String[]          @default([])
+  seatingCapacity                  Int?
+  serviceHistoryDetails            String?
+  sideAirbag                       Boolean?
+  sideAirbags                      Boolean?
+  soundSystem                      Boolean?
+  spareKey                         Boolean?
+  speedLimitingSystem              Boolean?
+  startingSystem                   String?
+  steeringSystem                   String[]          @default([])
+  steeringType                     String?
+  storageOptions                   String[]          @default([])
+  summerTires                      Boolean?
+  sunroof                          Boolean?
+  suspensionType                   String?
+  switchingRockers                 Boolean?
+  threePointHitch                  String?
+  tirePressureMonitoring           Boolean?
+  tireType                         String?
+  torque                           Int?
+  touchscreen                      Boolean?
+  trackHoldingAssistant            Boolean?
+  tractionControl                  Boolean?
+  trafficSignRecognition           Boolean?
+  trunkCapacity                    Float?
+  twoZoneClimateControl            Boolean?
+  upholsteryMaterial               String?
+  usbPorts                         Boolean?
+  vanType                          String?
+  ventilatedSeats                  Boolean?
+  voiceControl                     Boolean?
+  warrantyPeriod                   String?
+  wheelSize                        String?
+  wheelType                        String?
+  wheelchairAccessible             Boolean?
+  wheelchairLift                   Boolean?
+  wifiHotspot                      Boolean?
+  wirelessCharging                 Boolean?
+  seatMaterial                     String?
+  emissionStandard                 String?
+  enginePower                      String?
+  engineTorque                     String?
+  seatBelts                        String?
+  attachments                      String[]          @default([])
+  gearbox                          String?
+  bedLength                        String?
+  cabType                          String?
+  equipmentType                    String?
+  gps                              Boolean?
+  loadingFeatures                  String[]          @default([])
+  maxLiftingCapacity               String?
+  operatingWeight                  String?
+  operatorCabType                  String?
+  payload                          Int?
+  ptoType                          String?
+  truckType                        String?
+  hydraulicOutlets                 Int?
+  registrationStatus               String?
+  coolingSystem                    String?
+  customParts                      String[]          @default([])
+  startType                        String[]          @default([])
+  seatType                         String[]          @default([])
+  interiorHeight                   String?
+  interiorLength                   String?
+  seatingConfiguration             String?
+  temperatureRange                 String?
+  serviceHistory                   String[]          @default([])
+  transmission                     String?
+  registrationExpiry               String?
+  engineNumber                     String?
+  listing                          Listing           @relation(fields: [listingId], references: [id])
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+}
+
+model RealEstateDetails {
+  id                    String   @id @default(cuid())
+  propertyType          String
+  size                  String?
+  condition             String?
+  listingId             String   @unique
+  constructionType      String?
+  features              String[] @default([])
+  parking               String?
+  accessibilityFeatures String[] @default([])
+  balcony               Boolean?
+  buildingAmenities     String[] @default([])
+  cooling               String?
+  elevator              Boolean?
+  energyRating          String?
+  exposureDirection     String[] @default([])
+  fireSafety            String[] @default([])
+  floor                 Int?
+  flooringType          String?
+  furnished             String?
+  heating               String?
+  internetIncluded      Boolean?
+  parkingType           String?
+  petPolicy             String?
+  renovationHistory     String?
+  securityFeatures      String[] @default([])
+  storage               Boolean?
+  storageType           String[] @default([])
+  totalFloors           Int?
+  utilities             String[] @default([])
+  view                  String?
+  windowType            String?
+  attic                 String?
+  basement              String?
+  buildable             String?
+  buildingRestrictions  String?
+  elevation             Int?
+  environmentalFeatures String?
+  flooringTypes         String[]
+  halfBathrooms         Int?
+  naturalFeatures       String?
+  parcelNumber          String?
+  permitsInPlace        String?
+  soilTypes             String[]
+  stories               Int?
+  topography            String[]
+  waterFeatures         String?
+  floorLevel            Int?
+  isBuildable           Boolean?
+  totalArea             Float?
+  yearBuilt             Int?
+  bedrooms              Int?
+  bathrooms             Float?
+  accessibility         String?
+  appliances            String?
+  basementFeatures      String?
+  bathroomFeatures      String?
+  communityFeatures     String?
+  energyFeatures        String?
+  exteriorFeatures      String?
+  hoaFeatures           String?
+  kitchenFeatures       String?
+  landscaping           String?
+  livingArea            Float?
+  outdoorFeatures       String?
+  parkingSpaces         Int?
+  petFeatures           String?
+  roofAge               Int?
+  smartHomeFeatures     String?
+  storageFeatures       String?
+  windowFeatures        String?
+  listing               Listing  @relation(fields: [listingId], references: [id])
+
+  @@index([listingId])
+}
+
+enum UserRole {
+  FREE_USER
+  PREMIUM_USER
+  BUSINESS_USER
+  ADMIN
+  MODERATOR
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  RENTED
+  EXPIRED
+  ARCHIVED
+}
+
+enum ListingAction {
+  SALE
+  RENT
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  LISTING_INTEREST
+  PRICE_UPDATE
+  LISTING_SOLD
+  SYSTEM_NOTICE
+  LISTING_CREATED
+  NEW_LISTING_MATCH
+  ACCOUNT_WARNING
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum VehicleType {
+  CAR
+  TRUCK
+  MOTORCYCLE
+  RV
+  OTHER
+  VAN
+  BUS
+  CONSTRUCTION
+  TRACTOR
+}
+
+enum FuelType {
+  gasoline
+  diesel
+  electric
+  hybrid
+  pluginHybrid
+  lpg
+  cng
+  other
+  biodiesel
+}
+
+enum TransmissionType {
+  automatic
+  manual
+  semiAutomatic
+  continuouslyVariable
+  dualClutch
+  other
+}
+
+enum Condition {
+  new
+  likeNew
+  excellent
+  good
+  fair
+  poor
+  salvage
+}

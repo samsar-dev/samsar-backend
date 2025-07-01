@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks.toml"
+buildCommand = "npm run build"
+startCommand = "npm start"
+
+[deploy]
+startCommand = "npm start"
