@@ -8,18 +8,20 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "baseUrl": "./src",
+    "rootDir": ".",
+    "baseUrl": ".",
     "allowJs": true,
     "resolveJsonModule": true,
     "noImplicitAny": false,
     "declaration": false,
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo",
-    "sourceMap": false,
+    "sourceMap": true,
     "types": ["node"],
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "server.ts"],
   "exclude": ["node_modules", "dist"]
 }
