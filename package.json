@@ -2,23 +2,19 @@
   "name": "marketplace-backend",
   "version": "1.0.0",
   "description": "Marketplace application backend",
-  "type": "commonjs",
+  "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "NODE_ENV=development tsx watch server.ts",
-    "clean": "rimraf dist .tsbuildinfo",
-    "generate": "prisma generate",
-    "build": "node build.js",
+    "dev": "tsx watch server.ts",
+    "clean": "rimraf dist",
+    "generate": "prisma generate --schema src/prisma/schema.prisma",
+    "build": "npm run clean && npm run generate && tsc && node build.js",
+    "upload:favicon": "tsx scripts/uploadFavicon.ts",
     "start": "node dist/server.js",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate deploy",
-    "db:refresh": "prisma generate && prisma db push",
-    "postinstall": "npm run build"
+    "db:push": "prisma db push --schema src/prisma/schema.prisma",
+    "db:refresh": "npx prisma generate --schema src/prisma/schema.prisma && npx prisma db push --schema src/prisma/schema.prisma",
+    "postinstall": "prisma generate && npm run build"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
-  "packageManager": "npm@10.0.0",
   "prisma": {
     "schema": "src/prisma/schema.prisma"
   },
