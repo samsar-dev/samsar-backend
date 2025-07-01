@@ -44,6 +44,13 @@ async function build() {
     console.log("🔄 Generating Prisma Client...");
     await execAsync("prisma generate --schema src/prisma/schema.prisma");
 
+    // Copy server.ts to dist
+    console.log("📄 Copying server file...");
+    await copyFile(
+      join(process.cwd(), "server.ts"),
+      join(process.cwd(), "dist", "server.js")
+    );
+
     // Copy schema.prisma to dist
     console.log("📄 Copying Prisma schema...");
     await copyFile(

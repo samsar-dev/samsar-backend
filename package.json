@@ -13,7 +13,11 @@
     "start": "node dist/server.js",
     "db:push": "prisma db push --schema src/prisma/schema.prisma",
     "db:refresh": "npx prisma generate --schema src/prisma/schema.prisma && npx prisma db push --schema src/prisma/schema.prisma",
-    "postinstall": "prisma generate && npm run build"
+    "postinstall": "prisma generate && npm run build",
+    "railway:deploy": "railway up --detach"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma"
