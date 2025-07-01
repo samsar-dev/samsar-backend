@@ -7,14 +7,17 @@
   "scripts": {
     "dev": "tsx watch server.ts",
     "clean": "rimraf dist",
-    "generate": "prisma generate --schema src/prisma/schema.prisma",
+    "generate": "prisma generate",
     "build": "npm run clean && npm run generate && tsc && node build.js",
     "upload:favicon": "tsx scripts/uploadFavicon.ts",
     "start": "node dist/server.js",
-    "db:push": "prisma db push --schema src/prisma/schema.prisma",
-    "db:refresh": "npx prisma generate --schema src/prisma/schema.prisma && npx prisma db push --schema src/prisma/schema.prisma",
-    "postinstall": "prisma generate && npm run build",
-    "railway:deploy": "railway up --detach"
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:refresh": "npx prisma generate && npx prisma db push",
+    "postinstall": "npm run build",
+    "railway:deploy": "railway up --detach",
+    "docker:build": "docker build -t your-app-name .",
+    "docker:run": "docker run -p 3000:3000 your-app-name"
   },
   "engines": {
     "node": ">=16.0.0"

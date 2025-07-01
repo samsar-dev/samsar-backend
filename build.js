@@ -40,19 +40,24 @@ async function build() {
     await mkdir("dist/src/prisma", { recursive: true });
     await mkdir("dist/src/lib", { recursive: true });
 
-    // Generate Prisma Client with schema path
+    // Generate Prisma Client
     console.log("🔄 Generating Prisma Client...");
-    await execAsync("prisma generate --schema src/prisma/schema.prisma");
+    await execAsync("npx prisma generate");
 
-    // Copy server.ts to dist
-    console.log("📄 Copying server file...");
+    // Compile TypeScript files
+    console.log("🔨 Compiling TypeScript...");
+    await execAsync("npx tsc");
+
+    // Copy necessary files
+    console.log("📄 Copying required files...");
+    
+    // Copy server.js to root of dist
     await copyFile(
-      join(process.cwd(), "server.ts"),
+      join(process.cwd(), "dist", "server.js"),
       join(process.cwd(), "dist", "server.js")
     );
-
-    // Copy schema.prisma to dist
-    console.log("📄 Copying Prisma schema...");
+    
+    // Copy Prisma schema and migrations
     await copyFile(
       join(process.cwd(), "src", "prisma", "schema.prisma"),
       join(process.cwd(), "dist", "src", "prisma", "schema.prisma"),
