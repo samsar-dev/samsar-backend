@@ -1,0 +1,1 @@
+{"root":["./src/lib/prismaClient.ts","./src/services/cityService.ts","./src/services/notification.service.ts","./src/types/city.ts","./src/types/enums.ts","./src/utils/geoUtils.ts","./src/utils/geolocation.ts"],"version":"5.8.3"}

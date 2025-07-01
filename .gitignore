@@ -11,7 +11,7 @@ node_modules/
 dist/
 build/
 .next/
-out/
+out/ 
 .cache/
 tmp/
 temp/

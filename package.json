@@ -8,12 +8,12 @@
     "dev": "tsx watch server.ts",
     "clean": "rimraf dist",
     "generate": "prisma generate --schema src/prisma/schema.prisma",
-    "build": "npm run clean && npm run generate && tsc --build && node build.js",
+    "build": "npm run clean && npm run generate && tsc && node build.js",
     "upload:favicon": "tsx scripts/uploadFavicon.ts",
     "start": "node dist/server.js",
     "db:push": "prisma db push --schema src/prisma/schema.prisma",
-    "db:refresh": "prisma generate --schema src/prisma/schema.prisma && prisma db push --schema src/prisma/schema.prisma",
-    "postinstall": "npm run build"
+    "db:refresh": "npx prisma generate --schema src/prisma/schema.prisma && npx prisma db push --schema src/prisma/schema.prisma",
+    "postinstall": "prisma generate && npm run build"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma"
