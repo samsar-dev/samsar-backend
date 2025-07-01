@@ -4,20 +4,19 @@
   "description": "Marketplace application backend",
   "type": "module",
   "main": "dist/server.js",
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "scripts": {
-    "dev": "NODE_OPTIONS='--loader tsx' node --watch server.ts",
+    "dev": "tsx watch server.ts",
     "clean": "rimraf dist",
     "generate": "prisma generate",
     "build": "npm run clean && npm run generate && tsc",
-    "start": "NODE_OPTIONS='--loader tsx' node dist/server.js",
+    "start": "node dist/server.js",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:refresh": "npx prisma generate && npx prisma db push",
-    "postinstall": "npm run build",
-    "fix:types": "tsc --noEmit"
+    "postinstall": "npm run build"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma"
