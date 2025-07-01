@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import axios from "axios";
-import { CityService } from "../src/services/cityService";
-import { NearbyCitiesParams } from "../src/types/city";
+import { CityService } from "../src/services/cityService.js";
+import { NearbyCitiesParams } from "../src/types/city.js";
 
 // Type definitions for query parameters
 interface SearchQuery {

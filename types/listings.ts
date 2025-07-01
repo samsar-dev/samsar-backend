@@ -7,7 +7,7 @@ import type {
   Condition,
   ListingAction,
   ListingStatus,
-} from "./enums";
+} from "./enums.js";
 
 export enum YesNo {
   Yes = "true",

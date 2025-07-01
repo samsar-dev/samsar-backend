@@ -1,9 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
+import { PrismaClient } from "@prisma/client";
 let prisma;
 if (process.env.NODE_ENV === "production") {
-    prisma = new client_1.PrismaClient({
+    prisma = new PrismaClient({
         log: ["error", "warn"],
         errorFormat: "pretty",
     });
@@ -12,7 +10,7 @@ else {
     // Prevent multiple instances in development
     const globalWithPrisma = global;
     if (!globalWithPrisma.prisma) {
-        globalWithPrisma.prisma = new client_1.PrismaClient({
+        globalWithPrisma.prisma = new PrismaClient({
             log: ["error", "warn"],
             errorFormat: "pretty",
         });
@@ -32,5 +30,5 @@ async function validateConnection() {
 }
 // Call validateConnection but don't await it here
 validateConnection().catch(console.error);
-exports.default = prisma;
+export default prisma;
 //# sourceMappingURL=prismaClient.js.map
