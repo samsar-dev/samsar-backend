@@ -29,36 +29,47 @@ const s3 = isR2Configured
   : null;
 
 // Upload File to Cloudflare R2
+export interface UploadResult {
+  success: boolean;
+  message: string;
+  url?: string;
+  key?: string;
+}
+
 export const uploadToR2 = async (
-  file: Express.Multer.File,
+  file: Buffer | { buffer: Buffer; mimetype?: string },
   category: string,
-) => {
+): Promise<UploadResult> => {
   if (!isR2Configured || !s3) {
     console.warn(
       "⚠️ Cloudflare R2 is not configured. File upload will be skipped.",
     );
     return {
-      url: "placeholder-url",
-      key: "placeholder-key",
+      success: false,
+      message: "Cloudflare R2 is not configured",
     };
   }
 
-  const folder = category === "avatar" ? "avatars/" : "listings/";
-  const fileKey = `${folder}${crypto.randomUUID()}-${file.originalname.replace(/\s/g, "-")}`;
-
   try {
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.CLOUDFLARE_R2_BUCKET,
-        Key: fileKey,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      }),
-    );
+    const fileBuffer = Buffer.isBuffer(file) ? file : file.buffer;
+    const fileName = `uploads/${category}/${Date.now()}-${Math.round(
+      Math.random() * 1e9,
+    )}`;
+
+    const uploadParams = {
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET,
+      Key: fileName,
+      Body: fileBuffer,
+      ContentType: (file as any).mimetype || "application/octet-stream",
+    };
+
+    await s3.send(new PutObjectCommand(uploadParams));
 
     return {
-      url: `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileKey}`,
-      key: fileKey,
+      success: true,
+      message: "File uploaded successfully",
+      url: `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`,
+      key: fileName,
     };
   } catch (error) {
     console.error("❌ Failed to upload to R2:", error);

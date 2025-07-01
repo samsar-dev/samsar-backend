@@ -4,28 +4,12 @@ import {
   getNewsletterStats,
 } from "../controllers/newsletterController.js";
 import { authenticate, isAdmin } from "../middleware/auth.js";
-import { UserRole } from "@prisma/client";
+import { UserPayload } from "../types/auth.js";
 
-// Define our custom user type
-export interface AuthenticatedUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  username: string;
-  exp: number;
+// Use the centralized UserPayload type from auth types
+interface AuthenticatedRequest extends FastifyRequest {
+  user: UserPayload;
 }
-
-// Extend the FastifyRequest type to include our custom user type
-declare module "fastify" {
-  interface FastifyRequest {
-    user: AuthenticatedUser;
-  }
-}
-
-// Helper type for authenticated requests
-type AuthenticatedRequest = FastifyRequest & {
-  user: AuthenticatedUser;
-};
 
 // Define the request body schema for the newsletter
 const newsletterSchema = {

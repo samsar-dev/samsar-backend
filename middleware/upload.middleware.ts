@@ -156,16 +156,16 @@ export const processImagesMiddleware = async (
           path: tempFilePath,
         };
 
-        const { url } = await uploadToCloudflare(
-          fileForUpload as any,
-          "listings",
-        );
+        const uploadResult = await uploadToCloudflare(fileForUpload, "listings");
 
         // Clean up temp file
         fs.unlinkSync(tempFilePath);
 
-        processedImages.push({ url, order: index++ });
-        uploadedFiles.push(url);
+        if (uploadResult?.url) {
+          const url = uploadResult.url;
+          processedImages.push({ url, order: index++ });
+          uploadedFiles.push(url);
+        }
       } else if (part.type === "field") {
         // Process form field
         const fieldValue = await part.value;
@@ -274,12 +274,14 @@ export const uploadMiddleware = async (
         path: tempFilePath,
       };
 
-      const { url } = await uploadToCloudflare(fileForUpload as any, "listing");
+      const uploadResult = await uploadToCloudflare(fileForUpload, "listing");
 
       // Clean up temp file
       fs.unlinkSync(tempFilePath);
 
-      uploadedFiles.push(url);
+      if (uploadResult?.url) {
+        uploadedFiles.push(uploadResult.url);
+      }
     }
 
     request.uploadedFiles = uploadedFiles;
