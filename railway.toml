@@ -1,7 +1,6 @@
 [build]
   builder = "DOCKERFILE"
   dockerfile = "Dockerfile.railway"
-  buildCommand = ""
   buildCommand = "npm install && npm run build"
   
 [build.environment]
