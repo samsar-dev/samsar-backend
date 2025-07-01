@@ -2,21 +2,21 @@
   "name": "marketplace-backend",
   "version": "1.0.0",
   "description": "Marketplace application backend",
-  "type": "module",
+  "type": "commonjs",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch server.ts",
-    "clean": "rimraf dist",
+    "dev": "NODE_ENV=development tsx watch src/server.ts",
+    "clean": "rimraf dist .tsbuildinfo",
     "generate": "prisma generate",
-    "build": "npm run clean && npm run generate && tsc",
+    "build": "npm run clean && npm run generate && tsc --incremental",
     "start": "node dist/server.js",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
-    "db:refresh": "npx prisma generate && npx prisma db push",
+    "db:refresh": "prisma generate && prisma db push",
     "postinstall": "npm run build"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma"
