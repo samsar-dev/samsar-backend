@@ -16,8 +16,25 @@ export const filterListingDetails = (
         year: vehicleDetails.year,
       };
       const vehicleTypeField: string[] = schemaMap[listingType];
+      
+      // Process each field, with special handling for serviceHistory
       for (const [key, value] of Object.entries(vehicleDetails)) {
-        if (vehicleTypeField.includes(key)) details[key] = value;
+        if (vehicleTypeField.includes(key)) {
+          // Convert serviceHistory to an array if it's a single value
+          if (key === 'serviceHistory' && value !== undefined) {
+            if (Array.isArray(value)) {
+              details[key] = value;
+            } else if (value === false) {
+              details[key] = [];
+            } else if (value !== null) {
+              details[key] = [String(value)];
+            } else {
+              details[key] = [];
+            }
+          } else {
+            details[key] = value;
+          }
+        }
       }
       return details;
     } else if ("propertyType" in listingDetails) {

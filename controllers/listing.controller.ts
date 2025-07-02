@@ -847,6 +847,21 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       imagesToCreate = [...req.processedImages];
     }
 
+    // Handle deleted images if provided so we don't recreate them later
+    const { deletedImages } = req.body as { deletedImages?: string[] | string };
+    let deletedImagesArray: string[] = [];
+    if (deletedImages) {
+      if (Array.isArray(deletedImages)) {
+        deletedImagesArray = deletedImages;
+      } else if (typeof deletedImages === "string") {
+        try {
+          deletedImagesArray = JSON.parse(deletedImages);
+        } catch {
+          deletedImagesArray = [deletedImages];
+        }
+      }
+    }
+
     // Add existing images if provided
     if (existingImages) {
       console.log("🔍 [DEBUG] existingImages type:", typeof existingImages);
@@ -880,14 +895,18 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
 
         existingImagesArray.forEach((url: string, index: number) => {
           console.log(`🔍 [DEBUG] Processing URL ${index}:`, url);
-          if (url && typeof url === "string") {
+          if (
+            url &&
+            typeof url === "string" &&
+            !deletedImagesArray.includes(url)
+          ) {
             imagesToCreate.push({
               url,
               order: imagesToCreate.length + index,
             });
             console.log("🔍 [DEBUG] Added URL to imagesToCreate");
           } else {
-            console.log("🔍 [DEBUG] Skipped invalid URL:", url);
+            console.log("🔍 [DEBUG] Skipped invalid or deleted URL:", url);
           }
         });
       } catch (error) {
@@ -898,7 +917,18 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       }
     }
 
-    console.log("- Final imagesToCreate:", imagesToCreate);
+    // Deduplicate images by URL while preserving first occurrence order
+    const seen = new Set<string>();
+    imagesToCreate = imagesToCreate.filter((img) => {
+      if (seen.has(img.url)) return false;
+      seen.add(img.url);
+      return true;
+    });
+
+    // Re-index order to be sequential starting from 0
+    imagesToCreate = imagesToCreate.map((img, idx) => ({ ...img, order: idx }));
+
+    console.log("- Final imagesToCreate (deduped & reindexed):", imagesToCreate);
 
     // Ensure price is a number and handle potential string input
     const newPrice = typeof price === "string" ? parseFloat(price) : price;

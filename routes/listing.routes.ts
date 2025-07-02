@@ -1523,18 +1523,32 @@ export default async function (fastify: FastifyInstance) {
 
           console.log("🔍 [DEBUG] Processed details:", objDetails);
 
-          const vehicleDetails = objDetails?.vehicles;
+          // Process vehicle details with validation
+          let vehicleDetails = objDetails?.vehicles;
+          
+          // Ensure seatingCapacity is a valid number and not negative
+          if (vehicleDetails) {
+            vehicleDetails = {
+              ...vehicleDetails,
+              seatingCapacity: Math.max(0, Number(vehicleDetails.seatingCapacity || 0))
+            };
+          }
+          
           const realEstateDetails = objDetails?.realEstate;
 
           console.log("🔍 [DEBUG] Extracted details:", {
             vehicleDetails,
             realEstateDetails,
           });
-          const newImages = req.processedImages || [];
-          console.log("🔍 [DEBUG] New images:", newImages);
+
+          // Get current images from the database first
+          const currentImages = await prisma.image.findMany({
+            where: { listingId: (req.params as { id: string }).id },
+            select: { url: true },
+          });
 
           // Parse and validate existing images
-          let parsedExistingImages = [];
+          let parsedExistingImages: string[] = [];
           if (existingImages) {
             try {
               parsedExistingImages =
@@ -1543,42 +1557,39 @@ export default async function (fastify: FastifyInstance) {
                   : Array.isArray(existingImages)
                     ? existingImages
                     : [];
-              console.log(
-                "🔍 [DEBUG] Parsed existing images:",
-                parsedExistingImages,
+              
+              // Ensure we only keep valid image URLs that exist in the database
+              const validImageUrls = currentImages.map(img => img.url);
+              parsedExistingImages = parsedExistingImages.filter(url => 
+                validImageUrls.includes(url)
               );
+              
+              console.log("🔍 [DEBUG] Valid existing images:", parsedExistingImages);
             } catch (error) {
               console.error("🔍 [DEBUG] Error parsing existing images:", error);
-              parsedExistingImages = [];
+              // If there's an error, keep all existing images
+              parsedExistingImages = currentImages.map(img => img.url);
             }
+          } else {
+            // If no existing images provided, keep all current images
+            parsedExistingImages = currentImages.map(img => img.url);
           }
 
-          // Get current images from the database
-          const currentImages = await prisma.image.findMany({
-            where: { listingId: (req.params as { id: string }).id },
-            select: { url: true },
-          });
+          // Process new images
+          const newImages = req.processedImages || [];
+          console.log("🔍 [DEBUG] New images to add:", newImages);
 
-          console.log("🔍 [DEBUG] Current images in DB:", currentImages);
-          console.log("🔍 [DEBUG] Images to keep:", parsedExistingImages);
+          // Only delete images that are not in the parsedExistingImages
+          const imagesToDelete = currentImages
+            .filter(img => !parsedExistingImages.includes(img.url))
+            .map(img => img.url);
 
-          // First, delete removed images
-          if (parsedExistingImages.length === 0) {
-            console.log(
-              "🔍 [DEBUG] Deleting all images as no existing images were specified",
-            );
-            await prisma.image.deleteMany({
-              where: { listingId: (req.params as { id: string }).id },
-            });
-          } else {
-            console.log(
-              "🔍 [DEBUG] Deleting images not in:",
-              parsedExistingImages,
-            );
+          if (imagesToDelete.length > 0) {
+            console.log("🔍 [DEBUG] Deleting removed images:", imagesToDelete);
             await prisma.image.deleteMany({
               where: {
                 listingId: (req.params as { id: string }).id,
-                url: { notIn: parsedExistingImages },
+                url: { in: imagesToDelete },
               },
             });
           }

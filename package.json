@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "NODE_OPTIONS='--loader tsx' node --watch server.ts",
+    "dev": "NODE_OPTIONS='--import tsx' node --watch server.ts",
     "clean": "rimraf dist",
     "generate": "prisma generate --schema src/prisma/schema.prisma",
     "build": "npm run clean && npm run generate && tsc",
