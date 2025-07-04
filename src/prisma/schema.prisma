@@ -56,8 +56,23 @@ model User {
   relatedNotifications     Notification[] @relation("RelatedNotifications")
   notifications            Notification[]
   conversations            Conversation[] @relation("UserConversations")
+  viewHistory              View[]
 
   @@index([refreshToken])
+}
+
+model View {
+  id          String   @id @default(cuid())
+  listingId   String
+  userId      String?
+  userIp      String
+  userAgent   String
+  createdAt   DateTime @default(now())
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@unique([listingId, userId, userIp], name: "listing_user_ip")
+  @@index([createdAt])
 }
 
 model Listing {
@@ -94,6 +109,8 @@ model Listing {
   yearBuilt         Int?
   latitude          Float
   longitude         Float
+  views             Int               @default(0)
+  viewHistory       View[]
   attributes        Attribute[]
   conversations     Conversation[]     @relation("ListingConversations")
   favorites         Favorite[]

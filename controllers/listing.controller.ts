@@ -45,6 +45,7 @@ interface ListingResponse {
   location: string;
   latitude: number;
   longitude: number;
+  views?: number;
   condition?: string;
   status: string;
   listingAction?: string;
@@ -150,7 +151,9 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
     attributes: true;
     features: true;
   };
-}>;
+}> & {
+  views?: number;
+};
 
 type VehicleDetailsWithRelations = Prisma.VehicleDetailsGetPayload<{
   select: {
@@ -222,6 +225,7 @@ const formatListingResponse = (
     location: listing.location,
     latitude: listing.latitude,
     longitude: listing.longitude,
+    views: 'views' in listing ? (listing.views || 0) : 0,
     condition: listing.condition || undefined,
     status: listing.status,
     listingAction: listing.listingAction || undefined,
@@ -728,6 +732,8 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
 export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const { id } = req.params as ListingParams;
+    
+    // First, get the listing with all its relations
     const listing = await prisma.listing.findUnique({
       where: { id },
       include: {
@@ -742,7 +748,27 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
         favorites: true,
         attributes: true,
         features: true,
-
+        vehicleDetails: {
+          select: {
+            id: true,
+            vehicleType: true,
+            make: true,
+            model: true,
+            year: true,
+            mileage: true,
+            fuelType: true,
+            transmissionType: true,
+            color: true,
+            condition: true,
+            listingId: true,
+            interiorColor: true,
+            engine: true,
+            warranty: true,
+            serviceHistory: true,
+            previousOwners: true,
+            registrationStatus: true,
+          },
+        },
         realEstateDetails: true,
       },
     });
@@ -753,6 +779,87 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
         message: "Listing not found",
       });
     }
+
+    // Only increment view count if viewer is not the listing owner
+    if (!req.user || req.user.id !== listing.userId) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Check if user has already viewed this listing today
+      const existingView = await prisma.View.findFirst({
+        where: {
+          listingId: id,
+          OR: [
+            { userId: req.user?.id },
+            { userIp: req.ip || 'unknown' }
+          ],
+          createdAt: {
+            gte: today
+          }
+        }
+      });
+
+      if (!existingView) {
+        // Use a transaction to ensure atomic update
+        await prisma.$transaction([
+          // Increment the view count
+          prisma.$executeRaw`
+            UPDATE "Listing" 
+            SET "views" = COALESCE("views", 0) + 1
+            WHERE id = ${id}
+          `,
+          // Record the view
+          prisma.View.create({
+            data: {
+              listingId: id,
+              userId: req.user?.id,
+              userIp: req.ip || 'unknown',
+              userAgent: req.headers['user-agent'] || 'unknown'
+            }
+          })
+        ]);
+      }
+    }
+
+    // Get the updated listing with the incremented view count
+    const updatedListing = await prisma.listing.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true,
+          },
+        },
+        images: true,
+        favorites: true,
+        attributes: true,
+        features: true,
+        vehicleDetails: {
+          select: {
+            id: true,
+            vehicleType: true,
+            make: true,
+            model: true,
+            year: true,
+            mileage: true,
+            fuelType: true,
+            transmissionType: true,
+            color: true,
+            condition: true,
+            listingId: true,
+            interiorColor: true,
+            engine: true,
+            warranty: true,
+            serviceHistory: true,
+            previousOwners: true,
+            registrationStatus: true,
+          },
+        },
+        realEstateDetails: true,
+      },
+    }) as ListingWithRelations;
 
     // Create view notification if viewer is not the seller
     if (req.user && req.user.id !== listing.userId) {
@@ -768,7 +875,7 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     res.send({
       success: true,
-      data: formatListingResponse(listing as ListingWithRelations),
+      data: formatListingResponse(updatedListing as ListingWithRelations),
     });
   } catch (error) {
     console.error("Error getting listing:", error);
