@@ -9,7 +9,7 @@ import {
   Condition,
 } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
-import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
+import { uploadToR2, deleteFromR2, moveObjectInR2 } from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
@@ -393,9 +393,9 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       });
     }
 
-    // Start transaction
+    // Start transaction to ensure data consistency
     const result = await prismaClient.$transaction(async (tx) => {
-      // Create listing data
+      // Prepare base listing data
       const listingData: Prisma.ListingCreateInput = {
         title,
         description,
@@ -404,77 +404,51 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         subCategory,
         category: JSON.stringify({ mainCategory, subCategory }),
         location,
-        latitude:
-          typeof latitude === "string" ? parseFloat(latitude) : latitude,
-        longitude:
-          typeof longitude === "string" ? parseFloat(longitude) : longitude,
+        latitude: typeof latitude === "string" ? parseFloat(latitude) : latitude,
+        longitude: typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
         user: {
-          connect: {
-            id: userId,
-          },
+          connect: { id: userId },
         },
-        images: {
-          create:
-            req.processedImages?.map((img) => ({
-              url: img.url,
-              order: img.order,
-            })) || [],
-        },
-        vehicleDetails: parsedDetails?.vehicles
-          ? {
-              create: {
-                vehicleType: parsedDetails.vehicles.vehicleType,
-                make: parsedDetails.vehicles.make || undefined,
-                model: parsedDetails.vehicles.model || undefined,
-                year: parsedDetails.vehicles.year
-                  ? parseInt(parsedDetails.vehicles.year, 10)
-                  : undefined,
-                mileage: parsedDetails.vehicles.mileage
-                  ? parseInt(parsedDetails.vehicles.mileage, 10)
-                  : null,
-                fuelType: parsedDetails.vehicles.fuelType || null,
-                transmissionType:
-                  parsedDetails.vehicles.transmissionType || null,
-                color: parsedDetails.vehicles.color || null,
-                condition: parsedDetails.vehicles.condition || null,
-              } as Prisma.VehicleDetailsCreateWithoutListingInput,
-            }
-          : undefined,
-        realEstateDetails: parsedDetails?.realEstate
-          ? {
-              create: {
-                propertyType:
-                  parsedDetails.realEstate.propertyType || undefined,
-                totalArea: parsedDetails.realEstate.totalArea
-                  ? parseFloat(parsedDetails.realEstate.totalArea)
-                  : undefined,
-                bedrooms: parsedDetails.realEstate.bedrooms
-                  ? parseInt(parsedDetails.realEstate.bedrooms, 10)
-                  : undefined,
-                bathrooms: parsedDetails.realEstate.bathrooms
-                  ? parseFloat(parsedDetails.realEstate.bathrooms)
-                  : undefined,
-                yearBuilt: parsedDetails.realEstate.yearBuilt
-                  ? parseInt(parsedDetails.realEstate.yearBuilt, 10)
-                  : undefined,
-                floorLevel: parsedDetails.realEstate.floorLevel
-                  ? parseInt(parsedDetails.realEstate.floorLevel, 10)
-                  : undefined,
-                isBuildable:
-                  typeof parsedDetails.realEstate.isBuildable === "boolean"
-                    ? parsedDetails.realEstate.isBuildable
-                    : undefined,
-                usageType: parsedDetails.realEstate.usageType || undefined,
-                condition: parsedDetails.realEstate.condition || undefined,
-              } as Prisma.RealEstateDetailsCreateWithoutListingInput,
-            }
-          : undefined,
       };
 
-      // Create listing
+      // Add vehicle details if present
+      if (parsedDetails?.vehicles) {
+        listingData.vehicleDetails = {
+          create: {
+            vehicleType: parsedDetails.vehicles.vehicleType,
+            make: parsedDetails.vehicles.make || undefined,
+            model: parsedDetails.vehicles.model || undefined,
+            year: parsedDetails.vehicles.year ? parseInt(parsedDetails.vehicles.year, 10) : undefined,
+            mileage: parsedDetails.vehicles.mileage ? parseInt(parsedDetails.vehicles.mileage, 10) : null,
+            fuelType: parsedDetails.vehicles.fuelType || null,
+            transmissionType: parsedDetails.vehicles.transmissionType || null,
+            color: parsedDetails.vehicles.color || null,
+            condition: parsedDetails.vehicles.condition || null,
+          } as Prisma.VehicleDetailsCreateWithoutListingInput,
+        };
+      }
+
+      // Add real estate details if present
+      if (parsedDetails?.realEstate) {
+        listingData.realEstateDetails = {
+          create: {
+            propertyType: parsedDetails.realEstate.propertyType || undefined,
+            totalArea: parsedDetails.realEstate.totalArea ? parseFloat(parsedDetails.realEstate.totalArea) : undefined,
+            bedrooms: parsedDetails.realEstate.bedrooms ? parseInt(parsedDetails.realEstate.bedrooms, 10) : undefined,
+            bathrooms: parsedDetails.realEstate.bathrooms ? parseFloat(parsedDetails.realEstate.bathrooms) : undefined,
+            yearBuilt: parsedDetails.realEstate.yearBuilt ? parseInt(parsedDetails.realEstate.yearBuilt, 10) : undefined,
+            floorLevel: parsedDetails.realEstate.floorLevel ? parseInt(parsedDetails.realEstate.floorLevel, 10) : undefined,
+            isBuildable: typeof parsedDetails.realEstate.isBuildable === "boolean" ? parsedDetails.realEstate.isBuildable : undefined,
+            usageType: parsedDetails.realEstate.usageType || undefined,
+            condition: parsedDetails.realEstate.condition || undefined,
+          } as Prisma.RealEstateDetailsCreateWithoutListingInput,
+        };
+      }
+
+      // Create the listing
       const listing = await tx.listing.create({
         data: listingData,
         include: {
@@ -514,8 +488,19 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         },
       });
 
+      // Process images if any
+      if (req.processedImages && req.processedImages.length > 0) {
+        await tx.image.createMany({
+          data: req.processedImages.map((img, index) => ({
+            url: img.url,
+            order: index,
+            listingId: listing.id,
+          })),
+        });
+      }
+
       // Create notification
-      await prisma.notification.create({
+      await tx.notification.create({
         data: {
           userId: listing.userId,
           type: NotificationType.LISTING_CREATED,
@@ -528,7 +513,43 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     });
 
     // Format and send response
-    const formattedListing = formatListingResponse(result);
+    /* --- Move images from temporary 'other' folder to listing folder --- */
+    if (req.processedImages && req.processedImages.length > 0) {
+      const baseUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL || '';
+      await Promise.all(
+        req.processedImages.map(async (img) => {
+          if (!img.url.includes('/other/')) return;
+          try {
+            const urlPath = img.url.replace(baseUrl + '/', '');
+            const filename = urlPath.split('/').pop() || '';
+            const newKey = `uploads/users/${result.userId}/listings/${result.id}/images/${filename}`;
+            const moveRes = await moveObjectInR2(urlPath, newKey);
+            if (moveRes.success && moveRes.url) {
+              await prisma.image.updateMany({
+                where: { listingId: result.id, url: img.url },
+                data: { url: moveRes.url },
+              });
+            }
+          } catch (err) {
+            console.error('Failed to move listing image', err);
+          }
+        })
+      );
+    }
+
+    const refreshedListing = await prisma.listing.findUnique({
+      where: { id: result.id },
+      include: {
+        user: { select: { id: true, username: true, profilePicture: true } },
+        images: true,
+        vehicleDetails: true,
+        realEstateDetails: true,
+        favorites: true,
+        attributes: true,
+        features: true,
+      },
+    });
+    const formattedListing = formatListingResponse(refreshedListing as any);
 
     // Send response
     res.code(201).send({
@@ -540,8 +561,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     console.error("Error creating listing:", error);
     res.code(500).send({
       success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to create listing",
+      error: error instanceof Error ? error.message : "Failed to create listing",
       status: 500,
       data: null,
     });
@@ -786,7 +806,7 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
       today.setHours(0, 0, 0, 0);
       
       // Check if user has already viewed this listing today
-      const existingView = await prisma.View.findFirst({
+      const existingView = await prisma.view.findFirst({
         where: {
           listingId: id,
           OR: [
@@ -809,7 +829,7 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
             WHERE id = ${id}
           `,
           // Record the view
-          prisma.View.create({
+          prisma.view.create({
             data: {
               listingId: id,
               userId: req.user?.id,

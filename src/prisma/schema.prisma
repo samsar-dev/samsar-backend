@@ -7,30 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ReportStatus {
-  PENDING
-  INVESTIGATING
-  RESOLVED
-  DISMISSED
-}
-
-enum ReportType {
-  USER
-  LISTING
-  MESSAGE
-  COMMENT
-  OTHER
-}
-
-enum ReportReason {
-  SPAM
-  INAPPROPRIATE
-  MISLEADING
-  OFFENSIVE
-  HARASSMENT
-  OTHER
-}
-
 model Report {
   id           String       @id @default(cuid())
   type         ReportType
@@ -40,14 +16,12 @@ model Report {
   notes        String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-  
-  // Relationships
   reporterId   String
-  reporter     User         @relation("ReportedBy", fields: [reporterId], references: [id])
   resolvedById String?
-  resolvedBy   User?        @relation("ResolvedReports", fields: [resolvedById], references: [id])
   resolvedAt   DateTime?
-  
+  reporter     User         @relation("ReportedBy", fields: [reporterId], references: [id])
+  resolvedBy   User?        @relation("ResolvedReports", fields: [resolvedById], references: [id])
+
   @@index([type, targetId])
   @@index([status])
   @@index([createdAt])
@@ -101,23 +75,23 @@ model User {
   sentMessages             Message[]      @relation("SentMessages")
   relatedNotifications     Notification[] @relation("RelatedNotifications")
   notifications            Notification[]
-  conversations            Conversation[] @relation("UserConversations")
-  viewHistory              View[]
   reportedIssues           Report[]       @relation("ReportedBy")
   resolvedReports          Report[]       @relation("ResolvedReports")
+  viewHistory              View[]
+  conversations            Conversation[] @relation("UserConversations")
 
   @@index([refreshToken])
 }
 
 model View {
-  id          String   @id @default(cuid())
-  listingId   String
-  userId      String?
-  userIp      String
-  userAgent   String
-  createdAt   DateTime @default(now())
-  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user        User?    @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  listingId String
+  userId    String?
+  userIp    String
+  userAgent String
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@unique([listingId, userId, userIp], name: "listing_user_ip")
   @@index([createdAt])
@@ -157,8 +131,7 @@ model Listing {
   yearBuilt         Int?
   latitude          Float
   longitude         Float
-  views             Int               @default(0)
-  viewHistory       View[]
+  views             Int                @default(0)
   attributes        Attribute[]
   conversations     Conversation[]     @relation("ListingConversations")
   favorites         Favorite[]
@@ -169,6 +142,7 @@ model Listing {
   notifications     Notification[]     @relation("ListingNotifications")
   realEstateDetails RealEstateDetails?
   vehicleDetails    VehicleDetails?
+  viewHistory       View[]
 
   @@index([userId])
   @@index([mainCategory])
@@ -601,6 +575,30 @@ model RealEstateDetails {
   listing               Listing  @relation(fields: [listingId], references: [id])
 
   @@index([listingId])
+}
+
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportType {
+  USER
+  LISTING
+  MESSAGE
+  COMMENT
+  OTHER
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  MISLEADING
+  OFFENSIVE
+  HARASSMENT
+  OTHER
 }
 
 enum UserRole {

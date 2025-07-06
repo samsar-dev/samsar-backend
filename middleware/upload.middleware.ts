@@ -126,19 +126,6 @@ export const processImagesMiddleware = async (
           part.mimetype,
         );
 
-        // Create a temporary file for the processed image
-        const tempFilename = `processed-${crypto.randomUUID()}.${format}`;
-        const tempFilePath = path.join(process.cwd(), "temp", tempFilename);
-
-        // Ensure temp directory exists
-        const tempDir = path.dirname(tempFilePath);
-        if (!fs.existsSync(tempDir)) {
-          fs.mkdirSync(tempDir, { recursive: true });
-        }
-
-        // Write processed buffer to temp file
-        fs.writeFileSync(tempFilePath, processedBuffer);
-
         // Log compression results
         console.log(
           `Image processed: Original: ${(buffer.length / 1024).toFixed(1)}KB, Compressed: ${(processedBuffer.length / 1024).toFixed(1)}KB, Savings: ${((1 - processedBuffer.length / buffer.length) * 100).toFixed(1)}%`,
@@ -146,15 +133,12 @@ export const processImagesMiddleware = async (
 
         const fileForUpload: ExpressMulterFile = {
           fieldname: part.fieldname,
-          originalname: part.filename || tempFilename,
+          originalname: part.filename || `image-${Date.now()}.${format}`,
           encoding: part.encoding,
           mimetype: format === "webp" ? "image/webp" : `image/${format}`,
           buffer: processedBuffer,
           size: processedBuffer.length,
-          destination: tempDir,
-          filename: tempFilename,
-          path: tempFilePath,
-        };
+        } as any;
 
         // Get user and listing IDs from request
         const userId = (request as any).user?.id;
@@ -163,21 +147,24 @@ export const processImagesMiddleware = async (
         if (!userId) {
           throw new Error('User authentication required for uploads');
         }
-        
-        if (!listingId) {
-          throw new Error('Listing ID is required for listing images');
-        }
 
-        const uploadOptions: UploadOptions = {
-          userId,
-          originalName: fileForUpload.originalname,
-          ...(listingId && { listingId })
-        };
-        
-        const uploadResult = await uploadToR2(fileForUpload, 'listing', uploadOptions);
+        // Determine upload type based on fieldname
+        let uploadType: 'avatar' | 'listing' | 'other' = 'other';
+        if (part.fieldname === 'avatar' || part.fieldname === 'profilePicture') {
+          uploadType = 'avatar';
+        } else if (listingId) {
+           uploadType = 'listing';
+         } else {
+           uploadType = 'other'; // temporary until listingId is available
+         }
 
-        // Clean up temp file
-        fs.unlinkSync(tempFilePath);
+         const uploadOptions: UploadOptions = {
+           userId,
+           originalName: fileForUpload.originalname,
+           ...(listingId && { listingId })
+         };
+        
+        const uploadResult = await uploadToR2(fileForUpload, uploadType, uploadOptions);
 
         if (uploadResult?.url) {
           const url = uploadResult.url;
@@ -292,18 +279,43 @@ export const uploadMiddleware = async (
         path: tempFilePath,
       };
 
-      // Get user ID for avatar upload
+      // Get user ID and request context
       const userId = (request as any).user?.id;
+      const listingId = (request as any).body?.listingId;
+      
       if (!userId) {
-        throw new Error('User authentication required for avatar upload');
+        throw new Error('User authentication required for file uploads');
+      }
+
+      // Determine the upload type based on the request context
+      let uploadType = 'other';
+      const isProfilePicture = ['avatar', 'profilePicture', 'profile'].includes(part.fieldname?.toLowerCase());
+      const isListingImage = part.fieldname?.toLowerCase().includes('listing') || listingId;
+      
+      if (isProfilePicture) {
+        uploadType = 'avatar';
+      } else if (isListingImage) {
+        uploadType = 'listing';
+        if (!listingId) {
+          throw new Error('Listing ID is required for listing image uploads');
+        }
       }
       
+      // Set up upload options
       const uploadOptions: UploadOptions = {
         userId,
         originalName: fileForUpload.originalname
       };
       
-      const uploadResult = await uploadToR2(fileForUpload, 'avatar', uploadOptions);
+      // Add listing ID if this is a listing image
+      if (uploadType === 'listing') {
+        uploadOptions.listingId = listingId;
+      }
+      
+      console.log(`Uploading ${uploadType} file for user ${userId}${listingId ? `, listing ${listingId}` : ''}`);
+      
+      // Upload the file to R2
+      const uploadResult = await uploadToR2(fileForUpload, uploadType, uploadOptions);
 
       // Clean up temp file
       fs.unlinkSync(tempFilePath);

@@ -15,6 +15,8 @@ import {
   uploadToR2,
 } from "../middleware/upload.middleware.js";
 import { MultipartFile } from "@fastify/multipart";
+import prisma from "../src/lib/prismaClient.js";
+import { deleteFromR2 } from "../config/cloudflareR2.js";
 
 export default async function (fastify: FastifyInstance) {
   // Create Fastify-compatible handlers
@@ -59,66 +61,109 @@ export default async function (fastify: FastifyInstance) {
         return;
       }
 
+      // Get the authenticated user ID
+      const userId = (request as any).user?.id;
+      if (!userId) {
+        throw new Error('User authentication required');
+      }
+
       // Process the multipart form data
       const parts = await request.parts();
       let profilePictureFile: MultipartFile | null = null;
       const formData: Record<string, any> = {};
+      let hasError = false;
 
       for await (const part of parts) {
-        if (part.type === "file" && part.fieldname === "profilePicture") {
-          // Store the profile picture file
-          profilePictureFile = part;
-          const buffer = await part.toBuffer();
-          const fileObj = {
-            fieldname: part.fieldname,
-            originalname: part.filename || "profile.jpg",
-            encoding: part.encoding,
-            mimetype: part.mimetype,
-            buffer: buffer,
-            size: buffer.length,
-          };
+        try {
+          if (part.type === "file" && part.fieldname === "profilePicture") {
+            // Store the profile picture file
+            profilePictureFile = part;
+            const buffer = await part.toBuffer();
+            const fileObj = {
+              fieldname: part.fieldname,
+              originalname: part.filename || "profile.jpg",
+              encoding: part.encoding,
+              mimetype: part.mimetype,
+              buffer: buffer,
+              size: buffer.length,
+            };
 
-          try {
-            const result = await uploadToR2(fileObj as any, "profilePictures");
-            formData.profilePicture = result.url;
-          } catch (uploadError) {
-            console.error("Upload error:", uploadError);
-            throw new Error("Failed to upload profile picture");
+            // First, get the current user to find the old profile picture
+            const user = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { profilePicture: true }
+            });
+
+            // Upload the new profile picture
+            const result = await uploadToR2(fileObj as any, "avatar", { 
+              userId,
+              originalName: fileObj.originalname 
+            });
+            
+            if (result && result.url) {
+              // Store the new URL in the form data
+              formData.profilePicture = result.url;
+
+              // If there was a previous profile picture, delete it
+              if (user?.profilePicture) {
+                try {
+                  // Extract the key from the URL if it's a full URL
+                  const url = new URL(user.profilePicture);
+                  const key = url.pathname.substring(1); // Remove leading slash
+                  await deleteFromR2(key);
+                  console.log(`Deleted old profile picture: ${key}`);
+                } catch (deleteError) {
+                  console.error('Error deleting old profile picture:', deleteError);
+                  // Don't fail the request if deletion fails
+                }
+              }
+            } else {
+              throw new Error('Failed to upload profile picture: No URL returned');
+            }
+          } else if (part.type === "field") {
+            // Process form fields
+            const fieldValue = await part.value;
+
+            // Handle empty fields for optional profile data
+            // Empty strings should be converted to undefined to remove the field
+            const optionalFields = [
+              "bio",
+              "phone",
+              "dateOfBirth",
+              "street",
+              "city",
+            ];
+
+            if (optionalFields.includes(part.fieldname) && fieldValue === "") {
+              // Set to undefined to remove the field completely
+              formData[part.fieldname] = undefined;
+            } else {
+              formData[part.fieldname] = fieldValue;
+            }
           }
-        } else if (part.type === "field") {
-          // Process form fields
-          const fieldValue = await part.value;
-
-          // Handle empty fields for optional profile data
-          // Empty strings should be converted to undefined to remove the field
-          const optionalFields = [
-            "bio",
-            "phone",
-            "dateOfBirth",
-            "street",
-            "city",
-          ];
-
-          if (optionalFields.includes(part.fieldname) && fieldValue === "") {
-            // Set to undefined to remove the field completely
-            formData[part.fieldname] = undefined;
-          } else {
-            formData[part.fieldname] = fieldValue;
-          }
+        } catch (error) {
+          console.error(`Error processing part ${part?.fieldname || 'unknown'}:`, error);
+          hasError = true;
+          // Continue processing other parts but mark that there was an error
         }
+      }
+
+      if (hasError) {
+        throw new Error('Error processing one or more form fields');
       }
 
       // Attach the processed data to the request
       request.body = formData;
     } catch (error) {
       console.error("Profile picture processing error:", error);
-      reply.code(500).send({
+      reply.status(500).send({
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to process profile picture",
+        status: 500,
+        error: error instanceof Error ? error.message : "Failed to process profile picture",
+        data: null
       });
+      // Make sure to return to prevent further processing
+      return reply;
     }
   };
 

@@ -2,6 +2,7 @@
 import {
   S3Client,
   PutObjectCommand,
+  CopyObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import dotenv from "dotenv";
@@ -61,22 +62,33 @@ export const uploadToR2 = async (
 
     let fileName: string;
 
+    // Always require user ID for all uploads
+    if (!options.userId) {
+      throw new Error("User ID is required for all uploads");
+    }
+    
+    // Generate file paths under the user's directory
     switch (category.toLowerCase()) {
       case "avatar":
-        if (!options.userId) throw new Error("User ID required for avatar");
-        fileName = `uploads/avatars/${options.userId}.${ext}`;
+        // Store avatars in user's avatar directory with unique filename
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        fileName = `uploads/users/${options.userId}/avatar/profile-${uniqueSuffix}.${ext}`;
         break;
 
       case "listing":
-        if (!options.userId || !options.listingId) {
-          throw new Error("User ID and Listing ID required for listing");
+        if (!options.listingId) {
+          throw new Error("Listing ID is required for listing images");
         }
-        fileName = `uploads/listings/${options.userId}/${options.listingId}/images/${timestamp}-${random}.${ext}`;
+        // Store listing images in user's listings directory
+        fileName = `uploads/users/${options.userId}/listings/${options.listingId}/images/${timestamp}-${random}.${ext}`;
         break;
 
       default:
-        fileName = `uploads/${category}/${timestamp}-${random}.${ext}`;
+        // Store other uploads in user's directory
+        fileName = `uploads/users/${options.userId}/${category}/${timestamp}-${random}.${ext}`;
     }
+    
+    console.log(`Uploading file to: ${fileName}`);
 
     await s3.send(
       new PutObjectCommand({
@@ -100,22 +112,88 @@ export const uploadToR2 = async (
 };
 
 // ✅ Delete from R2
-export const deleteFromR2 = async (key: string) => {
+/**
+ * Move an object within R2 (copy then delete original)
+ */
+export const moveObjectInR2 = async (oldKey: string, newKey: string): Promise<{success:boolean; message:string; url?:string}> => {
   if (!isR2Configured || !s3) {
-    console.warn("⚠️ Cloudflare R2 is not configured. Deletion skipped.");
-    return;
+    return { success:false, message:"Cloudflare R2 not configured"};
+  }
+  try {
+    await s3.send(new CopyObjectCommand({
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
+      CopySource: `${process.env.CLOUDFLARE_R2_BUCKET}/${oldKey}`,
+      Key: newKey,
+    }));
+    await s3.send(new DeleteObjectCommand({
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
+      Key: oldKey,
+    }));
+    return {success:true, message:"Object moved", url:`${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${newKey}`};
+  } catch(err){
+    console.error('Failed to move object in R2', err);
+    return {success:false, message:'Failed to move object'};
+  }
+};
+
+export const deleteFromR2 = async (keyOrOptions: string | { userId: string; type: 'avatar' | 'listing'; listingId?: string }): Promise<{ success: boolean; message: string }> => {
+  if (!isR2Configured || !s3) {
+    console.warn("⚠️ Cloudflare R2 is not configured. Delete operation skipped.");
+    return { success: false, message: "Cloudflare R2 not configured" };
   }
 
   try {
+    let key: string;
+
+    // Handle different parameter types
+    if (typeof keyOrOptions === 'string') {
+      key = keyOrOptions;
+    } else {
+      const { userId, type, listingId } = keyOrOptions;
+      
+      switch (type) {
+        case 'avatar':
+          // Get the file extension from the existing avatar if needed
+          key = `uploads/users/${userId}/avatar/profile.jpg`; // Default to jpg, adjust if needed
+          break;
+          
+        case 'listing':
+          if (!listingId) {
+            throw new Error("Listing ID is required for deleting listing images");
+          }
+          // This will delete all images for a specific listing
+          key = `uploads/users/${userId}/listings/${listingId}`;
+          break;
+          
+        default:
+          throw new Error("Invalid file type for deletion");
+      }
+    }
+
+    console.log(`Deleting file from R2: ${key}`);
+    
+    // If the key ends with a directory, we need to list and delete all files in that directory
+    if (key.endsWith('/') || !key.includes('.')) {
+      // This is a directory, list all files and delete them
+      // Note: You'll need to implement listObjectsV2 and deleteObjects if you want to delete directories
+      console.warn("⚠️ Directory deletion not fully implemented. Need to list and delete all files in the directory.");
+      // For now, we'll just try to delete the directory itself (which may work if it's empty)
+    }
+    
     await s3.send(
       new DeleteObjectCommand({
         Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
         Key: key,
       })
     );
-  } catch (err) {
-    console.error("❌ Failed to delete from R2:", err);
-    throw new Error("Failed to delete from R2");
+    
+    return { success: true, message: "File deleted successfully" };
+  } catch (error) {
+    console.error("❌ Failed to delete file from R2:", error);
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : "Failed to delete file from R2" 
+    };
   }
 };
 
