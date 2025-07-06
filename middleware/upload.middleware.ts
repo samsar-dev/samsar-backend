@@ -156,7 +156,19 @@ export const processImagesMiddleware = async (
           path: tempFilePath,
         };
 
-        const uploadResult = await uploadToCloudflare(fileForUpload, "listings");
+        // Get user ID from request (assuming it's available in request.user)
+        const userId = (request as any).user?.id;
+        const listingId = (request.body as any)?.listingId;
+        
+        const uploadResult = await uploadToCloudflare(
+          fileForUpload, 
+          "listing", 
+          { 
+            userId,
+            listingId,
+            originalName: fileForUpload.originalname
+          }
+        );
 
         // Clean up temp file
         fs.unlinkSync(tempFilePath);
@@ -274,7 +286,20 @@ export const uploadMiddleware = async (
         path: tempFilePath,
       };
 
-      const uploadResult = await uploadToCloudflare(fileForUpload, "listing");
+      // For avatar uploads, we expect the user ID to be available in the request
+      const userId = (request as any).user?.id;
+      if (!userId) {
+        throw new Error('User ID is required for file uploads');
+      }
+      
+      const uploadResult = await uploadToCloudflare(
+        fileForUpload, 
+        "avatar", 
+        { 
+          userId,
+          originalName: fileForUpload.originalname
+        }
+      );
 
       // Clean up temp file
       fs.unlinkSync(tempFilePath);

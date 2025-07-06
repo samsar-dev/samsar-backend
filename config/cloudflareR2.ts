@@ -36,9 +36,16 @@ export interface UploadResult {
   key?: string;
 }
 
+export interface UploadOptions {
+  userId?: string;
+  listingId?: string;
+  originalName?: string;
+}
+
 export const uploadToR2 = async (
-  file: Buffer | { buffer: Buffer; mimetype?: string },
+  file: Buffer | { buffer: Buffer; mimetype?: string; originalname?: string },
   category: string,
+  options: UploadOptions = {}
 ): Promise<UploadResult> => {
   if (!isR2Configured || !s3) {
     console.warn(
@@ -52,9 +59,37 @@ export const uploadToR2 = async (
 
   try {
     const fileBuffer = Buffer.isBuffer(file) ? file : file.buffer;
-    const fileName = `uploads/${category}/${Date.now()}-${Math.round(
-      Math.random() * 1e9,
-    )}`;
+    const originalName = (file as any).originalname || '';
+    const fileExtension = originalName.split('.').pop() || '';
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 10);
+    
+    let fileName = '';
+    
+    // Handle different file types with appropriate folder structure
+    switch (category.toLowerCase()) {
+      case 'avatar':
+        if (!options.userId) {
+          throw new Error('User ID is required for avatar uploads');
+        }
+        fileName = `uploads/avatars/${options.userId}.${fileExtension || 'jpg'}`;
+        break;
+        
+      case 'listing':
+        if (!options.listingId) {
+          throw new Error('Listing ID is required for listing uploads');
+        }
+        if (!options.userId) {
+          throw new Error('User ID is required for listing uploads');
+        }
+        const imageName = originalName || `${timestamp}-${randomString}.${fileExtension || 'jpg'}`;
+        fileName = `uploads/listings/${options.userId}/${options.listingId}/images/${imageName}`;
+        break;
+        
+      default:
+        // For other categories, use a generic structure
+        fileName = `uploads/${category}/${timestamp}-${randomString}.${fileExtension || 'bin'}`;
+    }
 
     const uploadParams = {
       Bucket: process.env.CLOUDFLARE_R2_BUCKET,
