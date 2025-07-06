@@ -7,6 +7,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportType {
+  USER
+  LISTING
+  MESSAGE
+  COMMENT
+  OTHER
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  MISLEADING
+  OFFENSIVE
+  HARASSMENT
+  OTHER
+}
+
+model Report {
+  id           String       @id @default(cuid())
+  type         ReportType
+  targetId     String
+  reason       ReportReason
+  status       ReportStatus @default(PENDING)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  // Relationships
+  reporterId   String
+  reporter     User         @relation("ReportedBy", fields: [reporterId], references: [id])
+  resolvedById String?
+  resolvedBy   User?        @relation("ResolvedReports", fields: [resolvedById], references: [id])
+  resolvedAt   DateTime?
+  
+  @@index([type, targetId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model User {
   id                       String         @id @default(cuid())
   email                    String         @unique
@@ -57,6 +103,8 @@ model User {
   notifications            Notification[]
   conversations            Conversation[] @relation("UserConversations")
   viewHistory              View[]
+  reportedIssues           Report[]       @relation("ReportedBy")
+  resolvedReports          Report[]       @relation("ResolvedReports")
 
   @@index([refreshToken])
 }
