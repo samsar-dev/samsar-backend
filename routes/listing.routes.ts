@@ -173,6 +173,16 @@ const handleAuthRoute = (
 };
 
 export default async function (fastify: FastifyInstance) {
+  // Upload images for listing (authenticated)
+  fastify.post(
+    "/:id/images",
+    { preHandler: [authenticate, processImagesMiddleware] },
+    async (req, reply) => {
+      const authReq = req as unknown as MultipartAuthRequest;
+      authReq.body = { ...(authReq.body || {}), listingId: (req.params as any).id };
+      return addListingImages(authReq, reply);
+    },
+  );
   // Remove global auth middleware and handle auth per route
 
   // Public Routes

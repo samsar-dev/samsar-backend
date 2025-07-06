@@ -11,6 +11,7 @@ import {
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2, moveObjectInR2 } from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
+import { MultipartAuthRequest } from "../types/auth.js";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
 import { UserPayload } from "../types/auth.js";
@@ -343,6 +344,39 @@ const validateListingData = (data: any): string[] => {
 
   return errors;
 };
+
+export async function addListingImages(req: MultipartAuthRequest, res: FastifyReply) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.code(401).send({ success:false, error:'Unauthorized'});
+    }
+    const { listingId } = req.body as any;
+    if (!listingId) {
+      return res.code(400).send({ success:false, error:'listingId is required'});
+    }
+    // Check ownership
+    const listing = await prisma.listing.findUnique({ where:{ id: listingId }});
+    if (!listing || listing.userId !== userId) {
+      return res.code(403).send({ success:false, error:'Forbidden'});
+    }
+
+    if (req.processedImages && req.processedImages.length>0) {
+      await prisma.image.createMany({
+        data: req.processedImages.map((img, idx)=>({
+          url: img.url,
+          order: idx,
+          listingId,
+        }))
+      });
+    }
+    const updatedImages = await prisma.image.findMany({ where:{ listingId }});
+    return res.code(201).send({ success:true, data: updatedImages });
+  } catch(err){
+    console.error('addListingImages error', err);
+    return res.code(500).send({ success:false, error: err instanceof Error? err.message:'Unknown error'});
+  }
+}
 
 export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
   const prismaClient = prisma;
