@@ -1,223 +1,301 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { PrismaClient, Prisma } from "@prisma/client";
-import { APIResponse } from "../types/api.js";
+import { PrismaClient, Prisma, ReportStatus, ReportType, ReportReason } from "@prisma/client";
+import { APIResponse, APIError } from "../types/api.js";
 
-const prisma = new PrismaClient();
+// Re-export enums from Prisma
+export { ReportStatus, ReportType, ReportReason };
 
-// Import the generated Prisma types
-import type { PrismaClient as GeneratedPrismaClient } from '@prisma/client';
+// Type for report with relations
+type ReportWithRelations = Prisma.ReportGetPayload<{
+  include: {
+    reporter: true;
+    resolvedBy: true;
+  };
+}>;
 
-// Extend the Prisma client type to include the report model
-interface CustomPrismaClient extends Omit<GeneratedPrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'> {
-  report: any; // We'll use 'any' as a fallback since TypeScript can't infer the correct type
+// Type for report create input
+type ReportCreateInput = Omit<Prisma.ReportCreateInput, 'reporter' | 'resolvedBy'> & {
+  reporter: { connect: { id: string } };
+};
+
+// Type for report statistics
+interface ReportStats {
+  total: number;
+  byStatus: { status: ReportStatus; count: number }[];
+  byType: { type: ReportType; count: number }[];
+  recent: ReportWithRelations[];
 }
 
-// Cast the Prisma client to our custom type
-const prismaWithReport = prisma as unknown as CustomPrismaClient;
-
-
-
-// Define enums as const objects for type safety
-export const ReportType = {
-  USER: 'USER',
-  LISTING: 'LISTING',
-  MESSAGE: 'MESSAGE',
-  COMMENT: 'COMMENT'
-} as const;
-export type ReportType = typeof ReportType[keyof typeof ReportType];
-
-export const ReportStatus = {
-  PENDING: 'PENDING',
-  INVESTIGATING: 'INVESTIGATING',
-  RESOLVED: 'RESOLVED',
-  DISMISSED: 'DISMISSED'
-} as const;
-export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
-
-export const ReportReason = {
-  SPAM: 'SPAM',
-  INAPPROPRIATE: 'INAPPROPRIATE',
-  MISLEADING: 'MISLEADING',
-  OFFENSIVE: 'OFFENSIVE',
-  HARASSMENT: 'HARASSMENT',
-  OTHER: 'OTHER'
-} as const;
-export type ReportReason = typeof ReportReason[keyof typeof ReportReason];
-
-// Type for raw query results
-interface StatusCount {
-  status: ReportStatus;
-  _count: number;
-}
-
-interface TypeStatusCount {
-  type: ReportType;
-  status: ReportStatus;
-  _count: number;
-}
-
+// Input types
 interface CreateReportInput {
   type: ReportType;
   targetId: string;
   reason: ReportReason;
   notes?: string;
-  createdById: string;
 }
 
 interface UpdateReportInput {
   status?: ReportStatus;
   notes?: string;
-  resolvedById?: string;
-  resolvedAt?: Date;
 }
 
-interface CreateReportBody {
-  type: ReportType;
-  targetId: string;
-  reason: ReportReason;
-  notes?: string | null;
+interface GetReportsQuery {
+  page?: number;
+  limit?: number;
+  status?: ReportStatus;
+  type?: ReportType;
+  targetId?: string;
+  reporterId?: string;
+  includeResolved?: boolean;
+}
+
+// Import the AuthRequest type
+import { AuthRequest } from '../types/auth.js';
+
+const prisma = new PrismaClient();
+
+// Define the include type for report relations
+const reportInclude = {
+  reporter: {
+    select: {
+      id: true,
+      username: true,
+      email: true,
+    },
+  },
+  resolvedBy: {
+    select: {
+      id: true,
+      username: true,
+      email: true,
+    },
+  },
+} as const;
+
+// Helper function to create API errors
+function createError(message: string, code: string = 'INTERNAL_ERROR'): APIError {
+  return { code, message };
 }
 
 export async function createReport(
-  request: FastifyRequest<{ Body: CreateReportBody }> & { user?: { id: string } },
+  request: FastifyRequest<{ Body: CreateReportInput }>,
   reply: FastifyReply,
 ) {
   try {
     const { type, targetId, reason, notes } = request.body;
-    const userId = (request as any).user?.id;
+    const userId = request.user?.id;
     
     if (!userId) {
-      return reply.code(401).send({
+      reply.status(401);
+      return {
         success: false,
-        error: 'User not authenticated',
+        error: createError('Unauthorized', 'UNAUTHORIZED'),
+        data: null,
         status: 401,
-      });
+      };
     }
 
-    // Validate report type
-    if (!Object.values(ReportType).includes(type)) {
-      return reply.code(400).send({
+    // Check if user has already reported this target
+    const existingReport = await prisma.$queryRaw`
+      SELECT * FROM "Report"
+      WHERE "reporterId" = ${userId}
+      AND "targetId" = ${targetId}
+      AND "type" = ${type}::"ReportType"
+      AND "status" IN ('PENDING', 'INVESTIGATING')
+      LIMIT 1
+    `;
+
+    if (existingReport) {
+      reply.status(400);
+      const errorResponse: APIResponse<ReportWithRelations> = {
         success: false,
-        error: 'Invalid report type',
+        error: createError('You have already reported this target', 'DUPLICATE_REPORT'),
+        data: null,
         status: 400,
-      });
+      };
+      return errorResponse;
     }
 
-    // Validate reason
-    if (!Object.values(ReportReason).includes(reason)) {
-      return reply.code(400).send({
-        success: false,
-        error: 'Invalid report reason',
-        status: 400,
-      });
+    // Create the report using raw SQL to avoid Prisma type issues
+    const createdReport = await prisma.$queryRaw<ReportWithRelations[]>`
+      WITH new_report AS (
+        INSERT INTO "Report" ("type", "targetId", reason, notes, "reporterId", status, "createdAt", "updatedAt")
+        VALUES (
+          ${type}::"ReportType",
+          ${targetId},
+          ${reason}::"ReportReason",
+          ${notes || null},
+          ${userId},
+          'PENDING'::"ReportStatus",
+          NOW(),
+          NOW()
+        )
+        RETURNING *
+      )
+      SELECT 
+        r.*,
+        json_build_object(
+          'id', u1.id,
+          'username', u1.username,
+          'email', u1.email
+        ) as reporter,
+        CASE WHEN u2.id IS NOT NULL THEN 
+          json_build_object(
+            'id', u2.id,
+            'username', u2.username,
+            'email', u2.email
+          )
+        ELSE NULL END as "resolvedBy"
+      FROM new_report r
+      LEFT JOIN "User" u1 ON r."reporterId" = u1.id
+      LEFT JOIN "User" u2 ON r."resolvedById" = u2.id
+    `;
+
+    if (!createdReport || createdReport.length === 0) {
+      throw new Error('Failed to create report');
     }
 
-    const report = await prismaWithReport.report.create({
-      data: {
-        type,
-        targetId,
-        reason,
-        notes: notes || null,
-        createdById: userId,
-        status: 'PENDING' as const,
-      },
-      include: {
-        createdBy: {
-          select: { 
-            id: true, 
-            name: true, 
-            email: true 
-          }
-        }
-      }
-    });
-
-    return reply.code(201).send({
+    const response: APIResponse<ReportWithRelations> = {
       success: true,
-      data: report,
+      data: createdReport[0],
       status: 201,
-    });
+    };
+    return response;
   } catch (error: any) {
     console.error('Error creating report:', error);
     
     let statusCode = 500;
     let errorMessage = 'Failed to create report';
     
-    if (error.code === 'P2003') { // Foreign key constraint failed
-      statusCode = 400;
-      errorMessage = 'Invalid target ID or user ID';
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        statusCode = 409;
+        errorMessage = 'A similar report already exists';
+      } else if (error.code === 'P2003') {
+        statusCode = 404;
+        errorMessage = 'Referenced user or target not found';
+      }
     }
     
-    return reply.code(statusCode).send({
+    reply.status(statusCode);
+    const errorResponse: APIResponse<ReportWithRelations> = {
       success: false,
-      error: errorMessage,
+      error: createError(errorMessage, 'REPORT_CREATION_ERROR'),
+      data: null as never, // Using never type as a fallback for error cases
       status: statusCode,
-    });
+    };
+    return errorResponse;
   }
 };
 
 export async function getReports(
-  request: FastifyRequest<{
-    Querystring: {
-      page?: number;
-      limit?: number;
-      status?: ReportStatus;
-      type?: ReportType;
-    };
-  }>,
+  request: FastifyRequest<{ Querystring: GetReportsQuery }>,
   reply: FastifyReply,
-) {
+): Promise<APIResponse<{
+  items: ReportWithRelations[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}>> {
   try {
-    const page = Number(request.query.page) || 1;
-    const limit = Math.min(Number(request.query.limit) || 10, 100);
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      type,
+      targetId,
+      reporterId,
+      includeResolved = false,
+    } = request.query;
+
     const skip = (page - 1) * limit;
+    // Build raw SQL where conditions
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
 
-    const where: any = {};
-    if (request.query.status) where.report_status = request.query.status as ReportStatus;
-    if (request.query.type) where.report_type = request.query.type as ReportType;
+    if (reporterId) {
+      conditions.push(`"reporterId" = $${paramIndex++}`);
+      params.push(reporterId);
+    }
+    if (status) {
+      conditions.push(`"status" = $${paramIndex++}::"ReportStatus"`);
+      params.push(status);
+    }
+    if (type) {
+      conditions.push(`"type" = $${paramIndex++}::"ReportType"`);
+      params.push(type);
+    }
+    if (targetId) {
+      conditions.push(`"targetId" = $${paramIndex++}`);
+      params.push(targetId);
+    }
+    if (!includeResolved) {
+      conditions.push(`("status" = 'PENDING' OR "status" = 'INVESTIGATING')`);
+    }
 
-    const [items, total] = await Promise.all([
-      prismaWithReport.report.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        include: {
-          createdBy: {
-            select: { id: true, name: true, email: true }
-          },
-          resolvedBy: {
-            select: { id: true, name: true, email: true }
-          }
-        }
-      }),
-      prismaWithReport.report.count({ where })
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Use raw queries to bypass Prisma type issues
+    const [items, totalResult] = await Promise.all([
+      prisma.$queryRaw`
+        SELECT r.*, 
+               json_build_object(
+                 'id', u1.id,
+                 'username', u1.username,
+                 'email', u1.email
+               ) as reporter,
+               CASE WHEN u2.id IS NOT NULL THEN 
+                 json_build_object(
+                   'id', u2.id,
+                   'username', u2.username,
+                   'email', u2.email
+                 )
+               ELSE NULL END as "resolvedBy"
+        FROM "Report" r
+        LEFT JOIN "User" u1 ON r."reporterId" = u1.id
+        LEFT JOIN "User" u2 ON r."resolvedById" = u2.id
+        ${Prisma.raw(whereClause)}
+        ORDER BY r."createdAt" DESC
+        LIMIT ${limit} OFFSET ${skip}
+      `,
+      prisma.$queryRaw`
+        SELECT COUNT(*) as count FROM "Report" r
+        ${Prisma.raw(whereClause)}
+      `,
     ]);
 
-    const reports = items.map(report => ({
-      ...report,
-      type: report.report_type as ReportType,
-      status: report.report_status as ReportStatus,
-      reason: report.report_reason as ReportReason
-    }));
+    const total = Number((totalResult as any)[0]?.count || 0);
 
-    reply.send({
+    const totalPages = Math.ceil(total / limit);
+
+    return {
       success: true,
       data: {
-        items: reports,
+        items: items as ReportWithRelations[],
         total,
         page,
-        totalPages: Math.ceil(total / limit),
+        limit,
+        totalPages,
       },
       status: 200,
-    });
-  } catch (error: any) {
+    };
+  } catch (error) {
     console.error('Error fetching reports:', error);
-    reply.code(500).send({
+    reply.code(500);
+    return {
       success: false,
-      error: 'Failed to fetch reports',
+      error: createError('Failed to fetch reports', 'REPORT_FETCH_ERROR'),
+      data: {
+        items: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0
+      },
       status: 500,
-    });
+    };
   }
 };
 
@@ -227,154 +305,170 @@ export async function updateReportStatus(
     Body: { status: ReportStatus; notes?: string };
   }>,
   reply: FastifyReply,
-) {
+): Promise<APIResponse<ReportWithRelations>> {
   try {
     const { id } = request.params;
     const { status, notes } = request.body;
-    const userId = (request.user as any)?.id;
+    const userId = request.user?.id;
 
-    const updateData: UpdateReportInput = { status };
-    
-    if (status === ReportStatus.RESOLVED || status === ReportStatus.DISMISSED) {
-      updateData.resolvedById = userId;
-      updateData.resolvedAt = new Date();
-    }
-    
-    if (notes !== undefined) {
-      updateData.notes = notes;
-    }
-
-    const updated = await prismaWithReport.report.update({
-      where: { id },
-      data: updateData,
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true }
-        },
-        resolvedBy: {
-          select: { id: true, name: true, email: true }
-        }
-      }
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
     });
 
-    const report = {
-      ...updated,
-      type: updated.report_type as ReportType,
-      status: updated.report_status as ReportStatus,
-      reason: updated.report_reason as ReportReason
+    if (!user || user.role !== 'ADMIN') {
+      reply.status(403);
+      const errorResponse: APIResponse<ReportWithRelations> = {
+        success: false,
+        error: createError('Only admins can update report status', 'UNAUTHORIZED'),
+        data: null as never, // Using never type as a fallback for error cases
+        status: 403,
+      };
+      return errorResponse;
+    }
+
+    const report = await prisma.report.findUnique({
+      where: { id },
+    });
+
+    if (!report) {
+      reply.status(404);
+      const notFoundResponse: APIResponse<ReportWithRelations> = {
+        success: false,
+        error: createError('Report not found', 'REPORT_NOT_FOUND'),
+        data: null as never, // Using never type as a fallback for error cases
+        status: 404,
+      };
+      return notFoundResponse;
+    }
+
+    // Update the report
+    const updateData: Prisma.ReportUpdateInput = {
+      status,
+      ...(status === 'RESOLVED' || status === 'DISMISSED' 
+        ? { 
+            resolvedBy: { connect: { id: userId } },
+            resolvedAt: new Date()
+          } 
+        : {}
+      ),
+      ...(notes ? { notes } : {}),
     };
 
-    reply.send({
+    const updatedReport = await prisma.report.update({
+      where: { id: report.id }, // Use report.id from the found report
+      data: updateData,
+      include: reportInclude,
+    });
+
+    const response: APIResponse<ReportWithRelations> = {
       success: true,
-      data: report,
+      data: updatedReport as ReportWithRelations,
       status: 200,
-    });
-  } catch (error: any) {
+    };
+    return response;
+  } catch (error) {
     console.error('Error updating report status:', error);
-    if (error.code === 'P2025') { // Record not found
-      return reply.code(404).send({
-        success: false,
-        error: 'Report not found',
-        status: 404,
-      });
-    }
-    
-    reply.code(500).send({
+    const errorResponse: APIResponse<ReportWithRelations> = {
       success: false,
-      error: 'Failed to update report',
+      error: error instanceof Prisma.PrismaClientKnownRequestError
+        ? createError('Database error', 'DATABASE_ERROR')
+        : createError('Internal server error', 'INTERNAL_SERVER_ERROR'),
+      data: null,
       status: 500,
-    });
+    };
+    reply.code(500);
+    return errorResponse;
   }
 };
 
 export async function getReportStats(
   request: FastifyRequest,
   reply: FastifyReply,
-) {
+): Promise<APIResponse<ReportStats>> {
   try {
-    // Get total counts by status with proper typing
-    const statusCounts = await prisma.$queryRaw<StatusCount[]>`
-      SELECT report_status as status, COUNT(*)::integer as _count
-      FROM reports
-      GROUP BY report_status
-    `;
+    // Get report statistics using raw queries
+    const [totalResult, byStatusResult, byTypeResult, recentResult] = await Promise.all([
+      prisma.$queryRaw`SELECT COUNT(*) as count FROM "Report"`,
+      prisma.$queryRaw`
+        SELECT "status", COUNT(*) as count
+        FROM "Report"
+        GROUP BY "status"
+      `,
+      prisma.$queryRaw`
+        SELECT "type", COUNT(*) as count
+        FROM "Report"
+        GROUP BY "type"
+      `,
+      prisma.$queryRaw`
+        SELECT r.*, 
+               json_build_object(
+                 'id', u1.id,
+                 'username', u1.username,
+                 'email', u1.email
+               ) as reporter,
+               CASE WHEN u2.id IS NOT NULL THEN 
+                 json_build_object(
+                   'id', u2.id,
+                   'username', u2.username,
+                   'email', u2.email
+                 )
+               ELSE NULL END as "resolvedBy"
+        FROM "Report" r
+        LEFT JOIN "User" u1 ON r."reporterId" = u1.id
+        LEFT JOIN "User" u2 ON r."resolvedById" = u2.id
+        ORDER BY r."createdAt" DESC
+        LIMIT 10
+      `
+    ]);
 
-    // Get counts by type and status with proper typing
-    const typeStatusCounts = await prisma.$queryRaw<TypeStatusCount[]>`
-      SELECT report_type as type, report_status as status, COUNT(*)::integer as _count
-      FROM reports
-      GROUP BY report_type, report_status
-    `;
+    const total = Number((totalResult as any)[0]?.count || 0);
+    const byStatus = (byStatusResult as any[]).map(row => ({
+      status: row.status as ReportStatus,
+      _count: Number(row.count)
+    }));
+    const byType = (byTypeResult as any[]).map(row => ({
+      type: row.type as ReportType,
+      _count: Number(row.count)
+    }));
+    const recent = recentResult as unknown as ReportWithRelations[];
 
-    // Transform the data into the expected format
-    const result = {
-      statusCounts: {
-        [ReportStatus.PENDING]: 0,
-        [ReportStatus.INVESTIGATING]: 0,
-        [ReportStatus.RESOLVED]: 0,
-        [ReportStatus.DISMISSED]: 0,
-      } as Record<ReportStatus, number>,
-      typeStatusCounts: {} as Record<ReportType, Record<ReportStatus, number>>
-    };
-
-    // Initialize all type status combinations with 0
-    Object.values(ReportType).forEach(type => {
-      result.typeStatusCounts[type] = {
-        [ReportStatus.PENDING]: 0,
-        [ReportStatus.INVESTIGATING]: 0,
-        [ReportStatus.RESOLVED]: 0,
-        [ReportStatus.DISMISSED]: 0,
-      };
-    });
-
-    // Fill in the status counts from the query
-    statusCounts?.forEach(({ status, _count }) => {
-      if (status && _count !== undefined && status in result.statusCounts) {
-        result.statusCounts[status as ReportStatus] = _count;
-      }
-    });
-
-    // Fill in the type status counts from the query
-    typeStatusCounts?.forEach(({ type, status, _count }) => {
-      if (type && status && _count !== undefined) {
-        if (!result.typeStatusCounts[type as ReportType]) {
-          result.typeStatusCounts[type as ReportType] = {} as Record<ReportStatus, number>;
-        }
-        result.typeStatusCounts[type as ReportType][status as ReportStatus] = _count;
-      }
-    });
-
-    // Calculate totals for backward compatibility
-    const total = Object.values(result.statusCounts).reduce((sum, count) => sum + count, 0);
-    
-    // Transform to the expected response format
-    const response = {
+    // Transform the result to match the ReportStats type
+    const stats: ReportStats = {
       total,
-      pending: result.statusCounts[ReportStatus.PENDING],
-      investigating: result.statusCounts[ReportStatus.INVESTIGATING],
-      resolved: result.statusCounts[ReportStatus.RESOLVED],
-      dismissed: result.statusCounts[ReportStatus.DISMISSED],
-      byType: Object.entries(ReportType).reduce((acc, [key, type]) => {
-        const typeKey = type.toLowerCase() as keyof typeof ReportType;
-        acc[typeKey] = {
-          total: Object.values(result.typeStatusCounts[type] || {}).reduce((sum, count) => sum + count, 0),
-          pending: result.typeStatusCounts[type]?.[ReportStatus.PENDING] || 0,
-        };
-        return acc;
-      }, {} as Record<string, { total: number; pending: number }>)
+      byStatus: Object.values(ReportStatus).map(status => ({
+        status,
+        count: byStatus.find(s => s.status === status)?._count || 0,
+      })),
+      byType: Object.values(ReportType).map(type => ({
+        type,
+        count: byType.find(t => t.type === type)?._count || 0,
+      })),
+      recent,
     };
 
-    reply.send({
+    const response: APIResponse<ReportStats> = {
       success: true,
-      data: response,
+      data: stats,
       status: 200,
-    });
+    };
+    return response;
   } catch (error: any) {
     console.error('Error getting report stats:', error);
-    reply.code(500).send({
+    const errorMessage = error instanceof Error ? error.message : 'Failed to get report statistics';
+    reply.code(500);
+    const errorResponse: APIResponse<ReportStats> = {
       success: false,
-      error: 'Failed to get report statistics',
+      error: createError('Failed to get report statistics', 'REPORT_STATS_ERROR'),
+      data: {
+        total: 0,
+        byStatus: [],
+        byType: [],
+        recent: []
+      },
       status: 500,
-    });
+    };
+    return errorResponse;
   }
 };
