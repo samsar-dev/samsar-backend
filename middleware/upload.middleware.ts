@@ -4,7 +4,7 @@ import { MultipartFile } from "@fastify/multipart";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
-import { uploadToR2 as uploadToCloudflare } from "../config/cloudflareR2.js";
+import { uploadToR2, type UploadOptions } from "../config/cloudflareR2.js";
 
 // Define Express.Multer.File interface for compatibility
 interface ExpressMulterFile {
@@ -156,19 +156,25 @@ export const processImagesMiddleware = async (
           path: tempFilePath,
         };
 
-        // Get user ID from request (assuming it's available in request.user)
+        // Get user and listing IDs from request
         const userId = (request as any).user?.id;
         const listingId = (request.body as any)?.listingId;
         
-        const uploadResult = await uploadToCloudflare(
-          fileForUpload, 
-          "listing", 
-          { 
-            userId,
-            listingId,
-            originalName: fileForUpload.originalname
-          }
-        );
+        if (!userId) {
+          throw new Error('User authentication required for uploads');
+        }
+        
+        if (!listingId) {
+          throw new Error('Listing ID is required for listing images');
+        }
+
+        const uploadOptions: UploadOptions = {
+          userId,
+          originalName: fileForUpload.originalname,
+          ...(listingId && { listingId })
+        };
+        
+        const uploadResult = await uploadToR2(fileForUpload, 'listing', uploadOptions);
 
         // Clean up temp file
         fs.unlinkSync(tempFilePath);
@@ -286,20 +292,18 @@ export const uploadMiddleware = async (
         path: tempFilePath,
       };
 
-      // For avatar uploads, we expect the user ID to be available in the request
+      // Get user ID for avatar upload
       const userId = (request as any).user?.id;
       if (!userId) {
-        throw new Error('User ID is required for file uploads');
+        throw new Error('User authentication required for avatar upload');
       }
       
-      const uploadResult = await uploadToCloudflare(
-        fileForUpload, 
-        "avatar", 
-        { 
-          userId,
-          originalName: fileForUpload.originalname
-        }
-      );
+      const uploadOptions: UploadOptions = {
+        userId,
+        originalName: fileForUpload.originalname
+      };
+      
+      const uploadResult = await uploadToR2(fileForUpload, 'avatar', uploadOptions);
 
       // Clean up temp file
       fs.unlinkSync(tempFilePath);
