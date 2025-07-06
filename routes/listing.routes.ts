@@ -14,6 +14,7 @@ import {
 import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType } from "../types/enums.js";
 import { filterListingDetails } from "../utils/listing.utils.js";
+import { addListingImages } from "../controllers/listing.controller.js";
 interface ListingQuery {
   mainCategory?: string;
   subCategory?: string;

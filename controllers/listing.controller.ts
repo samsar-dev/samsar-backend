@@ -16,18 +16,17 @@ import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
 import { UserPayload } from "../types/auth.js";
 
-// Extend Fastify request with custom properties
+import { UserRole } from "../types/auth.js";
+
+// Extend Fastify request with processedImages
 declare module "fastify" {
   interface FastifyRequest {
-    user?: UserPayload;
     processedImages?: Array<{
       url: string;
       order: number;
     }>;
   }
 }
-
-import { UserRole } from "../types/auth.js";
 
 interface AuthenticatedUser {
   id: string;
@@ -79,7 +78,7 @@ interface ListingResponse {
     interiorColor?: string;
     engine?: string;
     warranty?: string;
-    serviceHistory?: string;
+    serviceHistory?: string[];
     previousOwners?: number;
     registrationStatus?: string;
   } | null;
