@@ -201,7 +201,24 @@ await fastify.register(import("@fastify/etag"), {
 
 // CORS
 await fastify.register(cors, {
-  origin: true, // Allow all origins in development
+  origin: (origin, cb) => {
+    const allowedOrigins = [
+      // Production
+      "https://samsar.app",
+      "https://www.samsar.app",
+      "https://samsar-frontend.vercel.app",
+      // Development
+      "http://localhost:3000",
+      "http://127.0.0.1:3000"
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Not allowed by CORS"), false);
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: [
