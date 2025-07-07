@@ -1,6 +1,6 @@
-# Tijara Backend
+# Samsar Backend
 
-This is the backend for the Tijara marketplace, responsible for managing user authentication, listings, and transactions.
+This is the backend for the Samsar marketplace, responsible for managing user authentication, listings, and transactions.
 
 ## Features
 

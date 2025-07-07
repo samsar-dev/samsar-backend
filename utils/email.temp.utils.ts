@@ -68,9 +68,9 @@ export const sendVerificationEmail = async (
             `;
 
     transporter.sendMail({
-      from: "no-reply@tijara.com",
+      from: "no-reply@samsar.com",
       to: email,
-      subject: "Tijara verification email",
+      subject: "Samsar verification email",
       html: htmlContent,
     });
 
@@ -93,19 +93,19 @@ export const sendUserLoginEmail = async (userDetails: {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
         <h2 style="color: #333; text-align: center;">Login Notification</h2>
         <p>Hello${userDetails.name ? ` ${userDetails.name}` : ""},</p>
-        <p>We noticed a login to your Tijara account with the following details:</p>
+        <p>We noticed a login to your Samsar account with the following details:</p>
         <ul>
           <li><strong>Username:</strong> ${userDetails.username}</li>
           <li><strong>Email:</strong> ${userDetails.email}</li>
         </ul>
         <p>If this was you, no action is needed.</p>
         <p>If you did not perform this login, please reset your password immediately.</p>
-        <p style="margin-top: 20px;">– The Tijara Team</p>
+        <p style="margin-top: 20px;">– The Samsar Team</p>
       </div>
     `;
 
     await transporter.sendMail({
-      from: "no-reply@tijara.com",
+      from: "no-reply@samsar.com",
       to: userDetails.email,
       subject: "New Login Detected",
       html: htmlContent,
@@ -140,7 +140,7 @@ export const sendNewMessageNotificationEmail = async (
 
         <div style="padding: 20px;">
           <p>Hi ${recipientName},</p>
-          <p><strong>${senderName}</strong> just sent you a new message on <strong>Tijara</strong>.</p>
+          <p><strong>${senderName}</strong> just sent you a new message on <strong>Samsar</strong>.</p>
           <p>Click the button below to read it:</p>
 
           <div style="text-align: center; margin: 30px 0;">
@@ -157,15 +157,15 @@ export const sendNewMessageNotificationEmail = async (
           </div>
 
           <p style="color: #888;">If you’re not expecting this, you can ignore this email.</p>
-          <p style="margin-top: 40px;">– The Tijara Team</p>
+          <p style="margin-top: 40px;">– The Samsar Team</p>
         </div>
       </div>
     `;
 
     await transporter.sendMail({
-      from: "no-reply@tijara.com",
+      from: "no-reply@samsar.com",
       to: recipientEmail,
-      subject: "You've got a new message on Tijara!",
+      subject: "You've got a new message on Samsar!",
       html: htmlContent,
     });
 

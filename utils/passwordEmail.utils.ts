@@ -61,7 +61,7 @@ export const sendPasswordChangeEmail = async (
         <p>This verification code will expire in 24 hours.</p>
         <p>If you did not request a password change, please secure your account by changing your password immediately.</p>
         <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;">
-        <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Tijara App. All rights reserved.</p>
+        <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Samsar App. All rights reserved.</p>
       </div>
     `;
 

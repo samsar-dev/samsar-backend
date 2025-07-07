@@ -62,8 +62,8 @@ const generateTokens = (user: {
     jwtSecret,
     {
       algorithm: "HS256",
-      audience: "tijara-app",
-      issuer: "tijara-api",
+      audience: "samsar-app",
+      issuer: "samsar-api",
     },
   );
 
@@ -78,8 +78,8 @@ const generateTokens = (user: {
     jwtSecret,
     {
       algorithm: "HS256",
-      audience: "tijara-app",
-      issuer: "tijara-api",
+      audience: "samsar-app",
+      issuer: "samsar-api",
     },
   );
 
@@ -337,7 +337,7 @@ export const register = async (
     //   sameSite: isProduction ? "strict" : "lax",
     //   path: "/",
     //   maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-    //   domain: isProduction ? ".tijara-app.com" : undefined,
+    //   domain: isProduction ? ".samsar.app" : undefined,
     // });
 
     // // Set HTTP-only cookie for access token (15 minutes)
@@ -347,7 +347,7 @@ export const register = async (
     //   sameSite: isProduction ? "strict" : "lax",
     //   path: "/",
     //   maxAge: 15 * 60, // 15 minutes in seconds
-    //   domain: isProduction ? ".tijara-app.com" : undefined,
+    //   domain: isProduction ? ".samsar.app" : undefined,
     // });
 
     // // Still return tokens in response for backward compatibility
@@ -701,7 +701,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       sameSite: isProduction ? "strict" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
+      domain: isProduction ? ".samsar.app" : undefined,
     });
 
     // Set HTTP-only cookie for access token (15 minutes)
@@ -711,7 +711,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       sameSite: isProduction ? "strict" : "lax",
       path: "/",
       maxAge: 15 * 60, // 15 minutes in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
+      domain: isProduction ? ".samsar.app" : undefined,
     });
 
     // Set secure HTTP-only cookie with refresh token (30 days)
@@ -721,7 +721,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       sameSite: isProduction ? "none" : "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
+      domain: isProduction ? ".samsar.app" : undefined,
     });
 
     // Set access token in cookie (short-lived, 30 days)
@@ -731,7 +731,7 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       sameSite: isProduction ? "strict" : "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
+      domain: isProduction ? ".samsar.app" : undefined,
     });
 
     if (fullUser.loginNotifications)
@@ -994,7 +994,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       sameSite: isProduction ? "none" : "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
+      domain: isProduction ? ".samsar.app" : undefined,
     });
 
     // Set access token in cookie (30 days)
@@ -1004,7 +1004,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       sameSite: isProduction ? "strict" : "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-      domain: isProduction ? ".tijara-app.com" : undefined,
+      domain: isProduction ? ".samsar.app" : undefined,
     });
 
     return reply.send({
@@ -1052,7 +1052,7 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
     // Clear all auth cookies
     const cookieOptions = {
       path: "/",
-      domain: isProduction ? ".tijara-app.com" : undefined,
+      domain: isProduction ? ".samsar.app" : undefined,
       secure: isProduction,
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",

@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendEmail = async (options: EmailOptions) => {
-  const from = '"Tijara App" <noreply@tijara.app>';
+  const from = '"Samsar App" <noreply@samsar.app>';
 
   const mailOptions = {
     from,

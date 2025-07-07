@@ -156,7 +156,7 @@ export const sendVerificationEmail = async (
         <p>This verification code and link will expire in 24 hours.</p>
         <p>If you didn't sign up for an account, you can safely ignore this email.</p>
         <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;">
-        <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Tijara App. All rights reserved.</p>
+        <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Samsar App. All rights reserved.</p>
       </div>
     `;
 
