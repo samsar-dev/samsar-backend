@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { upload } from "../middleware/upload.middleware.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import dotenv from "dotenv";
+import { error } from "node:console";
 dotenv.config();
 
 export default async function (fastify: FastifyInstance) {
@@ -12,6 +13,14 @@ export default async function (fastify: FastifyInstance) {
       try {
         // Note: Fastify file handling will need to be configured separately
         // This is a placeholder for the file upload handling
+
+        if (!request.body) {
+          reply.code(400).send({
+            error: "Request body is empty",
+          });
+        }
+        console.log("🔍 Initial request body:", request.body);
+
         const file = (request as any).file; // This will need proper Fastify multipart handling
 
         if (!file) {

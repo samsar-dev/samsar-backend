@@ -1497,6 +1497,7 @@ export default async function (fastify: FastifyInstance) {
   fastify.put<{ Params: { id: string } }>(
     "/:id",
     {
+      onRequest: authenticate,
       preHandler: processImagesMiddleware,
     },
     handleAuthRoute(
