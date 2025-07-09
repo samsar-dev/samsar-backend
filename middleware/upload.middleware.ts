@@ -143,28 +143,38 @@ export const processImagesMiddleware = async (
         // Get user and listing IDs from request
         const userId = (request as any).user?.id;
         const listingId = (request.body as any)?.listingId;
-        
+
         if (!userId) {
-          throw new Error('User authentication required for uploads');
+          throw new Error("User authentication required for uploads");
         }
 
         // Determine upload type based on fieldname
-        let uploadType: 'avatar' | 'listing' | 'other' = 'other';
-        if (part.fieldname === 'avatar' || part.fieldname === 'profilePicture') {
-          uploadType = 'avatar';
+        let uploadType: "avatar" | "listing" | "other" = "other";
+        if (
+          part.fieldname === "avatar" ||
+          part.fieldname === "profilePicture"
+        ) {
+          uploadType = "avatar";
         } else if (listingId) {
-           uploadType = 'listing';
-         } else {
-           uploadType = 'other'; // temporary until listingId is available
-         }
+          uploadType = "listing";
+        } else {
+          uploadType = "other"; // temporary until listingId is available
+        }
 
-         const uploadOptions: UploadOptions = {
-           userId,
-           originalName: fileForUpload.originalname,
-           ...(listingId && { listingId })
-         };
-        
-        const uploadResult = await uploadToR2(fileForUpload, uploadType, uploadOptions);
+        const uploadOptions: UploadOptions = {
+          userId,
+          originalName: fileForUpload.originalname,
+          ...(listingId && { listingId }),
+        };
+        console.log("fileForUpload:", fileForUpload);
+        console.log("uploadType:", uploadType);
+        console.log("uploadOptions:", uploadOptions);
+
+        const uploadResult = await uploadToR2(
+          fileForUpload,
+          uploadType,
+          uploadOptions,
+        );
 
         if (uploadResult?.url) {
           const url = uploadResult.url;
@@ -282,40 +292,49 @@ export const uploadMiddleware = async (
       // Get user ID and request context
       const userId = (request as any).user?.id;
       const listingId = (request as any).body?.listingId;
-      
+
       if (!userId) {
-        throw new Error('User authentication required for file uploads');
+        throw new Error("User authentication required for file uploads");
       }
 
       // Determine the upload type based on the request context
-      let uploadType = 'other';
-      const isProfilePicture = ['avatar', 'profilePicture', 'profile'].includes(part.fieldname?.toLowerCase());
-      const isListingImage = part.fieldname?.toLowerCase().includes('listing') || listingId;
-      
+      let uploadType = "other";
+      const isProfilePicture = ["avatar", "profilePicture", "profile"].includes(
+        part.fieldname?.toLowerCase(),
+      );
+      const isListingImage =
+        part.fieldname?.toLowerCase().includes("listing") || listingId;
+
       if (isProfilePicture) {
-        uploadType = 'avatar';
+        uploadType = "avatar";
       } else if (isListingImage) {
-        uploadType = 'listing';
+        uploadType = "listing";
         if (!listingId) {
-          throw new Error('Listing ID is required for listing image uploads');
+          throw new Error("Listing ID is required for listing image uploads");
         }
       }
-      
+
       // Set up upload options
       const uploadOptions: UploadOptions = {
         userId,
-        originalName: fileForUpload.originalname
+        originalName: fileForUpload.originalname,
       };
-      
+
       // Add listing ID if this is a listing image
-      if (uploadType === 'listing') {
+      if (uploadType === "listing") {
         uploadOptions.listingId = listingId;
       }
-      
-      console.log(`Uploading ${uploadType} file for user ${userId}${listingId ? `, listing ${listingId}` : ''}`);
-      
+
+      console.log(
+        `Uploading ${uploadType} file for user ${userId}${listingId ? `, listing ${listingId}` : ""}`,
+      );
+
       // Upload the file to R2
-      const uploadResult = await uploadToR2(fileForUpload, uploadType, uploadOptions);
+      const uploadResult = await uploadToR2(
+        fileForUpload,
+        uploadType,
+        uploadOptions,
+      );
 
       // Clean up temp file
       fs.unlinkSync(tempFilePath);
