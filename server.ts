@@ -207,9 +207,13 @@ await fastify.register(cors, {
       "https://samsar.app",
       "https://www.samsar.app",
       "https://samsar-frontend.vercel.app",
+      "https://samsar-frontend-production.up.railway.app",
+      "https://samsar-backend-production.up.railway.app",
       // Development
       "http://localhost:3000",
-      "http://127.0.0.1:3000"
+      "http://127.0.0.1:3000",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests)
