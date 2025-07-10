@@ -114,6 +114,7 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
     userId: listing.userId,
+    views: listing.views,
     details: details,
     listingAction: listing.listingAction,
     status: listing.status,

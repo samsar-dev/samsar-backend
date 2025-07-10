@@ -191,6 +191,7 @@ export interface ListingBase {
   title: string;
   description: string;
   price: number;
+  views: number;
   category: {
     mainCategory: ListingCategory;
     subCategory: VehicleType | PropertyType;
