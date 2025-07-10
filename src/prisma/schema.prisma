@@ -132,6 +132,7 @@ model Listing {
   latitude          Float
   longitude         Float
   views             Int                @default(0)
+  viewUsersId       String[]
   attributes        Attribute[]
   conversations     Conversation[]     @relation("ListingConversations")
   favorites         Favorite[]
