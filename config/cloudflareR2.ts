@@ -2,6 +2,7 @@
 import {
   S3Client,
   PutObjectCommand,
+  PutBucketCorsCommand,
   CopyObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
@@ -90,14 +91,45 @@ export const uploadToR2 = async (
     
     console.log(`Uploading file to: ${fileName}`);
 
+    // Set cache control headers (1 year for images, 1 hour for other files)
+    const isImage = (file as any).mimetype?.startsWith('image/');
+    const cacheControl = isImage 
+      ? 'public, max-age=31536000, immutable' // 1 year for images
+      : 'public, max-age=3600'; // 1 hour for other files
+
     await s3.send(
       new PutObjectCommand({
         Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
         Key: fileName,
         Body: fileBuffer,
         ContentType: (file as any).mimetype || "application/octet-stream",
+        CacheControl: cacheControl,
+        // Enable CORS for all origins
+        ACL: 'public-read',
       })
     );
+
+    // Set CORS configuration on the bucket (idempotent operation)
+    try {
+      await s3.send(
+        new PutBucketCorsCommand({
+          Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
+          CORSConfiguration: {
+            CORSRules: [
+              {
+                AllowedHeaders: ["*"],
+                AllowedMethods: ["GET", "HEAD"],
+                AllowedOrigins: ["*"],
+                ExposeHeaders: ["ETag"],
+                MaxAgeSeconds: 3000,
+              },
+            ],
+          },
+        })
+      );
+    } catch (error) {
+      console.warn("⚠️ Could not update CORS configuration. This is normal if you don't have permissions.", error);
+    }
 
     return {
       success: true,
