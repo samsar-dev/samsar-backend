@@ -69,10 +69,38 @@ export const authenticate = async (
       });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "your-secret-key",
-    ) as JWTPayload;
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured');
+      return reply.code(500).send({
+        success: false,
+        error: {
+          code: 'CONFIGURATION_ERROR',
+          message: 'Server configuration error',
+        },
+      });
+    }
+
+    let decoded: JWTPayload;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET) as JWTPayload;
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return reply.code(401).send({
+          success: false,
+          error: {
+            code: 'TOKEN_EXPIRED',
+            message: 'Your session has expired',
+          },
+        });
+      }
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or malformed token',
+        },
+      });
+    }
 
     // Get user from database
     const user = await prisma.user.findUnique({

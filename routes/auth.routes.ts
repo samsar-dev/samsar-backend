@@ -20,6 +20,7 @@ import {
   type LoginBody,
 } from "../middleware/validation.middleware.js";
 import { authenticate } from "../middleware/auth.js";
+import { authRateLimit, rateLimitConfig, rateLimitPlugin } from "../middleware/rateLimit.js";
 
 // Request type definitions
 interface RegisterRequest extends FastifyRequest {
@@ -31,10 +32,20 @@ interface LoginRequest extends FastifyRequest {
 }
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  // Register route with schema validation
+  // Apply global rate limiting to all auth routes
+  fastify.register(rateLimitPlugin, rateLimitConfig);
+
+  // Register route with schema validation and stricter rate limiting
   fastify.post<{ Body: RegisterBody }>(
     "/register",
     {
+      config: {
+        rateLimit: {
+          ...authRateLimit,
+          timeWindow: '1 hour', // 1 hour window for registration
+          max: 5 // Only 5 registration attempts per hour
+        }
+      },
       schema: {
         body: {
           type: "object",
@@ -72,10 +83,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
   );
 
-  // Login route with schema validation
+  // Login route with schema validation and rate limiting
   fastify.post<{ Body: LoginBody }>(
     "/login",
     {
+      config: {
+        rateLimit: {
+          ...authRateLimit,
+          timeWindow: '15 minutes',
+          max: 10 // 10 login attempts per 15 minutes
+        }
+      },
       schema: {
         body: {
           type: "object",
@@ -100,6 +118,43 @@ export default async function authRoutes(fastify: FastifyInstance) {
           error: {
             code: "LOGIN_ERROR",
             message: error.message || "Invalid credentials",
+          },
+        });
+      }
+    },
+  );
+
+  // Password reset request with rate limiting
+  fastify.post(
+    "/forgot-password",
+    {
+      config: {
+        rateLimit: {
+          ...authRateLimit,
+          timeWindow: '1 hour',
+          max: 3 // Only 3 password reset attempts per hour
+        }
+      },
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            email: { type: "string", format: "email" },
+          },
+          required: ["email"],
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const isValid = await validate(request, reply, LoginSchema);
+        if (!isValid) return reply;
+      } catch (error: any) {
+        reply.code(500).send({
+          success: false,
+          error: {
+            code: "PASSWORD_RESET_ERROR",
+            message: error.message || "Failed to reset password",
           },
         });
       }
@@ -314,10 +369,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
   );
 
-  // Add resend verification route
+  // Resend verification email with rate limiting
   fastify.post(
     "/resend-verification",
     {
+      config: {
+        rateLimit: {
+          ...authRateLimit,
+          timeWindow: '1 hour',
+          max: 3 // Only 3 verification email requests per hour
+        }
+      },
       schema: {
         body: {
           type: "object",
