@@ -199,46 +199,15 @@ await fastify.register(import("@fastify/etag"), {
   weak: true, // Use weak ETags for better compatibility
 });
 
-// CORS
-await fastify.register(cors, {
-  origin: (origin, cb) => {
-    const allowedOrigins = [
-      // Production
-      "https://samsar.app",
-      "https://www.samsar.app",
-      "https://samsar-frontend.vercel.app",
-      "https://samsar-frontend-production.up.railway.app",
-      "https://samsar-backend-production.up.railway.app",
-      "https://api.samsar.app",
-      // Development
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:5173",
-      "http://127.0.0.1:5173"
-    ];
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.includes(origin)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Not allowed by CORS"), false);
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-    "Access-Control-Allow-Headers",
-    "Access-Control-Allow-Origin",
-    "Access-Control-Allow-Credentials",
-  ],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 600,
-});
+// CORS - Temporarily commented out for testing
+// await fastify.register(cors, {
+//   origin: true,  // Allow all origins for testing
+//   credentials: true,
+//   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+//   allowedHeaders: "*",
+//   exposedHeaders: ["Content-Range", "X-Content-Range"],
+//   maxAge: 600,
+// });
 
 // Logging (only development)
 if (process.env.NODE_ENV === "development") {
