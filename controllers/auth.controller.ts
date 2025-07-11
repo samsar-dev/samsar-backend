@@ -2,14 +2,8 @@ import bcrypt from "bcryptjs";
 import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 import prisma from "../src/lib/prismaClient.js";
-import { UserWithVerification } from "../utils/email.utils.js";
-import {
-  createVerificationToken,
-  sendVerificationEmail,
-  generateVerificationCode,
-} from "../utils/email.utils.js";
 import { sendPasswordChangeEmail } from "../utils/passwordEmail.utils.js";
-// Temporary email utilities (new implementation)
+// Email utilities
 import {
   createVerificationToken as verifyTokenTemp,
   sendVerificationEmail as sendEmail,
@@ -1111,7 +1105,14 @@ export const verifyEmailCode = async (
         verificationCode: true,
         verificationTokenExpires: true,
       },
-    })) as UserWithVerification;
+    })) as {
+      id: string;
+      email: string;
+      emailVerified: boolean | null;
+      verificationToken: string | null;
+      verificationCode: string | null;
+      verificationTokenExpires: Date | null;
+    };
 
     if (!user) {
       return reply.status(404).send({
@@ -1220,14 +1221,13 @@ export const sendPasswordChangeVerification = async (
     }
 
     // Generate a verification code
-    const verificationCode = generateVerificationCode();
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Store the verification code in the database
     await prisma.user.update({
       where: { email },
       data: {
-        // @ts-ignore - verificationCode exists in the Prisma schema
-        verificationCode: verificationCode,
+        verificationCode,
         verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       },
     });
