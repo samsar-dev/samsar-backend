@@ -199,15 +199,15 @@ await fastify.register(import("@fastify/etag"), {
   weak: true, // Use weak ETags for better compatibility
 });
 
-// CORS - Temporarily commented out for testing
-// await fastify.register(cors, {
-//   origin: true,  // Allow all origins for testing
-//   credentials: true,
-//   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-//   allowedHeaders: "*",
-//   exposedHeaders: ["Content-Range", "X-Content-Range"],
-//   maxAge: 600,
-// });
+// CORS - Allow all origins for testing
+await fastify.register(cors, {
+  origin: true,  // Allow all origins
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: "*",
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  maxAge: 600,
+});
 
 // Logging (only development)
 if (process.env.NODE_ENV === "development") {
