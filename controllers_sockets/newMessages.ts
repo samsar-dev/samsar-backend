@@ -10,64 +10,39 @@ import {
 import { Prisma } from "@prisma/client";
 import { sendNewMessageNotificationEmail } from "../utils/email.temp.utils.js";
 
-async function sendMessageNotifications({
+export const newMessages = async ({
   content,
   senderId,
   recipientId,
   conversationId,
   createdAt,
-}: NewMessageData) {
+}: NewMessageData) => {
+  let messageNotifications = true;
   try {
-    // Get recipient's notification preferences and email
-    const [recipient, sender] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: recipientId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          messageNotifications: true,
-          showEmail: true,
-        },
-      }),
-      prisma.user.findUnique({
-        where: { id: senderId },
-        select: {
-          name: true,
-        },
-      }),
-    ]);
+    const user = await prisma.user.findUnique({
+      where: {
+        id: recipientId,
+      },
+      select: {
+        messageNotifications: true,
+      },
+    });
+    if (user && user.messageNotifications) {
+      messageNotifications = user.messageNotifications;
+    }
 
-    // If recipient has notifications enabled, send both socket and email notifications
-    if (recipient?.messageNotifications) {
-      // Send socket notification
-      await newMessagesHeplerFun({
+    if (messageNotifications)
+      newMessagesHeplerFun({
         content,
         senderId,
         recipientId,
         conversationId,
         createdAt,
       });
-
-      // Send email notification if recipient has email visible
-      if (recipient.email && recipient.showEmail && sender?.name) {
-        try {
-          await sendNewMessageNotificationEmail(recipient.email, {
-            senderName: sender.name,
-            recipientName: recipient.name || 'there',
-            conversationId,
-          });
-        } catch (emailError) {
-          console.error('Failed to send email notification:', emailError);
-        }
-      }
-    }
   } catch (err) {
-    console.error('Error in message notifications:', err);
+    console.log(err);
   }
-}
-
-export const newMessages = sendMessageNotifications;
+};
 
 export const newMessagesHeplerFun = async ({
   content,
