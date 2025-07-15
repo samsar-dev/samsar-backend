@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config";
 import { UserPayload } from "../types/auth";
+import { SESSION_COOKIE_NAME, REFRESH_COOKIE_NAME } from "./session.middleware";
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -26,10 +27,10 @@ const extractToken = (request: FastifyRequest): string | null => {
     return authHeader.substring(7);
   }
 
-  // Try cookie next
+  // Try session cookie next
   const cookies = request.headers.cookie;
   if (cookies) {
-    const match = cookies.match(/jwt=([^;]+)/);
+    const match = cookies.match(`${SESSION_COOKIE_NAME}=([^;]+)`);
     if (match) {
       return decodeURIComponent(match[1]);
     }

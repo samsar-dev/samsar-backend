@@ -9,6 +9,8 @@ import {
   sendVerificationEmail as sendEmail,
   sendUserLoginEmail,
 } from "../utils/email.temp.utils.js";
+// Session management
+import { setSessionCookie, setRefreshCookie, clearSessionCookies, SESSION_COOKIE_NAME, REFRESH_COOKIE_NAME } from "../middleware/session.middleware.js";
 
 // Define JWT user interface
 interface JWTUser {
@@ -302,47 +304,39 @@ export const register = async (
     }
 
     // Generate tokens with the actual user ID
-    // const tokens = generateTokens({
-    //   id: user.id,
-    //   email: user.email,
-    //   username: user.username,
-    //   role: user.role,
-    // });
+    const tokens = generateTokens({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    });
 
     // Update user with the correct refresh token
-    // const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     // Using raw SQL to update the user with the refresh token
     // This is a workaround for the Prisma type issues
-    // await prisma.$executeRaw`
-    //   UPDATE "User"
-    //   SET "refreshToken" = ${tokens.refreshToken},
-    //       "refreshTokenExpiresAt" = ${expiryDate}
-    //   WHERE id = ${user.id}
-    // `;
+    await prisma.$executeRaw`
+      UPDATE "User"
+      SET "refreshToken" = ${tokens.refreshToken},
+          "refreshTokenExpiresAt" = ${expiryDate}
+      WHERE id = ${user.id}
+    `;
 
-    // Set secure cookies for tokens
-    // const isProduction = process.env.NODE_ENV === "production";
+    // Set session cookies using middleware
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieOptions = {
+      path: "/",
+      domain: isProduction ? ".samsar.app" : undefined,
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: isProduction ? "strict" : "lax",
+    } as const;
 
-    // // Set HTTP-only cookie for refresh token (7 days)
-    // reply.setCookie("refresh_token", tokens.refreshToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: isProduction ? "strict" : "lax",
-    //   path: "/",
-    //   maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-    //   domain: isProduction ? ".samsar.app" : undefined,
-    // });
-
-    // // Set HTTP-only cookie for access token (15 minutes)
-    // reply.setCookie("access_token", tokens.accessToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: isProduction ? "strict" : "lax",
-    //   path: "/",
-    //   maxAge: 15 * 60, // 15 minutes in seconds
-    //   domain: isProduction ? ".samsar.app" : undefined,
-    // });
+    // Set access token cookie
+    setSessionCookie(reply, tokens.accessToken, 15 * 60);
+    // Set refresh token cookie
+    setRefreshCookie(reply, tokens.refreshToken, 7 * 24 * 60 * 60);
 
     // // Still return tokens in response for backward compatibility
     // return reply.code(201).send({
@@ -685,48 +679,9 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       `User ${fullUser.id} (${fullUser.email}) logged in successfully from IP ${clientIp}`,
     );
 
-    // Set secure cookies for tokens
-    const isProduction = process.env.NODE_ENV === "production";
-
-    // Set HTTP-only cookie for refresh token (7 days)
-    reply.setCookie("refresh_token", tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-      domain: isProduction ? ".samsar.app" : undefined,
-    });
-
-    // Set HTTP-only cookie for access token (15 minutes)
-    reply.setCookie("access_token", tokens.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
-      path: "/",
-      maxAge: 15 * 60, // 15 minutes in seconds
-      domain: isProduction ? ".samsar.app" : undefined,
-    });
-
-    // Set secure HTTP-only cookie with refresh token (30 days)
-    reply.setCookie("refreshToken", tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-      domain: isProduction ? ".samsar.app" : undefined,
-    });
-
-    // Set access token in cookie (short-lived, 30 days)
-    reply.setCookie("accessToken", tokens.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "strict" : "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-      domain: isProduction ? ".samsar.app" : undefined,
-    });
+    // Set session cookies using our middleware
+    setSessionCookie(reply, tokens.accessToken, 15 * 60); // 15 minutes
+    setRefreshCookie(reply, tokens.refreshToken, 7 * 24 * 60 * 60); // 7 days
 
     if (fullUser.loginNotifications)
       sendUserLoginEmail({
@@ -979,27 +934,20 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       WHERE "id" = ${user.id}
     `;
 
+    // Set session cookies using middleware
     const isProduction = process.env.NODE_ENV === "production";
-
-    // Set secure HTTP-only cookie with refresh token (30 days)
-    reply.setCookie("refreshToken", tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
+    const cookieOptions = {
       path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
       domain: isProduction ? ".samsar.app" : undefined,
-    });
-
-    // Set access token in cookie (30 days)
-    reply.setCookie("accessToken", tokens.accessToken, {
-      httpOnly: true,
       secure: isProduction,
+      httpOnly: true,
       sameSite: isProduction ? "strict" : "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
-      domain: isProduction ? ".samsar.app" : undefined,
-    });
+    } as const;
+
+    // Set access token cookie
+    setSessionCookie(reply, tokens.accessToken, 15 * 60);
+    // Set refresh token cookie
+    setRefreshCookie(reply, tokens.refreshToken, 7 * 24 * 60 * 60);
 
     return reply.send({
       success: true,
@@ -1043,19 +991,8 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
 
     const isProduction = process.env.NODE_ENV === "production";
 
-    // Clear all auth cookies
-    const cookieOptions = {
-      path: "/",
-      domain: isProduction ? ".samsar.app" : undefined,
-      secure: isProduction,
-      httpOnly: true,
-      sameSite: isProduction ? "none" : "lax",
-    } as const;
-
-    // Clear all authentication cookies
-    reply.clearCookie("accessToken", cookieOptions);
-    reply.clearCookie("refreshToken", cookieOptions);
-    reply.clearCookie("jwt", cookieOptions);
+    // Clear session cookies using middleware
+    clearSessionCookies(reply);
 
     return reply.send({
       success: true,
