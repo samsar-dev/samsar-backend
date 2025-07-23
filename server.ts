@@ -80,34 +80,83 @@ export const io = new SocketIOServer(httpServer, {
 // BEFORE listen, decorate Fastify
 fastify.decorate("io", io);
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   console.log("Incoming socket headers:", socket.handshake.headers);
+  console.log("Socket handshake cookies:", socket.handshake.headers.cookie);
+  
   try {
-    const tokenWithBearer =
-      socket.handshake.headers.authorization ||
-      socket.handshake.auth.token ||
-      socket.handshake.query.token;
-
-    if (!tokenWithBearer) {
-      return next(new Error("Token missing"));
+    let token: string | undefined;
+    
+    // First check Authorization header
+    const authHeader = socket.handshake.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log('✅ Socket Auth - Token found in Authorization header');
+    }
+    
+    // If no token in header, check cookies (parse manually since socket.io doesn't parse cookies)
+    if (!token && socket.handshake.headers.cookie) {
+      const cookies = socket.handshake.headers.cookie
+        .split(';')
+        .reduce((acc: Record<string, string>, cookie) => {
+          const [key, value] = cookie.trim().split('=');
+          if (key && value) {
+            acc[key] = decodeURIComponent(value);
+          }
+          return acc;
+        }, {});
+      
+      // Check both jwt and session_token cookies
+      token = cookies.jwt || cookies.session_token;
+      if (token) {
+        console.log('✅ Socket Auth - Token found in cookies:', {
+          jwt: !!cookies.jwt,
+          session_token: !!cookies.session_token
+        });
+      }
     }
 
-    const token = tokenWithBearer.startsWith("Bearer ")
-      ? tokenWithBearer.split(" ")[1]
-      : tokenWithBearer;
+    if (!token) {
+      console.log('❌ Socket Auth - No token found in headers or cookies');
+      return next(new Error("No authentication token provided"));
+    }
 
-    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ token:", token);
+    console.log("🚀 ~ Socket Auth ~ token:", token.substring(0, 20) + '...');
 
     // Verify and decode JWT token
     const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
     if (!decoded) {
       return next(new Error("Authentication error: Invalid token"));
     }
+    
+    // Verify user exists in database
+    const user = await prisma.user.findUnique({
+      where: { email: decoded.email },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        name: true,
+      },
+    });
+
+    if (!user) {
+      return next(new Error("User not found"));
+    }
+    
     (socket as AuthSocket).user = decoded;
+    console.log('✅ Socket authenticated for user:', decoded.email);
     next();
   } catch (error) {
-    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ error:", error);
-    next(error as ExtendedError);
+    console.log("🚀 ~ Socket Auth ~ error:", error);
+    if (error instanceof jwt.TokenExpiredError) {
+      next(new Error("Token expired"));
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      next(new Error("jwt malformed"));
+    } else {
+      next(error as ExtendedError);
+    }
   }
 });
 
@@ -210,11 +259,13 @@ await fastify.register(cors, {
       "https://samsar-frontend-production.up.railway.app",
       "https://samsar-backend-production.up.railway.app",
       "https://api.samsar.app",
-      // Development
+      // Development - Frontend ports
       "http://localhost:3000",
       "http://127.0.0.1:3000",
       "http://localhost:5173",
-      "http://127.0.0.1:5173"
+      "http://127.0.0.1:5173",
+      "http://localhost:4173",
+      "http://127.0.0.1:4173"
     ];
     
     // Allow requests with no origin (like mobile apps or curl requests)

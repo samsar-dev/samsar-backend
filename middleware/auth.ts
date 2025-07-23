@@ -47,19 +47,36 @@ export const authenticate = async (
   reply: FastifyReply,
 ) => {
   try {
+    console.log('🔍 Auth Middleware - Request Headers:', {
+      authorization: request.headers.authorization,
+      cookie: request.headers.cookie,
+      origin: request.headers.origin,
+      userAgent: request.headers['user-agent']
+    });
+    console.log('🍪 Auth Middleware - Cookies:', request.cookies);
+    
     // First check Authorization header
     let token: string | undefined;
     const authHeader = request.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      console.log('✅ Auth Middleware - Token found in Authorization header');
     }
 
     // If no token in header, check cookies as fallback
     if (!token) {
-      token = request.cookies.jwt;
+      // Check both jwt and session_token cookies
+      token = request.cookies.jwt || request.cookies.session_token;
+      if (token) {
+        console.log('✅ Auth Middleware - Token found in cookies:', {
+          jwt: !!request.cookies.jwt,
+          session_token: !!request.cookies.session_token
+        });
+      }
     }
 
     if (!token) {
+      console.log('❌ Auth Middleware - No token found in headers or cookies');
       return reply.code(401).send({
         success: false,
         error: {

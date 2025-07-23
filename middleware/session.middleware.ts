@@ -11,25 +11,48 @@ export const REFRESH_COOKIE_NAME = 'refresh_token';
 // Helper to append a cookie without overriding existing Set-Cookie headers
 const appendSetCookie = (reply: FastifyReply, cookie: string) => {
   const existing = reply.raw.getHeader('Set-Cookie');
+  console.log('📋 appendSetCookie called:', {
+    cookiePreview: cookie.substring(0, 50) + '...',
+    existingHeaders: existing
+  });
 
   if (!existing) {
     reply.raw.setHeader('Set-Cookie', cookie);
+    console.log('✅ Set new Set-Cookie header');
   } else if (Array.isArray(existing)) {
     reply.raw.setHeader('Set-Cookie', [...existing, cookie]);
+    console.log('✅ Appended to existing Set-Cookie array');
   } else {
     reply.raw.setHeader('Set-Cookie', [existing as string, cookie]);
+    console.log('✅ Converted to array and appended');
   }
+  
+  console.log('📋 Final Set-Cookie headers:', reply.raw.getHeader('Set-Cookie'));
 };
 
 export const setSessionCookie = (reply: FastifyReply, token: string, maxAge: number) => {
+  console.log('🔑 setSessionCookie called:', {
+    tokenLength: token.length,
+    maxAge,
+    nodeEnv: process.env.NODE_ENV
+  });
+  
+  // Determine if we're actually in production based on environment
+  const isActualProduction = process.env.NODE_ENV === 'production' && 
+    (process.env.RAILWAY_ENVIRONMENT === 'production' || 
+     process.env.VERCEL_ENV === 'production' ||
+     process.env.PRODUCTION === 'true');
+  
   const options = {
-    Path: '/',
-    Secure: process.env.NODE_ENV === 'production',
-    HttpOnly: true,
-    SameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
-    "Max-Age": maxAge,
-    Domain: process.env.NODE_ENV === 'production' ? '.samsar.app' : undefined
+    path: '/',
+    secure: isActualProduction,
+    httponly: true,
+    samesite: isActualProduction ? 'None' : 'Lax',
+    "max-age": maxAge,
+    ...(isActualProduction && { domain: '.samsar.app' })
   } as const;
+  
+  console.log('🍪 Cookie options:', options);
 
   const cookie = `${SESSION_COOKIE_NAME}=${token}; ${Object.entries(options)
     .filter(([, v]) => v !== false && v !== undefined && v !== null)
@@ -38,18 +61,34 @@ export const setSessionCookie = (reply: FastifyReply, token: string, maxAge: num
     )
     .join('; ')}`;
 
+  console.log('🍪 Generated session cookie:', cookie.substring(0, 100) + '...');
   appendSetCookie(reply, cookie);
+  console.log('✅ Session cookie appended to response');
 };
 
 export const setRefreshCookie = (reply: FastifyReply, token: string, maxAge: number) => {
+  console.log('🔄 setRefreshCookie called:', {
+    tokenLength: token.length,
+    maxAge,
+    nodeEnv: process.env.NODE_ENV
+  });
+  
+  // Use same production detection logic
+  const isActualProduction = process.env.NODE_ENV === 'production' && 
+    (process.env.RAILWAY_ENVIRONMENT === 'production' || 
+     process.env.VERCEL_ENV === 'production' ||
+     process.env.PRODUCTION === 'true');
+  
   const options = {
-    Path: '/auth/refresh',
-    Secure: process.env.NODE_ENV === 'production',
-    HttpOnly: true,
-    SameSite: 'Lax',
-    "Max-Age": maxAge,
-    ...(process.env.COOKIE_DOMAIN && { Domain: process.env.COOKIE_DOMAIN })
+    path: '/auth/refresh',
+    secure: isActualProduction,
+    httponly: true,
+    samesite: 'None',
+    "max-age": maxAge,
+    ...(isActualProduction && { domain: '.samsar.app' })
   } as const;
+  
+  console.log('🔄 Refresh cookie options:', options);
 
   const cookie = `${REFRESH_COOKIE_NAME}=${token}; ${Object.entries(options)
     .filter(([, v]) => v !== false && v !== undefined && v !== null)
@@ -62,19 +101,49 @@ export const setRefreshCookie = (reply: FastifyReply, token: string, maxAge: num
 };
 
 export const clearSessionCookies = (reply: FastifyReply) => {
+  console.log('🧹 clearSessionCookies called');
+  
+  // Use same production detection logic
+  const isActualProduction = process.env.NODE_ENV === 'production' && 
+    (process.env.RAILWAY_ENVIRONMENT === 'production' || 
+     process.env.VERCEL_ENV === 'production' ||
+     process.env.PRODUCTION === 'true');
+  
   const options = {
     path: '/',
-    ...(process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN })
+    httponly: true,
+    secure: isActualProduction,
+    samesite: isActualProduction ? 'None' : 'Lax',
+    ...(isActualProduction && { domain: '.samsar.app' })
   };
-
-  reply.raw.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=; Max-Age=0; ${Object.entries(options).map(([k, v]) => `${k}=${v}`).join('; ')}`);
   
-  const refreshOptions = {
-    path: '/auth/refresh',
-    ...(process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN })
-  };
+  console.log('🧹 Clear session cookie options:', options);
 
-  reply.raw.setHeader('Set-Cookie', `${REFRESH_COOKIE_NAME}=; Max-Age=0; ${Object.entries(refreshOptions).map(([k, v]) => `${k}=${v}`).join('; ')}`);
+  // Clear session cookie
+  const sessionCookie = `${SESSION_COOKIE_NAME}=; Max-Age=0; ${Object.entries(options)
+    .filter(([, v]) => v !== false && v !== undefined && v !== null)
+    .map(([k, v]) => typeof v === 'boolean' ? k : `${k}=${v}`)
+    .join('; ')}`;
+  
+  appendSetCookie(reply, sessionCookie);
+  
+  // Clear refresh cookie
+  const refreshOptions = {
+    Path: '/auth/refresh',
+    HttpOnly: true,
+    Secure: isActualProduction,
+    SameSite: 'Lax',
+    ...(isActualProduction && { Domain: '.samsar.app' })
+  };
+  
+  console.log('🧹 Clear refresh cookie options:', refreshOptions);
+
+  const refreshCookie = `${REFRESH_COOKIE_NAME}=; Max-Age=0; ${Object.entries(refreshOptions)
+    .filter(([, v]) => v !== false && v !== undefined && v !== null)
+    .map(([k, v]) => typeof v === 'boolean' ? k : `${k}=${v}`)
+    .join('; ')}`;
+    
+  appendSetCookie(reply, refreshCookie);
 };
 
 export const generateToken = (payload: any, expiresIn: JWTExpiresIn): string => {

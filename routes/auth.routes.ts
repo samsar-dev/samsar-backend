@@ -203,8 +203,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
   );
 
-  // Protected routes
-  fastify.post("/logout", { preHandler: authenticate }, logout);
+  // Logout route - no authentication required to allow logout with expired tokens
+  fastify.post("/logout", logout);
 
   // Verify email with code route
   fastify.post(

@@ -680,8 +680,15 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     );
 
     // Set session cookies using our middleware
+    console.log('🍪 Setting session cookies for user:', fullUser.id);
+    console.log('🔑 Access token length:', tokens.accessToken.length);
+    console.log('🔄 Refresh token length:', tokens.refreshToken.length);
+    
     setSessionCookie(reply, tokens.accessToken, 15 * 60); // 15 minutes
     setRefreshCookie(reply, tokens.refreshToken, 7 * 24 * 60 * 60); // 7 days
+    
+    console.log('✅ Session cookies set successfully');
+    console.log('📋 Response headers after setting cookies:', reply.raw.getHeaders());
 
     if (fullUser.loginNotifications)
       sendUserLoginEmail({
@@ -971,28 +978,35 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
 // Logout
 export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    if (!request.user) {
-      return reply.code(401).send({
-        success: false,
-        error: {
-          code: "UNAUTHORIZED",
-          message: "User not authenticated",
-        },
-      });
+    console.log('🚪 Logout request received', {
+      hasUser: !!request.user,
+      cookies: request.cookies,
+      headers: {
+        authorization: request.headers.authorization,
+        cookie: request.headers.cookie
+      }
+    });
+
+    // If user is authenticated, clear their refresh token from database
+    if (request.user) {
+      try {
+        await prisma.$executeRaw`
+          UPDATE "User" 
+          SET "refreshToken" = null, 
+              "refreshTokenExpiresAt" = null
+          WHERE id = ${request.user.id}
+        `;
+        console.log('✅ Cleared refresh token for user:', request.user.id);
+      } catch (dbError) {
+        console.error('❌ Error clearing refresh token:', dbError);
+        // Don't fail logout if database update fails
+      }
     }
 
-    // Clear refresh token
-    await prisma.$executeRaw`
-      UPDATE "User" 
-      SET "refreshToken" = null, 
-          "refreshTokenExpiresAt" = null
-      WHERE id = ${request.user.id}
-    `;
-
-    const isProduction = process.env.NODE_ENV === "production";
-
-    // Clear session cookies using middleware
+    // Always clear session cookies, even if user is not authenticated
+    // This handles cases where cookies exist but are invalid/expired
     clearSessionCookies(reply);
+    console.log('✅ Session cookies cleared');
 
     return reply.send({
       success: true,
@@ -1002,6 +1016,14 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
     });
   } catch (error) {
     console.error("Logout error:", error);
+    
+    // Even if there's an error, try to clear cookies
+    try {
+      clearSessionCookies(reply);
+    } catch (cookieError) {
+      console.error("Error clearing cookies during error handling:", cookieError);
+    }
+    
     return reply.code(500).send({
       success: false,
       error: {
