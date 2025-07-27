@@ -49,7 +49,7 @@ export const setSessionCookie = (reply: FastifyReply, token: string, maxAge: num
     httponly: true,
     samesite: isActualProduction ? 'None' : 'Lax',
     "max-age": maxAge,
-    ...(isActualProduction && { domain: '.samsar.app' })
+    
   } as const;
   
   console.log('🍪 Cookie options:', options);
@@ -85,7 +85,7 @@ export const setRefreshCookie = (reply: FastifyReply, token: string, maxAge: num
     httponly: true,
     samesite: 'None',
     "max-age": maxAge,
-    ...(isActualProduction && { domain: '.samsar.app' })
+    
   } as const;
   
   console.log('🔄 Refresh cookie options:', options);
@@ -114,7 +114,7 @@ export const clearSessionCookies = (reply: FastifyReply) => {
     httponly: true,
     secure: isActualProduction,
     samesite: isActualProduction ? 'None' : 'Lax',
-    ...(isActualProduction && { domain: '.samsar.app' })
+    
   };
   
   console.log('🧹 Clear session cookie options:', options);

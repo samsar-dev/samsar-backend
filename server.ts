@@ -54,25 +54,58 @@ const fastify = Fastify({
 });
 
 // Attach Socket.IO to httpServer
+// Function to determine allowed origins from environment variables
+const getAllowedOrigins = () => {
+  const defaultOrigins = [
+    // Production
+    "https://samsar.app",
+    "https://www.samsar.app",
+    "https://samsar-frontend.vercel.app",
+    "https://samsar-frontend-production.up.railway.app",
+    "https://samsar-backend-production.up.railway.app",
+    "https://api.samsar.app",
+    // Development
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+  ];
+
+  const envOrigins = process.env.CORS_ALLOWED_ORIGINS;
+  if (envOrigins) {
+    return [...new Set([...defaultOrigins, ...envOrigins.split(',')])];
+  }
+  return defaultOrigins;
+};
+
+const allowedOrigins = getAllowedOrigins();
+
+const corsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "Access-Control-Allow-Headers",
+    "Access-Control-Allow-Origin",
+    "Access-Control-Allow-Credentials",
+  ],
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  maxAge: 600,
+};
+
+// Attach Socket.IO to httpServer
 export const io = new SocketIOServer(httpServer, {
   serveClient: false,
   pingTimeout: 30000,
   pingInterval: 25000,
-  cors: {
-    origin: [
-      process.env.FRONTEND_URL || "http://localhost:3000",
-      "http://localhost:5173",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-      "Origin",
-    ],
-  },
+  cors: corsOptions, // Use the unified corsOptions
   transports: ["websocket", "polling"],
   allowEIO3: true,
 });
@@ -249,47 +282,7 @@ await fastify.register(import("@fastify/etag"), {
 });
 
 // CORS
-await fastify.register(cors, {
-  origin: (origin, cb) => {
-    const allowedOrigins = [
-      // Production
-      "https://samsar.app",
-      "https://www.samsar.app",
-      "https://samsar-frontend.vercel.app",
-      "https://samsar-frontend-production.up.railway.app",
-      "https://samsar-backend-production.up.railway.app",
-      "https://api.samsar.app",
-      // Development - Frontend ports
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:4173",
-      "http://127.0.0.1:4173"
-    ];
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.includes(origin)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Not allowed by CORS"), false);
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-    "Access-Control-Allow-Headers",
-    "Access-Control-Allow-Origin",
-    "Access-Control-Allow-Credentials",
-  ],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 600,
-});
+await fastify.register(cors, corsOptions);
 
 // Logging (only development)
 if (process.env.NODE_ENV === "development") {
