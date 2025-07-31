@@ -199,10 +199,12 @@ io.use(async (socket, next) => {
 await fastify.register(helmet);
 // Configure compression with specific settings
 await fastify.register(compress, {
-  global: true,
-  encodings: ["gzip", "deflate", "br"],
+  encodings: ['gzip', 'deflate'],
   threshold: 1024,
 });
+
+// Register cache control middleware
+await fastify.register(import('./middleware/cache.middleware.js'));
 await fastify.register(cookie);
 await fastify.register(import("@fastify/formbody"));
 await fastify.register(multipart, {
