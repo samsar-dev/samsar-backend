@@ -289,53 +289,19 @@ export const updateProfile = async (
     const updatedUser = await prisma.user.update({
       where: { id: (request.user as any).id },
       data: updates,
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        phone: true,
-        bio: true,
-        profilePicture: true,
-        dateOfBirth: true,
-        street: true,
-        city: true,
-        preferences: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
     });
-
-    // Ensure we're not sending the password hash back
-    const { password: _, ...userWithoutPassword } = updatedUser as any;
 
     reply.status(200).send({
       success: true,
+      data: updatedUser,
       status: 200,
-      data: userWithoutPassword,
-      message: "Profile updated successfully",
     });
   } catch (error) {
     console.error("Update error:", error);
-
-    // Handle Prisma validation errors
-    if (
-      error instanceof Error &&
-      error.name === "PrismaClientValidationError"
-    ) {
-      return reply.status(400).send({
-        success: false,
-        status: 400,
-        error: "Validation error: " + error.message.split("\n").pop()?.trim(),
-        data: null,
-      });
-    }
-
-    // Handle other errors
     reply.status(500).send({
       success: false,
+      error: "Error updating profile",
       status: 500,
-      error: error instanceof Error ? error.message : "Error updating profile",
       data: null,
     });
   }

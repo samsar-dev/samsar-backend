@@ -1,17 +1,19 @@
+// City coordinate interface for geographic data
 export interface CityCoordinates {
   name: string;
   latitude: number;
   longitude: number;
-  neighbors?: CityCoordinates[];
 }
 
+// City with distance calculation result
 export interface CityWithDistance extends CityCoordinates {
-  distance: number;
+  distance: number; // distance in kilometers
 }
 
+// Parameters for nearby cities search
 export interface NearbyCitiesParams {
-  lat: number;
-  lng: number;
+  latitude: number;
+  longitude: number;
   radiusKm: number;
   limit?: number;
 }

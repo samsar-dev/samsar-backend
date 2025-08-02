@@ -1,4 +1,4 @@
-import { CityCoordinates, CityWithDistance } from "../types/city.js";
+import { CityCoordinates, CityWithDistance } from "../../types/city.js";
 import { findCitiesInRadius } from "../utils/geoUtils.js";
 
 // This should be populated from a database in a real application

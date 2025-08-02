@@ -1,5 +1,5 @@
 import prismaClient from "../lib/prismaClient.js";
-import { NotificationType } from "../types/enums.js";
+import { NotificationType } from "../../types/enums.js";
 import { NotificationType as PrismaNotificationType } from "@prisma/client";
 
 /**
