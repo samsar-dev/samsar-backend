@@ -384,12 +384,10 @@ export async function addListingImages(
     return res.code(201).send({ success: true, data: updatedImages });
   } catch (err) {
     console.error("addListingImages error", err);
-    return res
-      .code(500)
-      .send({
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
+    return res.code(500).send({
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
   }
 }
 

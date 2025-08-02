@@ -54,58 +54,25 @@ const fastify = Fastify({
 });
 
 // Attach Socket.IO to httpServer
-// Function to determine allowed origins from environment variables
-const getAllowedOrigins = () => {
-  const defaultOrigins = [
-    // Production
-    "https://samsar.app",
-    "https://www.samsar.app",
-    "https://samsar-frontend.vercel.app",
-    "https://samsar-frontend-production.up.railway.app",
-    "https://samsar-backend-production.up.railway.app",
-    "https://api.samsar.app",
-    // Development
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:4173",
-    "http://127.0.0.1:4173",
-  ];
-
-  const envOrigins = process.env.CORS_ALLOWED_ORIGINS;
-  if (envOrigins) {
-    return [...new Set([...defaultOrigins, ...envOrigins.split(",")])];
-  }
-  return defaultOrigins;
-};
-
-const allowedOrigins = getAllowedOrigins();
-
-const corsOptions = {
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "X-Requested-With",
-    "Accept",
-    "Origin",
-    "Access-Control-Allow-Headers",
-    "Access-Control-Allow-Origin",
-    "Access-Control-Allow-Credentials",
-  ],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  maxAge: 600,
-};
-
-// Attach Socket.IO to httpServer
 export const io = new SocketIOServer(httpServer, {
   serveClient: false,
   pingTimeout: 30000,
   pingInterval: 25000,
-  cors: corsOptions, // Use the unified corsOptions
+  cors: {
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      "http://localhost:5173",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
+  },
   transports: ["websocket", "polling"],
   allowEIO3: true,
 });
@@ -113,83 +80,34 @@ export const io = new SocketIOServer(httpServer, {
 // BEFORE listen, decorate Fastify
 fastify.decorate("io", io);
 
-io.use(async (socket, next) => {
+io.use((socket, next) => {
   console.log("Incoming socket headers:", socket.handshake.headers);
-  console.log("Socket handshake cookies:", socket.handshake.headers.cookie);
-
   try {
-    let token: string | undefined;
+    const tokenWithBearer =
+      socket.handshake.headers.authorization ||
+      socket.handshake.auth.token ||
+      socket.handshake.query.token;
 
-    // First check Authorization header
-    const authHeader = socket.handshake.headers.authorization;
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      console.log("✅ Socket Auth - Token found in Authorization header");
+    if (!tokenWithBearer) {
+      return next(new Error("Token missing"));
     }
 
-    // If no token in header, check cookies (parse manually since socket.io doesn't parse cookies)
-    if (!token && socket.handshake.headers.cookie) {
-      const cookies = socket.handshake.headers.cookie
-        .split(";")
-        .reduce((acc: Record<string, string>, cookie) => {
-          const [key, value] = cookie.trim().split("=");
-          if (key && value) {
-            acc[key] = decodeURIComponent(value);
-          }
-          return acc;
-        }, {});
+    const token = tokenWithBearer.startsWith("Bearer ")
+      ? tokenWithBearer.split(" ")[1]
+      : tokenWithBearer;
 
-      // Check both jwt and session_token cookies
-      token = cookies.jwt || cookies.session_token;
-      if (token) {
-        console.log("✅ Socket Auth - Token found in cookies:", {
-          jwt: !!cookies.jwt,
-          session_token: !!cookies.session_token,
-        });
-      }
-    }
-
-    if (!token) {
-      console.log("❌ Socket Auth - No token found in headers or cookies");
-      return next(new Error("No authentication token provided"));
-    }
-
-    console.log("🚀 ~ Socket Auth ~ token:", token.substring(0, 20) + "...");
+    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ token:", token);
 
     // Verify and decode JWT token
     const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
     if (!decoded) {
       return next(new Error("Authentication error: Invalid token"));
     }
-
-    // Verify user exists in database
-    const user = await prisma.user.findUnique({
-      where: { email: decoded.email },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        role: true,
-        name: true,
-      },
-    });
-
-    if (!user) {
-      return next(new Error("User not found"));
-    }
-
     (socket as AuthSocket).user = decoded;
-    console.log("✅ Socket authenticated for user:", decoded.email);
     next();
   } catch (error) {
-    console.log("🚀 ~ Socket Auth ~ error:", error);
-    if (error instanceof jwt.TokenExpiredError) {
-      next(new Error("Token expired"));
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      next(new Error("jwt malformed"));
-    } else {
-      next(error as ExtendedError);
-    }
+    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ error:", error);
+    next(error as ExtendedError);
   }
 });
 
@@ -199,12 +117,10 @@ io.use(async (socket, next) => {
 await fastify.register(helmet);
 // Configure compression with specific settings
 await fastify.register(compress, {
-  encodings: ["gzip", "deflate"],
+  global: true,
+  encodings: ["gzip", "deflate", "br"],
   threshold: 1024,
 });
-
-// Register cache control middleware
-await fastify.register(import("./middleware/cache.middleware.js"));
 await fastify.register(cookie);
 await fastify.register(import("@fastify/formbody"));
 await fastify.register(multipart, {
@@ -283,8 +199,15 @@ await fastify.register(import("@fastify/etag"), {
   weak: true, // Use weak ETags for better compatibility
 });
 
-// CORS
-await fastify.register(cors, corsOptions);
+// CORS - Allow all origins for testing
+await fastify.register(cors, {
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: "*",
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  maxAge: 600,
+});
 
 // Logging (only development)
 if (process.env.NODE_ENV === "development") {
