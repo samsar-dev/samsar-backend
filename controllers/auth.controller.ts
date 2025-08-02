@@ -10,13 +10,7 @@ import {
   sendUserLoginEmail,
 } from "../utils/email.temp.utils.js";
 // Session management
-import {
-  setSessionCookie,
-  setRefreshCookie,
-  clearSessionCookies,
-  SESSION_COOKIE_NAME,
-  REFRESH_COOKIE_NAME,
-} from "../middleware/session.middleware.js";
+import { setSessionCookie, setRefreshCookie, clearSessionCookies, SESSION_COOKIE_NAME, REFRESH_COOKIE_NAME } from "../middleware/session.middleware.js";
 
 // Define JWT user interface
 interface JWTUser {
@@ -686,18 +680,15 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     );
 
     // Set session cookies using our middleware
-    console.log("🍪 Setting session cookies for user:", fullUser.id);
-    console.log("🔑 Access token length:", tokens.accessToken.length);
-    console.log("🔄 Refresh token length:", tokens.refreshToken.length);
-
+    console.log('🍪 Setting session cookies for user:', fullUser.id);
+    console.log('🔑 Access token length:', tokens.accessToken.length);
+    console.log('🔄 Refresh token length:', tokens.refreshToken.length);
+    
     setSessionCookie(reply, tokens.accessToken, 15 * 60); // 15 minutes
     setRefreshCookie(reply, tokens.refreshToken, 7 * 24 * 60 * 60); // 7 days
-
-    console.log("✅ Session cookies set successfully");
-    console.log(
-      "📋 Response headers after setting cookies:",
-      reply.raw.getHeaders(),
-    );
+    
+    console.log('✅ Session cookies set successfully');
+    console.log('📋 Response headers after setting cookies:', reply.raw.getHeaders());
 
     if (fullUser.loginNotifications)
       sendUserLoginEmail({
@@ -987,13 +978,13 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
 // Logout
 export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    console.log("🚪 Logout request received", {
+    console.log('🚪 Logout request received', {
       hasUser: !!request.user,
       cookies: request.cookies,
       headers: {
         authorization: request.headers.authorization,
-        cookie: request.headers.cookie,
-      },
+        cookie: request.headers.cookie
+      }
     });
 
     // If user is authenticated, clear their refresh token from database
@@ -1005,9 +996,9 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
               "refreshTokenExpiresAt" = null
           WHERE id = ${request.user.id}
         `;
-        console.log("✅ Cleared refresh token for user:", request.user.id);
+        console.log('✅ Cleared refresh token for user:', request.user.id);
       } catch (dbError) {
-        console.error("❌ Error clearing refresh token:", dbError);
+        console.error('❌ Error clearing refresh token:', dbError);
         // Don't fail logout if database update fails
       }
     }
@@ -1015,7 +1006,7 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
     // Always clear session cookies, even if user is not authenticated
     // This handles cases where cookies exist but are invalid/expired
     clearSessionCookies(reply);
-    console.log("✅ Session cookies cleared");
+    console.log('✅ Session cookies cleared');
 
     return reply.send({
       success: true,
@@ -1025,17 +1016,14 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
     });
   } catch (error) {
     console.error("Logout error:", error);
-
+    
     // Even if there's an error, try to clear cookies
     try {
       clearSessionCookies(reply);
     } catch (cookieError) {
-      console.error(
-        "Error clearing cookies during error handling:",
-        cookieError,
-      );
+      console.error("Error clearing cookies during error handling:", cookieError);
     }
-
+    
     return reply.code(500).send({
       success: false,
       error: {
@@ -1192,9 +1180,7 @@ export const sendPasswordChangeVerification = async (
     }
 
     // Generate a verification code
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000,
-    ).toString();
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Store the verification code in the database
     await prisma.user.update({
