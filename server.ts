@@ -75,7 +75,7 @@ const getAllowedOrigins = () => {
 
   const envOrigins = process.env.CORS_ALLOWED_ORIGINS;
   if (envOrigins) {
-    return [...new Set([...defaultOrigins, ...envOrigins.split(',')])];
+    return [...new Set([...defaultOrigins, ...envOrigins.split(",")])];
   }
   return defaultOrigins;
 };
@@ -116,52 +116,52 @@ fastify.decorate("io", io);
 io.use(async (socket, next) => {
   console.log("Incoming socket headers:", socket.handshake.headers);
   console.log("Socket handshake cookies:", socket.handshake.headers.cookie);
-  
+
   try {
     let token: string | undefined;
-    
+
     // First check Authorization header
     const authHeader = socket.handshake.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      console.log('✅ Socket Auth - Token found in Authorization header');
+      console.log("✅ Socket Auth - Token found in Authorization header");
     }
-    
+
     // If no token in header, check cookies (parse manually since socket.io doesn't parse cookies)
     if (!token && socket.handshake.headers.cookie) {
       const cookies = socket.handshake.headers.cookie
-        .split(';')
+        .split(";")
         .reduce((acc: Record<string, string>, cookie) => {
-          const [key, value] = cookie.trim().split('=');
+          const [key, value] = cookie.trim().split("=");
           if (key && value) {
             acc[key] = decodeURIComponent(value);
           }
           return acc;
         }, {});
-      
+
       // Check both jwt and session_token cookies
       token = cookies.jwt || cookies.session_token;
       if (token) {
-        console.log('✅ Socket Auth - Token found in cookies:', {
+        console.log("✅ Socket Auth - Token found in cookies:", {
           jwt: !!cookies.jwt,
-          session_token: !!cookies.session_token
+          session_token: !!cookies.session_token,
         });
       }
     }
 
     if (!token) {
-      console.log('❌ Socket Auth - No token found in headers or cookies');
+      console.log("❌ Socket Auth - No token found in headers or cookies");
       return next(new Error("No authentication token provided"));
     }
 
-    console.log("🚀 ~ Socket Auth ~ token:", token.substring(0, 20) + '...');
+    console.log("🚀 ~ Socket Auth ~ token:", token.substring(0, 20) + "...");
 
     // Verify and decode JWT token
     const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
     if (!decoded) {
       return next(new Error("Authentication error: Invalid token"));
     }
-    
+
     // Verify user exists in database
     const user = await prisma.user.findUnique({
       where: { email: decoded.email },
@@ -177,9 +177,9 @@ io.use(async (socket, next) => {
     if (!user) {
       return next(new Error("User not found"));
     }
-    
+
     (socket as AuthSocket).user = decoded;
-    console.log('✅ Socket authenticated for user:', decoded.email);
+    console.log("✅ Socket authenticated for user:", decoded.email);
     next();
   } catch (error) {
     console.log("🚀 ~ Socket Auth ~ error:", error);
@@ -199,12 +199,12 @@ io.use(async (socket, next) => {
 await fastify.register(helmet);
 // Configure compression with specific settings
 await fastify.register(compress, {
-  encodings: ['gzip', 'deflate'],
+  encodings: ["gzip", "deflate"],
   threshold: 1024,
 });
 
 // Register cache control middleware
-await fastify.register(import('./middleware/cache.middleware.js'));
+await fastify.register(import("./middleware/cache.middleware.js"));
 await fastify.register(cookie);
 await fastify.register(import("@fastify/formbody"));
 await fastify.register(multipart, {

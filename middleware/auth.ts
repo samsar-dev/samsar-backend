@@ -47,20 +47,20 @@ export const authenticate = async (
   reply: FastifyReply,
 ) => {
   try {
-    console.log('🔍 Auth Middleware - Request Headers:', {
+    console.log("🔍 Auth Middleware - Request Headers:", {
       authorization: request.headers.authorization,
       cookie: request.headers.cookie,
       origin: request.headers.origin,
-      userAgent: request.headers['user-agent']
+      userAgent: request.headers["user-agent"],
     });
-    console.log('🍪 Auth Middleware - Cookies:', request.cookies);
-    
+    console.log("🍪 Auth Middleware - Cookies:", request.cookies);
+
     // First check Authorization header
     let token: string | undefined;
     const authHeader = request.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      console.log('✅ Auth Middleware - Token found in Authorization header');
+      console.log("✅ Auth Middleware - Token found in Authorization header");
     }
 
     // If no token in header, check cookies as fallback
@@ -68,15 +68,15 @@ export const authenticate = async (
       // Check both jwt and session_token cookies
       token = request.cookies.jwt || request.cookies.session_token;
       if (token) {
-        console.log('✅ Auth Middleware - Token found in cookies:', {
+        console.log("✅ Auth Middleware - Token found in cookies:", {
           jwt: !!request.cookies.jwt,
-          session_token: !!request.cookies.session_token
+          session_token: !!request.cookies.session_token,
         });
       }
     }
 
     if (!token) {
-      console.log('❌ Auth Middleware - No token found in headers or cookies');
+      console.log("❌ Auth Middleware - No token found in headers or cookies");
       return reply.code(401).send({
         success: false,
         error: {
@@ -87,12 +87,12 @@ export const authenticate = async (
     }
 
     if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is not configured');
+      console.error("JWT_SECRET is not configured");
       return reply.code(500).send({
         success: false,
         error: {
-          code: 'CONFIGURATION_ERROR',
-          message: 'Server configuration error',
+          code: "CONFIGURATION_ERROR",
+          message: "Server configuration error",
         },
       });
     }
@@ -105,16 +105,16 @@ export const authenticate = async (
         return reply.code(401).send({
           success: false,
           error: {
-            code: 'TOKEN_EXPIRED',
-            message: 'Your session has expired',
+            code: "TOKEN_EXPIRED",
+            message: "Your session has expired",
           },
         });
       }
       return reply.code(401).send({
         success: false,
         error: {
-          code: 'INVALID_TOKEN',
-          message: 'Invalid or malformed token',
+          code: "INVALID_TOKEN",
+          message: "Invalid or malformed token",
         },
       });
     }

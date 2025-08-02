@@ -1,4 +1,9 @@
-import { FastifyInstance, FastifyReply, FastifyRequest, RouteHandlerMethod } from "fastify";
+import {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  RouteHandlerMethod,
+} from "fastify";
 import { authenticate } from "../middleware/auth.js";
 import { getListingPermission } from "../controllers/listingPermission.controller.js";
 
@@ -16,7 +21,7 @@ interface ListingPermissionResponse {
 
 // Define the route options type
 interface RouteOptions {
-  method: 'GET';
+  method: "GET";
   url: string;
   preHandler: any[];
   handler: RouteHandlerMethod;
@@ -46,9 +51,15 @@ export default async function listingPermissionRoutes(
   fastify: FastifyInstance,
 ) {
   // Create the handler with proper type assertion
-  const handler: RouteHandlerMethod = async (request: FastifyRequest, reply: FastifyReply) => {
+  const handler: RouteHandlerMethod = async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
     try {
-      const result = await getListingPermission(request as unknown as AuthRequest, reply);
+      const result = await getListingPermission(
+        request as unknown as AuthRequest,
+        reply,
+      );
       return result;
     } catch (error) {
       request.log.error(error);
@@ -58,30 +69,30 @@ export default async function listingPermissionRoutes(
 
   // Define route options
   const routeOptions: RouteOptions = {
-    method: 'GET',
+    method: "GET",
     url: "/user/listing-permission",
     preHandler: [authenticate],
     handler,
     schema: {
       response: {
         200: {
-          type: 'object',
+          type: "object",
           properties: {
-            canCreate: { type: 'boolean' },
-            maxListings: { type: 'number' },
-            currentListings: { type: 'number' },
-            userRole: { type: 'string' },
-            listingRestriction: { type: 'string' }
-          }
+            canCreate: { type: "boolean" },
+            maxListings: { type: "number" },
+            currentListings: { type: "number" },
+            userRole: { type: "string" },
+            listingRestriction: { type: "string" },
+          },
         },
         500: {
-          type: 'object',
+          type: "object",
           properties: {
-            error: { type: 'string' }
-          }
-        }
-      }
-    }
+            error: { type: "string" },
+          },
+        },
+      },
+    },
   };
 
   // Register the route

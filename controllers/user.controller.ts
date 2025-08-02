@@ -317,14 +317,17 @@ export const updateProfile = async (
     });
   } catch (error) {
     console.error("Update error:", error);
-    
+
     // Handle Prisma validation errors
-    if (error instanceof Error && error.name === 'PrismaClientValidationError') {
+    if (
+      error instanceof Error &&
+      error.name === "PrismaClientValidationError"
+    ) {
       return reply.status(400).send({
         success: false,
         status: 400,
-        error: "Validation error: " + error.message.split('\n').pop()?.trim(),
-        data: null
+        error: "Validation error: " + error.message.split("\n").pop()?.trim(),
+        data: null,
       });
     }
 
@@ -333,7 +336,7 @@ export const updateProfile = async (
       success: false,
       status: 500,
       error: error instanceof Error ? error.message : "Error updating profile",
-      data: null
+      data: null,
     });
   }
 };

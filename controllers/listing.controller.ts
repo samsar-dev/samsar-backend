@@ -9,7 +9,11 @@ import {
   Condition,
 } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
-import { uploadToR2, deleteFromR2, moveObjectInR2 } from "../config/cloudflareR2.js";
+import {
+  uploadToR2,
+  deleteFromR2,
+  moveObjectInR2,
+} from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
 import { MultipartAuthRequest } from "../types/auth.js";
 import fs from "fs";
@@ -225,7 +229,7 @@ const formatListingResponse = (
     location: listing.location,
     latitude: listing.latitude,
     longitude: listing.longitude,
-    views: 'views' in listing ? (listing.views || 0) : 0,
+    views: "views" in listing ? listing.views || 0 : 0,
     condition: listing.condition || undefined,
     status: listing.status,
     listingAction: listing.listingAction || undefined,
@@ -344,36 +348,48 @@ const validateListingData = (data: any): string[] => {
   return errors;
 };
 
-export async function addListingImages(req: MultipartAuthRequest, res: FastifyReply) {
+export async function addListingImages(
+  req: MultipartAuthRequest,
+  res: FastifyReply,
+) {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      return res.code(401).send({ success:false, error:'Unauthorized'});
+      return res.code(401).send({ success: false, error: "Unauthorized" });
     }
     const { listingId } = req.body as any;
     if (!listingId) {
-      return res.code(400).send({ success:false, error:'listingId is required'});
+      return res
+        .code(400)
+        .send({ success: false, error: "listingId is required" });
     }
     // Check ownership
-    const listing = await prisma.listing.findUnique({ where:{ id: listingId }});
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+    });
     if (!listing || listing.userId !== userId) {
-      return res.code(403).send({ success:false, error:'Forbidden'});
+      return res.code(403).send({ success: false, error: "Forbidden" });
     }
 
-    if (req.processedImages && req.processedImages.length>0) {
+    if (req.processedImages && req.processedImages.length > 0) {
       await prisma.image.createMany({
-        data: req.processedImages.map((img, idx)=>({
+        data: req.processedImages.map((img, idx) => ({
           url: img.url,
           order: idx,
           listingId,
-        }))
+        })),
       });
     }
-    const updatedImages = await prisma.image.findMany({ where:{ listingId }});
-    return res.code(201).send({ success:true, data: updatedImages });
-  } catch(err){
-    console.error('addListingImages error', err);
-    return res.code(500).send({ success:false, error: err instanceof Error? err.message:'Unknown error'});
+    const updatedImages = await prisma.image.findMany({ where: { listingId } });
+    return res.code(201).send({ success: true, data: updatedImages });
+  } catch (err) {
+    console.error("addListingImages error", err);
+    return res
+      .code(500)
+      .send({
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
   }
 }
 
@@ -437,8 +453,10 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         subCategory,
         category: JSON.stringify({ mainCategory, subCategory }),
         location,
-        latitude: typeof latitude === "string" ? parseFloat(latitude) : latitude,
-        longitude: typeof longitude === "string" ? parseFloat(longitude) : longitude,
+        latitude:
+          typeof latitude === "string" ? parseFloat(latitude) : latitude,
+        longitude:
+          typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
@@ -454,8 +472,12 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
             vehicleType: parsedDetails.vehicles.vehicleType,
             make: parsedDetails.vehicles.make || undefined,
             model: parsedDetails.vehicles.model || undefined,
-            year: parsedDetails.vehicles.year ? parseInt(parsedDetails.vehicles.year, 10) : undefined,
-            mileage: parsedDetails.vehicles.mileage ? parseInt(parsedDetails.vehicles.mileage, 10) : null,
+            year: parsedDetails.vehicles.year
+              ? parseInt(parsedDetails.vehicles.year, 10)
+              : undefined,
+            mileage: parsedDetails.vehicles.mileage
+              ? parseInt(parsedDetails.vehicles.mileage, 10)
+              : null,
             fuelType: parsedDetails.vehicles.fuelType || null,
             transmissionType: parsedDetails.vehicles.transmissionType || null,
             color: parsedDetails.vehicles.color || null,
@@ -469,12 +491,25 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         listingData.realEstateDetails = {
           create: {
             propertyType: parsedDetails.realEstate.propertyType || undefined,
-            totalArea: parsedDetails.realEstate.totalArea ? parseFloat(parsedDetails.realEstate.totalArea) : undefined,
-            bedrooms: parsedDetails.realEstate.bedrooms ? parseInt(parsedDetails.realEstate.bedrooms, 10) : undefined,
-            bathrooms: parsedDetails.realEstate.bathrooms ? parseFloat(parsedDetails.realEstate.bathrooms) : undefined,
-            yearBuilt: parsedDetails.realEstate.yearBuilt ? parseInt(parsedDetails.realEstate.yearBuilt, 10) : undefined,
-            floorLevel: parsedDetails.realEstate.floorLevel ? parseInt(parsedDetails.realEstate.floorLevel, 10) : undefined,
-            isBuildable: typeof parsedDetails.realEstate.isBuildable === "boolean" ? parsedDetails.realEstate.isBuildable : undefined,
+            totalArea: parsedDetails.realEstate.totalArea
+              ? parseFloat(parsedDetails.realEstate.totalArea)
+              : undefined,
+            bedrooms: parsedDetails.realEstate.bedrooms
+              ? parseInt(parsedDetails.realEstate.bedrooms, 10)
+              : undefined,
+            bathrooms: parsedDetails.realEstate.bathrooms
+              ? parseFloat(parsedDetails.realEstate.bathrooms)
+              : undefined,
+            yearBuilt: parsedDetails.realEstate.yearBuilt
+              ? parseInt(parsedDetails.realEstate.yearBuilt, 10)
+              : undefined,
+            floorLevel: parsedDetails.realEstate.floorLevel
+              ? parseInt(parsedDetails.realEstate.floorLevel, 10)
+              : undefined,
+            isBuildable:
+              typeof parsedDetails.realEstate.isBuildable === "boolean"
+                ? parsedDetails.realEstate.isBuildable
+                : undefined,
             usageType: parsedDetails.realEstate.usageType || undefined,
             condition: parsedDetails.realEstate.condition || undefined,
           } as Prisma.RealEstateDetailsCreateWithoutListingInput,
@@ -548,13 +583,13 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     // Format and send response
     /* --- Move images from temporary 'other' folder to listing folder --- */
     if (req.processedImages && req.processedImages.length > 0) {
-      const baseUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL || '';
+      const baseUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL || "";
       await Promise.all(
         req.processedImages.map(async (img) => {
-          if (!img.url.includes('/other/')) return;
+          if (!img.url.includes("/other/")) return;
           try {
-            const urlPath = img.url.replace(baseUrl + '/', '');
-            const filename = urlPath.split('/').pop() || '';
+            const urlPath = img.url.replace(baseUrl + "/", "");
+            const filename = urlPath.split("/").pop() || "";
             const newKey = `uploads/users/${result.userId}/listings/${result.id}/images/${filename}`;
             const moveRes = await moveObjectInR2(urlPath, newKey);
             if (moveRes.success && moveRes.url) {
@@ -564,9 +599,9 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
               });
             }
           } catch (err) {
-            console.error('Failed to move listing image', err);
+            console.error("Failed to move listing image", err);
           }
-        })
+        }),
       );
     }
 
@@ -594,7 +629,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     console.error("Error creating listing:", error);
     res.code(500).send({
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create listing",
+      error:
+        error instanceof Error ? error.message : "Failed to create listing",
       status: 500,
       data: null,
     });
@@ -785,7 +821,7 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
 export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
     const { id } = req.params as ListingParams;
-    
+
     // First, get the listing with all its relations
     const listing = await prisma.listing.findUnique({
       where: { id },
@@ -837,19 +873,16 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
     if (!req.user || req.user.id !== listing.userId) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // Check if user has already viewed this listing today
       const existingView = await prisma.view.findFirst({
         where: {
           listingId: id,
-          OR: [
-            { userId: req.user?.id },
-            { userIp: req.ip || 'unknown' }
-          ],
+          OR: [{ userId: req.user?.id }, { userIp: req.ip || "unknown" }],
           createdAt: {
-            gte: today
-          }
-        }
+            gte: today,
+          },
+        },
       });
 
       if (!existingView) {
@@ -866,16 +899,16 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
             data: {
               listingId: id,
               userId: req.user?.id,
-              userIp: req.ip || 'unknown',
-              userAgent: req.headers['user-agent'] || 'unknown'
-            }
-          })
+              userIp: req.ip || "unknown",
+              userAgent: req.headers["user-agent"] || "unknown",
+            },
+          }),
         ]);
       }
     }
 
     // Get the updated listing with the incremented view count
-    const updatedListing = await prisma.listing.findUnique({
+    const updatedListing = (await prisma.listing.findUnique({
       where: { id },
       include: {
         user: {
@@ -912,7 +945,7 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
         },
         realEstateDetails: true,
       },
-    }) as ListingWithRelations;
+    })) as ListingWithRelations;
 
     // Create view notification if viewer is not the seller
     if (req.user && req.user.id !== listing.userId) {
@@ -1088,7 +1121,10 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     // Re-index order to be sequential starting from 0
     imagesToCreate = imagesToCreate.map((img, idx) => ({ ...img, order: idx }));
 
-    console.log("- Final imagesToCreate (deduped & reindexed):", imagesToCreate);
+    console.log(
+      "- Final imagesToCreate (deduped & reindexed):",
+      imagesToCreate,
+    );
 
     // Ensure price is a number and handle potential string input
     const newPrice = typeof price === "string" ? parseFloat(price) : price;

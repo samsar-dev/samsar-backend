@@ -20,7 +20,11 @@ import {
   type LoginBody,
 } from "../middleware/validation.middleware.js";
 import { authenticate } from "../middleware/auth.js";
-import { authRateLimit, rateLimitConfig, rateLimitPlugin } from "../middleware/rateLimit.js";
+import {
+  authRateLimit,
+  rateLimitConfig,
+  rateLimitPlugin,
+} from "../middleware/rateLimit.js";
 
 // Request type definitions
 interface RegisterRequest extends FastifyRequest {
@@ -42,9 +46,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       config: {
         rateLimit: {
           ...authRateLimit,
-          timeWindow: '1 hour', // 1 hour window for registration
-          max: 5 // Only 5 registration attempts per hour
-        }
+          timeWindow: "1 hour", // 1 hour window for registration
+          max: 5, // Only 5 registration attempts per hour
+        },
       },
       schema: {
         body: {
@@ -90,9 +94,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       config: {
         rateLimit: {
           ...authRateLimit,
-          timeWindow: '15 minutes',
-          max: 10 // 10 login attempts per 15 minutes
-        }
+          timeWindow: "15 minutes",
+          max: 10, // 10 login attempts per 15 minutes
+        },
       },
       schema: {
         body: {
@@ -131,9 +135,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       config: {
         rateLimit: {
           ...authRateLimit,
-          timeWindow: '1 hour',
-          max: 3 // Only 3 password reset attempts per hour
-        }
+          timeWindow: "1 hour",
+          max: 3, // Only 3 password reset attempts per hour
+        },
       },
       schema: {
         body: {
@@ -376,9 +380,9 @@ export default async function authRoutes(fastify: FastifyInstance) {
       config: {
         rateLimit: {
           ...authRateLimit,
-          timeWindow: '1 hour',
-          max: 3 // Only 3 verification email requests per hour
-        }
+          timeWindow: "1 hour",
+          max: 3, // Only 3 verification email requests per hour
+        },
       },
       schema: {
         body: {

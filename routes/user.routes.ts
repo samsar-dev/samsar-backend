@@ -64,7 +64,7 @@ export default async function (fastify: FastifyInstance) {
       // Get the authenticated user ID
       const userId = (request as any).user?.id;
       if (!userId) {
-        throw new Error('User authentication required');
+        throw new Error("User authentication required");
       }
 
       // Process the multipart form data
@@ -91,15 +91,15 @@ export default async function (fastify: FastifyInstance) {
             // First, get the current user to find the old profile picture
             const user = await prisma.user.findUnique({
               where: { id: userId },
-              select: { profilePicture: true }
+              select: { profilePicture: true },
             });
 
             // Upload the new profile picture
-            const result = await uploadToR2(fileObj as any, "avatar", { 
+            const result = await uploadToR2(fileObj as any, "avatar", {
               userId,
-              originalName: fileObj.originalname 
+              originalName: fileObj.originalname,
             });
-            
+
             if (result && result.url) {
               // Store the new URL in the form data
               formData.profilePicture = result.url;
@@ -113,12 +113,17 @@ export default async function (fastify: FastifyInstance) {
                   await deleteFromR2(key);
                   console.log(`Deleted old profile picture: ${key}`);
                 } catch (deleteError) {
-                  console.error('Error deleting old profile picture:', deleteError);
+                  console.error(
+                    "Error deleting old profile picture:",
+                    deleteError,
+                  );
                   // Don't fail the request if deletion fails
                 }
               }
             } else {
-              throw new Error('Failed to upload profile picture: No URL returned');
+              throw new Error(
+                "Failed to upload profile picture: No URL returned",
+              );
             }
           } else if (part.type === "field") {
             // Process form fields
@@ -142,14 +147,17 @@ export default async function (fastify: FastifyInstance) {
             }
           }
         } catch (error) {
-          console.error(`Error processing part ${part?.fieldname || 'unknown'}:`, error);
+          console.error(
+            `Error processing part ${part?.fieldname || "unknown"}:`,
+            error,
+          );
           hasError = true;
           // Continue processing other parts but mark that there was an error
         }
       }
 
       if (hasError) {
-        throw new Error('Error processing one or more form fields');
+        throw new Error("Error processing one or more form fields");
       }
 
       // Attach the processed data to the request
@@ -159,8 +167,11 @@ export default async function (fastify: FastifyInstance) {
       reply.status(500).send({
         success: false,
         status: 500,
-        error: error instanceof Error ? error.message : "Failed to process profile picture",
-        data: null
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to process profile picture",
+        data: null,
       });
       // Make sure to return to prevent further processing
       return reply;
