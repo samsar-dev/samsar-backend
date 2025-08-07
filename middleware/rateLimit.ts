@@ -16,9 +16,9 @@ declare module "fastify" {
 // Helper to create rate limit configs
 const createRateLimitConfig = (overrides = {}) => {
   const defaultConfig = {
-    // Default rate limiting (100 requests per 15 minutes)
-    max: 100,
-    timeWindow: "15 minutes",
+    // Default rate limiting (configurable via environment variables)
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+    timeWindow: process.env.RATE_LIMIT_WINDOW || '15 minutes',
     ban: 5,
     // Generate key based on IP address
     keyGenerator: (req: FastifyRequest) => {
@@ -47,8 +47,8 @@ export const rateLimitConfig = createRateLimitConfig();
 
 // Stricter rate limiting for authentication endpoints
 export const authRateLimit = createRateLimitConfig({
-  max: 10, // 10 requests
-  timeWindow: "15 minutes",
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX_REQUESTS || '10', 10),
+  timeWindow: process.env.AUTH_RATE_LIMIT_WINDOW || '15 minutes',
   ban: 2,
   errorResponse: () => ({
     statusCode: 429,

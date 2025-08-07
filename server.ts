@@ -201,11 +201,21 @@ await fastify.register(import("@fastify/etag"), {
 
 // CORS - Allow all origins for testing
 await fastify.register(cors, {
-  origin: true, // Allow all origins
+  origin: [
+    process.env.FRONTEND_URL || "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:4173", // Added frontend preview port
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: "*",
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+  ],
+  exposedHeaders: ["Content-Length", "X-Kuma-Revision"],
   maxAge: 600,
 });
 
