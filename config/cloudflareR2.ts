@@ -104,35 +104,11 @@ export const uploadToR2 = async (
         Body: fileBuffer,
         ContentType: (file as any).mimetype || "application/octet-stream",
         CacheControl: cacheControl,
-        // Enable CORS for all origins
-        ACL: "public-read",
+
       }),
     );
 
-    // Set CORS configuration on the bucket (idempotent operation)
-    try {
-      await s3.send(
-        new PutBucketCorsCommand({
-          Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
-          CORSConfiguration: {
-            CORSRules: [
-              {
-                AllowedHeaders: ["*"],
-                AllowedMethods: ["GET", "HEAD"],
-                AllowedOrigins: ["*"],
-                ExposeHeaders: ["ETag"],
-                MaxAgeSeconds: 3000,
-              },
-            ],
-          },
-        }),
-      );
-    } catch (error) {
-      console.warn(
-        "⚠️ Could not update CORS configuration. This is normal if you don't have permissions.",
-        error,
-      );
-    }
+
 
     return {
       success: true,
