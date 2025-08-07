@@ -7,7 +7,7 @@ import helmet from "@fastify/helmet";
 import multipart, { FastifyMultipartBaseOptions } from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import dotenv from "dotenv";
-import Fastify from "fastify";
+import Fastify, { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import { createServer } from "node:http";
 import { ExtendedError, Server as SocketIOServer } from "socket.io";
@@ -192,6 +192,19 @@ fastify.after(() => {
 // Add activity tracking middleware
 fastify.addHook("onRequest", async (request, reply) => {
   await updateLastActive(request, reply);
+});
+
+fastify.decorate("authenticate", async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    // Check if Authorization header exists before trying to verify
+    if (!request.headers.authorization) {
+      return reply.status(401).send({ message: 'Authorization header is missing' });
+    }
+    await request.jwtVerify();
+  } catch (err) {
+    // Send a clear 401 response on verification failure
+    reply.status(401).send(err);
+  }
 });
 
 // Add ETag support for efficient caching
