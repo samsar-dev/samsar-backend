@@ -200,12 +200,21 @@ await fastify.register(import("@fastify/etag"), {
 });
 
 // CORS - Allow all origins for testing
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:4173',
+].filter(Boolean) as string[];
+
 await fastify.register(cors, {
-  origin: [
-    process.env.FRONTEND_URL || "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:4173", // Added frontend preview port
-  ],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: [
