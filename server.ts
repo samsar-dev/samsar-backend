@@ -115,11 +115,13 @@ io.use((socket, next) => {
 // Register middlewares
 // -----------------
 await fastify.register(helmet);
-// Configure compression with specific settings
+// Configure compression with Flutter-compatible settings
 await fastify.register(compress, {
   global: true,
-  encodings: ["gzip", "deflate", "br"],
-  threshold: 1024,
+  encodings: ["gzip", "deflate"], // Removed 'br' (Brotli) as it can cause issues with some mobile clients
+  threshold: 1024, // Only compress responses larger than 1KB
+  customTypes: /^text\/|application\/json$|application\/javascript$/, // Only compress text and JSON
+  removeContentLengthHeader: false, // Keep content-length header for better compatibility
 });
 await fastify.register(cookie);
 await fastify.register(import("@fastify/formbody"));

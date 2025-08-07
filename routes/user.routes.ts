@@ -101,6 +101,7 @@ export default async function (fastify: FastifyInstance) {
             });
 
             if (result && result.url) {
+              console.log('✅ Profile picture uploaded successfully:', result.url);
               // Store the new URL in the form data
               formData.profilePicture = result.url;
 
@@ -160,6 +161,7 @@ export default async function (fastify: FastifyInstance) {
         throw new Error("Error processing one or more form fields");
       }
 
+      console.log('📦 Final form data to attach to request:', formData);
       // Attach the processed data to the request
       request.body = formData;
     } catch (error) {
@@ -203,13 +205,24 @@ export default async function (fastify: FastifyInstance) {
     },
   );
 
-  // Get user profile
-  fastify.get("/profile", createFastifyHandler(getUserProfile));
+  // Get user profile (compression disabled for Flutter compatibility)
+  fastify.get(
+    "/profile", 
+    {
+      config: {
+        compress: false // Disable compression for this route
+      }
+    },
+    createFastifyHandler(getUserProfile)
+  );
 
-  // Update profile (optional profile picture upload)
+  // Update profile (optional profile picture upload, compression disabled for Flutter compatibility)
   fastify.put(
     "/profile",
     {
+      config: {
+        compress: false // Disable compression for this route
+      },
       preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
         if (request.isMultipart()) {
           await processProfilePicture(request, reply);

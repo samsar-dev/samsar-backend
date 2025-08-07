@@ -286,16 +286,28 @@ export const updateProfile = async (
       updates.profilePicture = (request.body as any).profilePicture;
     }
 
+    console.log('🔍 Updates to apply:', updates);
+    
     const updatedUser = await prisma.user.update({
       where: { id: (request.user as any).id },
       data: updates,
     });
 
-    reply.status(200).send({
+    console.log('✅ User updated successfully:', {
+      id: updatedUser.id,
+      profilePicture: updatedUser.profilePicture,
+      phone: updatedUser.phone
+    });
+
+    const responseData = {
       success: true,
       data: updatedUser,
       status: 200,
-    });
+    };
+    
+    console.log('📤 Sending response:', JSON.stringify(responseData, null, 2));
+    
+    reply.status(200).send(responseData);
   } catch (error) {
     console.error("Update error:", error);
     reply.status(500).send({
