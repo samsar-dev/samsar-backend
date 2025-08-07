@@ -202,6 +202,7 @@ await fastify.register(import("@fastify/etag"), {
 // CORS - Allow all origins for testing
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  'https://samsar-frontend.vercel.app', // Production Frontend
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:4173',
