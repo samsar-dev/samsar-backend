@@ -101,7 +101,7 @@ const generateTokens = (user: {
   return { accessToken, refreshToken };
 };
 
-// Register a New User
+// Register a New User - Updated with smart registration flow
 export const register = async (
   request: FastifyRequest,
   reply: FastifyReply,
