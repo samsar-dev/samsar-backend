@@ -34,6 +34,16 @@ interface AuthTokens {
   refreshToken: string;
 }
 
+// Helper function to parse time string (e.g., '15m', '1h', '7d') to seconds
+const parseTimeToSeconds = (timeStr: string): number => {
+  const value = parseInt(timeStr);
+  if (timeStr.endsWith('s')) return value; // seconds
+  if (timeStr.endsWith('m')) return value * 60; // minutes
+  if (timeStr.endsWith('h')) return value * 60 * 60; // hours
+  if (timeStr.endsWith('d')) return value * 60 * 60 * 24; // days
+  return parseInt(timeStr); // default to seconds if no unit
+};
+
 // Enhanced token generation with security options
 const generateTokens = (user: {
   id: string;
@@ -50,7 +60,15 @@ const generateTokens = (user: {
   const CurrentDate = new Date();
   const now = Math.floor(CurrentDate.getTime() / 1000);
 
-  // Access token with 30-day expiry
+  // Parse JWT expiration times from environment variables with validation
+  const accessExpiry = process.env.JWT_ACCESS_EXPIRES || '15m';
+  const refreshExpiry = process.env.JWT_REFRESH_EXPIRES || '30d';
+
+  // Calculate expiration times in seconds
+  const accessExpirySeconds = parseTimeToSeconds(accessExpiry);
+  const refreshExpirySeconds = parseTimeToSeconds(refreshExpiry);
+
+  // Access token with configurable expiry
   const accessToken = jwt.sign(
     {
       sub: user.id,
@@ -59,27 +77,28 @@ const generateTokens = (user: {
       role: user.role,
       type: "access",
       iat: now,
-      exp: now + 60 * 60 * 24 * 30, // 30 days in seconds
+      exp: now + accessExpirySeconds,
     },
     jwtSecret,
     {
-      algorithm: "HS256",
+      algorithm: "HS256" as const,
       audience: "samsar-app",
       issuer: "samsar-api",
     },
   );
 
-  // Refresh token with 60-day expiry
+  // Refresh token with configurable expiry
+  // Refresh token with configurable expiry
   const refreshToken = jwt.sign(
     {
       sub: user.id,
       type: "refresh",
       iat: now,
-      exp: now + 60 * 60 * 24 * 60, // 60 days in seconds
+      exp: now + refreshExpirySeconds,
     },
     jwtSecret,
     {
-      algorithm: "HS256",
+      algorithm: "HS256" as const,
       audience: "samsar-app",
       issuer: "samsar-api",
     },
@@ -87,11 +106,16 @@ const generateTokens = (user: {
 
   // Set secure, httpOnly cookie with SameSite=None and Secure flags for production
   const isProduction = process.env.NODE_ENV === "production";
+  
+  // Parse refresh token expiry from environment variable (defaults to 30 days if not set)
+  const refreshTokenExpiry = process.env.REFRESH_TOKEN_EXPIRY || '30d';
+  const maxAge = parseTimeToSeconds(refreshTokenExpiry);
+  
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : ("lax" as const),
-    maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+    maxAge,
     path: "/",
   };
 
@@ -233,9 +257,9 @@ export const register = async (
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Hash password with configurable salt rounds
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Create user with verification fields and set account status to 'PENDING'
     const user = await prisma.user.create({
@@ -1309,9 +1333,9 @@ export const changePasswordWithVerification = async (
       });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    // Hash new password with configurable salt rounds
+    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
     // Update user password, clear verification code, and mark as verified
     await prisma.user.update({

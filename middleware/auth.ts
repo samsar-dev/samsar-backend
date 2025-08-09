@@ -86,13 +86,13 @@ export const authenticate = async (
       });
     }
 
-    if (!process.env.JWT_SECRET) {
-      console.error("JWT_SECRET is not configured");
+    if (!process.env.JWT_SECRET || !process.env.JWT_ACCESS_EXPIRES) {
+      console.error("JWT configuration is not complete");
       return reply.code(500).send({
         success: false,
         error: {
           code: "CONFIGURATION_ERROR",
-          message: "Server configuration error",
+          message: "Server JWT configuration is incomplete",
         },
       });
     }

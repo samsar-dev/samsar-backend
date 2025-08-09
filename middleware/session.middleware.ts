@@ -5,8 +5,9 @@ import { SignOptions, Secret } from "jsonwebtoken";
 
 type JWTExpiresIn = "24h" | "7d" | number;
 
-export const SESSION_COOKIE_NAME = "session_token";
-export const REFRESH_COOKIE_NAME = "refresh_token";
+// Use environment variables for cookie names with fallbacks
+export const SESSION_COOKIE_NAME = process.env.AUTH_COOKIE_NAME || "session_token";
+export const REFRESH_COOKIE_NAME = process.env.REFRESH_COOKIE_NAME || "refresh_token";
 
 // Helper to append a cookie without overriding existing Set-Cookie headers
 const appendSetCookie = (reply: FastifyReply, cookie: string) => {
@@ -161,20 +162,25 @@ export const generateToken = (
   payload: any,
   expiresIn: JWTExpiresIn,
 ): string => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+
   const options: SignOptions = {
     expiresIn: typeof expiresIn === "number" ? expiresIn : expiresIn,
     algorithm: "HS256" as const,
   };
-  const secret: Secret = config.jwtSecret;
-  return jwt.sign(payload, secret, options);
+  
+  return jwt.sign(payload, process.env.JWT_SECRET, options);
 };
 
 export const verifyToken = (token: string): any => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as {
-      [key: string]: any;
-    };
-    return decoded;
+    return jwt.verify(token, process.env.JWT_SECRET) as { [key: string]: any };
   } catch (error) {
     throw error;
   }

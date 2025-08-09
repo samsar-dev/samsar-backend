@@ -82,18 +82,20 @@ export const configureSecurityHeaders = (fastify: FastifyInstance) => {
 export const configureSecureCookies = (fastify: FastifyInstance) => {
   const isProduction = process.env.NODE_ENV === "production";
 
+  if (!process.env.COOKIE_SECRET) {
+    throw new Error('COOKIE_SECRET is not defined in environment variables');
+  }
+
   fastify.register(cookie, {
-    secret: process.env.COOKIE_SECRET || "your-strong-cookie-secret",
+    secret: process.env.COOKIE_SECRET,
     hook: "onRequest",
     parseOptions: {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax" as const, // Always use lax for cross-origin
+      sameSite: "lax" as const,
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days
       domain: isProduction ? ".samsar.app" : undefined,
-      // Remove partitioned flag for cross-origin compatibility
-      // partitioned: true
     },
   });
 };
