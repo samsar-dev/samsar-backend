@@ -24,6 +24,8 @@ interface ListingQuery {
   page?: string;
   limit?: string;
   builtYear?: string;
+  year?: string; // For vehicle year
+  listingAction?: string; // For sale/rent filter
   preview?: string;
   publicAccess?: string;
   latitude?: string;
@@ -203,6 +205,8 @@ export default async function (fastify: FastifyInstance) {
         page = "1",
         limit = "10",
         builtYear,
+        year,
+        listingAction,
         preview = "false",
         publicAccess = "false",
         latitude,
@@ -217,6 +221,11 @@ export default async function (fastify: FastifyInstance) {
       }
       if (subCategory) {
         where.subCategory = subCategory as string;
+      }
+      
+      // Add listingAction filtering (for sale/rent)
+      if (listingAction) {
+        where.listingAction = listingAction as string;
       }
 
       // Add price range filtering
@@ -235,6 +244,16 @@ export default async function (fastify: FastifyInstance) {
           is: {
             ...(where.realEstateDetails?.is || {}),
             yearBuilt: parseInt(builtYear),
+          },
+        };
+      }
+      
+      // Vehicle year filter (nested)
+      if (year) {
+        where.vehicleDetails = {
+          is: {
+            ...(where.vehicleDetails?.is || {}),
+            year: parseInt(year),
           },
         };
       }
