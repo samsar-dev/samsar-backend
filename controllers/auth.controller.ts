@@ -278,16 +278,16 @@ export const register = async (
         }
 
         // Continue with normal registration flow below (user will be created fresh)
+      } else {
+        // For any other case (shouldn't happen, but safety check)
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: "USER_EXISTS",
+            message: "User already exists with this email",
+          },
+        });
       }
-
-      // For any other case (shouldn't happen, but safety check)
-      return reply.code(400).send({
-        success: false,
-        error: {
-          code: "USER_EXISTS",
-          message: "User already exists with this email",
-        },
-      });
     }
 
     // Hash password
