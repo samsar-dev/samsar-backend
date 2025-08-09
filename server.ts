@@ -288,6 +288,15 @@ import { PriceChangeData } from "./types/socket.js";
 // Add cache middleware
 await fastify.register(cacheControl);
 
+// Add version endpoint to test deployment
+fastify.get('/api/version', async (request, reply) => {
+  return {
+    version: '2.0.0-smart-registration',
+    timestamp: new Date().toISOString(),
+    message: 'Smart registration flow active'
+  };
+});
+
 // Attach routes
 await fastify.register(authRoutes, { prefix: "/api/auth" });
 await fastify.register(listingRoutes, { prefix: "/api/listings" });
