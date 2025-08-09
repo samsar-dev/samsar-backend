@@ -277,8 +277,8 @@ export const updateProfile = async (
           data: null,
         });
       }
-      const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
-      updates.password = await bcrypt.hash(password, saltRounds);
+      const salt = await bcrypt.genSalt(10);
+      updates.password = await bcrypt.hash(password, salt);
     }
 
     // Check if profilePicture URL was set by the middleware

@@ -34,16 +34,6 @@ interface AuthTokens {
   refreshToken: string;
 }
 
-// Helper function to parse time string (e.g., '15m', '1h', '7d') to seconds
-const parseTimeToSeconds = (timeStr: string): number => {
-  const value = parseInt(timeStr);
-  if (timeStr.endsWith('s')) return value; // seconds
-  if (timeStr.endsWith('m')) return value * 60; // minutes
-  if (timeStr.endsWith('h')) return value * 60 * 60; // hours
-  if (timeStr.endsWith('d')) return value * 60 * 60 * 24; // days
-  return parseInt(timeStr); // default to seconds if no unit
-};
-
 // Enhanced token generation with security options
 const generateTokens = (user: {
   id: string;
@@ -60,15 +50,7 @@ const generateTokens = (user: {
   const CurrentDate = new Date();
   const now = Math.floor(CurrentDate.getTime() / 1000);
 
-  // Parse JWT expiration times from environment variables with validation
-  const accessExpiry = process.env.JWT_ACCESS_EXPIRES || '15m';
-  const refreshExpiry = process.env.JWT_REFRESH_EXPIRES || '30d';
-
-  // Calculate expiration times in seconds
-  const accessExpirySeconds = parseTimeToSeconds(accessExpiry);
-  const refreshExpirySeconds = parseTimeToSeconds(refreshExpiry);
-
-  // Access token with configurable expiry
+  // Access token with 30-day expiry
   const accessToken = jwt.sign(
     {
       sub: user.id,
@@ -77,28 +59,27 @@ const generateTokens = (user: {
       role: user.role,
       type: "access",
       iat: now,
-      exp: now + accessExpirySeconds,
+      exp: now + 60 * 60 * 24 * 30, // 30 days in seconds
     },
     jwtSecret,
     {
-      algorithm: "HS256" as const,
+      algorithm: "HS256",
       audience: "samsar-app",
       issuer: "samsar-api",
     },
   );
 
-  // Refresh token with configurable expiry
-  // Refresh token with configurable expiry
+  // Refresh token with 60-day expiry
   const refreshToken = jwt.sign(
     {
       sub: user.id,
       type: "refresh",
       iat: now,
-      exp: now + refreshExpirySeconds,
+      exp: now + 60 * 60 * 24 * 60, // 60 days in seconds
     },
     jwtSecret,
     {
-      algorithm: "HS256" as const,
+      algorithm: "HS256",
       audience: "samsar-app",
       issuer: "samsar-api",
     },
@@ -106,16 +87,11 @@ const generateTokens = (user: {
 
   // Set secure, httpOnly cookie with SameSite=None and Secure flags for production
   const isProduction = process.env.NODE_ENV === "production";
-  
-  // Parse refresh token expiry from environment variable (defaults to 30 days if not set)
-  const refreshTokenExpiry = process.env.REFRESH_TOKEN_EXPIRY || '30d';
-  const maxAge = parseTimeToSeconds(refreshTokenExpiry);
-  
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? "none" : ("lax" as const),
-    maxAge,
+    maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
     path: "/",
   };
 
@@ -245,9 +221,66 @@ export const register = async (
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: true,
+        verificationTokenExpires: true,
+        createdAt: true,
+      },
     });
 
     if (existingUser) {
+      // If user is already verified and active, they cannot register again
+      if (existingUser.emailVerified && existingUser.accountStatus === "ACTIVE") {
+        return reply.code(400).send({
+          success: false,
+          error: {
+            code: "USER_ALREADY_VERIFIED",
+            message: "An account with this email is already verified. Please log in instead.",
+          },
+        });
+      }
+
+      // If user exists but is pending verification, allow fresh re-registration with rate limiting
+      if (existingUser.accountStatus === "PENDING" && !existingUser.emailVerified) {
+        // Check if enough time has passed since last registration attempt (1 minute)
+        const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+        if (existingUser.createdAt > oneMinuteAgo) {
+          const remainingTime = Math.ceil((existingUser.createdAt.getTime() + 60 * 1000 - Date.now()) / 1000);
+          return reply.code(429).send({
+            success: false,
+            error: {
+              code: "REGISTRATION_RATE_LIMITED",
+              message: `Please wait ${remainingTime} seconds before requesting a new verification code.`,
+              retryAfter: remainingTime,
+            },
+          });
+        }
+
+        // Delete the existing pending user to allow fresh registration
+        try {
+          await prisma.user.delete({
+            where: { id: existingUser.id },
+          });
+          console.log(`Deleted pending user with email: ${existingUser.email} for fresh re-registration`);
+        } catch (deleteError) {
+          console.error("Failed to delete pending user:", deleteError);
+          return reply.code(500).send({
+            success: false,
+            error: {
+              code: "DATABASE_ERROR",
+              message: "Failed to process re-registration. Please try again.",
+            },
+          });
+        }
+
+        // Continue with normal registration flow below (user will be created fresh)
+      }
+
+      // For any other case (shouldn't happen, but safety check)
       return reply.code(400).send({
         success: false,
         error: {
@@ -257,9 +290,9 @@ export const register = async (
       });
     }
 
-    // Hash password with configurable salt rounds
-    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create user with verification fields and set account status to 'PENDING'
     const user = await prisma.user.create({
@@ -1333,9 +1366,9 @@ export const changePasswordWithVerification = async (
       });
     }
 
-    // Hash new password with configurable salt rounds
-    const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
-    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     // Update user password, clear verification code, and mark as verified
     await prisma.user.update({
