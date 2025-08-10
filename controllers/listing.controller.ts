@@ -465,9 +465,20 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
 
       // Add vehicle details if present
       if (parsedDetails?.vehicles) {
+        // Validate vehicleType
+        const vehicleType = parsedDetails.vehicles.vehicleType;
+        if (!Object.values(VehicleType).includes(vehicleType as VehicleType)) {
+          return res.code(400).send({
+            success: false,
+            error: `Invalid vehicleType: ${vehicleType}. Expected one of: ${Object.values(VehicleType).join(', ')}`,
+            status: 400,
+            data: null,
+          });
+        }
+        
         listingData.vehicleDetails = {
           create: {
-            vehicleType: parsedDetails.vehicles.vehicleType as VehicleType,
+            vehicleType: vehicleType as VehicleType,
             make: parsedDetails.vehicles.make || undefined,
             model: parsedDetails.vehicles.model || undefined,
             year: parsedDetails.vehicles.year
