@@ -917,307 +917,36 @@ export default async function (fastify: FastifyInstance) {
             vehicleDetails: parsedDetails.vehicles
               ? {
                   create: {
-                    vehicleType: parsedDetails.vehicles.vehicleType,
+                    vehicleType: parsedDetails.vehicles.vehicleType as VehicleType,
                     make: parsedDetails.vehicles.make,
                     model: parsedDetails.vehicles.model,
-                    year:
-                      parsedDetails.vehicles.year || new Date().getFullYear(),
-                    mileage: parsedDetails.vehicles.mileage
-                      ? Number(parsedDetails.vehicles.mileage)
-                      : 0,
-                    fuelType: parsedDetails.vehicles.fuelType,
-                    transmissionType: parsedDetails.vehicles.transmissionType,
-                    color: parsedDetails.vehicles.color || "#000000",
-                    condition: parsedDetails.vehicles.condition,
+                    year: parsedDetails.vehicles.year || new Date().getFullYear(),
+                    mileage: parsedDetails.vehicles.mileage ? Number(parsedDetails.vehicles.mileage) : null,
+                    fuelType: parsedDetails.vehicles.fuelType || null,
+                    transmissionType: parsedDetails.vehicles.transmissionType || null,
+                    color: parsedDetails.vehicles.color || null,
+                    condition: parsedDetails.vehicles.condition || null,
                     features: parsedDetails.vehicles.features || [],
-                    interiorColor:
-                      parsedDetails.vehicles.interiorColor || "#000000",
-                    engine: parsedDetails.vehicles.engine || "",
-                    warranty: parsedDetails.vehicles.warranty || "",
-                    serviceHistory:
-                      parsedDetails.vehicles.serviceHistory || null,
-                    previousOwners:
-                      parsedDetails.vehicles.previousOwners !== undefined
-                        ? Number(parsedDetails.vehicles.previousOwners)
-                        : undefined,
-                    registrationStatus:
-                      parsedDetails.vehicles.registrationStatus || undefined,
-                    horsepower: parsedDetails.vehicles.horsepower,
-                    torque: parsedDetails.vehicles.torque,
-                    engineType: parsedDetails.vehicles.engineType,
-                    engineSize: parsedDetails.vehicles.engineSize,
-                    enginePowerOutput: parsedDetails.vehicles.enginePowerOutput,
-                    driveType: parsedDetails.vehicles.driveType,
-                    bodyStyle: parsedDetails.vehicles.bodyStyle,
-                    safetyFeatures: parsedDetails.vehicles.safetyFeatures || [],
-                    comfortFeatures:
-                      parsedDetails.vehicles.comfortFeatures || [],
-                    entertainmentSystem:
-                      parsedDetails.vehicles.entertainmentSystem || [],
-                    exteriorFeatures:
-                      parsedDetails.vehicles.exteriorFeatures || [],
-                    performanceFeatures:
-                      parsedDetails.vehicles.performanceFeatures || [],
-                    modifications: parsedDetails.vehicles.modifications || null,
-                    customFeatures: parsedDetails.vehicles.customFeatures || [],
-                    emissionStandard: parsedDetails.vehicles.emissionStandard,
-                    enginePower: parsedDetails.vehicles.enginePower,
-                    engineTorque: parsedDetails.vehicles.engineTorque,
-                    trunkCapacity: parsedDetails.vehicles.trunkCapacity,
-                    airbags: parsedDetails.vehicles.airbags,
-                    brakeType: parsedDetails.vehicles.brakeType,
-                    fuelTankCapacity: parsedDetails.vehicles.fuelTankCapacity,
-                    roofType: parsedDetails.vehicles.roofType,
-                    suspensionType: parsedDetails.vehicles.suspensionType,
-                    steeringType: parsedDetails.vehicles.steeringType,
-                    parkingAssist: parsedDetails.vehicles.parkingAssist || [],
-                    motorcycleType: parsedDetails.vehicles.motorcycleType,
-                    engineConfiguration:
-                      parsedDetails.vehicles.engineConfiguration,
-                    ridingStyle: parsedDetails.vehicles.ridingStyle,
-                    brakeSystem: parsedDetails.vehicles.brakeSystem || [],
-                    frameType: parsedDetails.vehicles.frameType,
-                    wheelSize: parsedDetails.vehicles.wheelSize,
-                    tireType: parsedDetails.vehicles.tireType,
-                    startingSystem: parsedDetails.vehicles.startingSystem,
-                    instrumentCluster:
-                      parsedDetails.vehicles.instrumentCluster || [],
-                    lightingSystem: parsedDetails.vehicles.lightingSystem || [],
-                    hours: parseInt(parsedDetails.vehicles.hours) || null,
-                    driveSystem: parsedDetails.vehicles.driveSystem,
-                    engineSpecs: parsedDetails.vehicles.engineSpecs || [],
-                    engineManufacturer:
-                      parsedDetails.vehicles.engineManufacturer,
-                    engineModel: parsedDetails.vehicles.engineModel,
-                    displacement: parsedDetails.vehicles.displacement,
-                    cylinders: parsedDetails.vehicles.cylinders,
-                    emissions: parsedDetails.vehicles.emissions,
-                    hydraulicFlow:
-                      parseInt(parsedDetails.vehicles.hydraulicFlow) || null,
-                    ptoSystem: parsedDetails.vehicles.ptoSystem || [],
-                    ptoHorsepower:
-                      parseInt(parsedDetails.vehicles.ptoHorsepower) || null,
-                    frontAttachments:
-                      parsedDetails.vehicles.frontAttachments || [],
-                    rearAttachments:
-                      parsedDetails.vehicles.rearAttachments || [],
-                    threePointHitch: parsedDetails.vehicles.threePointHitch,
-                    hitchCapacity:
-                      parseFloat(parsedDetails.vehicles.hitchCapacity) || null,
-                    cabFeatures: parsedDetails.vehicles.cabFeatures || [],
-                    seating: parsedDetails.vehicles.seating || [],
-                    steeringSystem: parsedDetails.vehicles.steeringSystem || [],
-                    lighting: parsedDetails.vehicles.lighting || [],
-                    precisionFarming:
-                      parsedDetails.vehicles.precisionFarming || [],
-                    vanType: parsedDetails.vehicles.vanType,
-                    cargoVolume:
-                      parseInt(parsedDetails.vehicles.cargoVolume) || null,
-                    roofHeight: parsedDetails.vehicles.roofHeight,
-                    loadingFeatures:
-                      parsedDetails.vehicles.loadingFeatures || [],
-                    truckType: parsedDetails.vehicles.truckType,
-                    cabType: parsedDetails.vehicles.cabType,
-                    bedLength: parsedDetails.vehicles.bedLength,
-                    payload: parseInt(parsedDetails.vehicles.payload) || null,
-                    seatingConfiguration:
-                      parsedDetails.vehicles.seatingConfiguration,
-                    interiorHeight: parsedDetails.vehicles.interiorHeight,
-                    interiorLength: parsedDetails.vehicles.interiorLength,
-                    temperatureRange: parsedDetails.vehicles.temperatureRange,
-                    equipmentType: parsedDetails.vehicles.equipmentType,
-                    operatingWeight: parsedDetails.vehicles.operatingWeight,
-                    maxLiftingCapacity:
-                      parsedDetails.vehicles.maxLiftingCapacity,
-                    hydraulicSystem: parsedDetails.vehicles.hydraulicSystem,
-                    operatorCabType: parsedDetails.vehicles.operatorCabType,
-                    gps: parsedDetails.vehicles.gps,
-                    ptoType: parsedDetails.vehicles.ptoType,
-                    hydraulicOutlets:
-                      parseInt(parsedDetails.vehicles.hydraulicOutlets) || null,
-                    busType: parsedDetails.vehicles.busType,
-                    seatingCapacity: parsedDetails.vehicles.seatingCapacity,
-                    luggageSpace: parsedDetails.vehicles.luggageSpace,
-                    wheelchairAccessible:
-                      parsedDetails.vehicles.wheelchairAccessible,
-                    wheelchairLift: parsedDetails.vehicles.wheelchairLift,
-                    accessibilityFeatures:
-                      parsedDetails.vehicles.accessibilityFeatures || [],
-                    emergencyExits: parsedDetails.vehicles.emergencyExits,
-                    luggageCompartments:
-                      parsedDetails.vehicles.luggageCompartments,
-                    luggageRacks: parsedDetails.vehicles.luggageRacks,
-                    warrantyPeriod: parsedDetails.vehicles.warrantyPeriod,
-                    serviceHistoryDetails:
-                      parsedDetails.vehicles.serviceHistoryDetails,
-                    customsCleared: parsedDetails.vehicles.customsCleared,
-                    communicationSystem:
-                      parsedDetails.vehicles.communicationSystem || [],
-                    lastInspectionDate:
-                      parsedDetails.vehicles.lastInspectionDate,
-                    certifications: parsedDetails.vehicles.certifications || [],
-                    monitor: parsedDetails.vehicles.monitor || [],
-                    electricalSystem: parsedDetails.vehicles.electricalSystem,
-                    maintenanceHistory:
-                      parsedDetails.vehicles.maintenanceHistory,
-                    blindSpotMonitor: parsedDetails.vehicles.blindSpotMonitor,
-                    laneAssist: parsedDetails.vehicles.laneAssist,
-                    adaptiveCruiseControl:
-                      parsedDetails.vehicles.adaptiveCruiseControl,
-                    tractionControl: parsedDetails.vehicles.tractionControl,
-                    abs: parsedDetails.vehicles.abs,
-                    emergencyBrakeAssist:
-                      parsedDetails.vehicles.emergencyBrakeAssist,
-                    tirePressureMonitoring:
-                      parsedDetails.vehicles.tirePressureMonitoring,
-                    distanceTempomat: parsedDetails.vehicles.distanceTempomat,
-                    distanceWarning: parsedDetails.vehicles.distanceWarning,
-                    passengerAirbag: parsedDetails.vehicles.passengerAirbag,
-                    glarelessHighBeam: parsedDetails.vehicles.glarelessHighBeam,
-                    esp: parsedDetails.vehicles.esp,
-                    driverAirbag: parsedDetails.vehicles.driverAirbag,
-                    highBeamAssistant: parsedDetails.vehicles.highBeamAssistant,
-                    speedLimitingSystem:
-                      parsedDetails.vehicles.speedLimitingSystem,
-                    isofix: parsedDetails.vehicles.isofix,
-                    fatigueWarningSystem:
-                      parsedDetails.vehicles.fatigueWarningSystem,
-                    emergencyCallSystem:
-                      parsedDetails.vehicles.emergencyCallSystem,
-                    sideAirbag: parsedDetails.vehicles.sideAirbag,
-                    trackHoldingAssistant:
-                      parsedDetails.vehicles.trackHoldingAssistant,
-                    deadAngleAssistant:
-                      parsedDetails.vehicles.deadAngleAssistant,
-                    trafficSignRecognition:
-                      parsedDetails.vehicles.trafficSignRecognition,
-                    burglarAlarmSystem:
-                      parsedDetails.vehicles.burglarAlarmSystem,
-                    immobilizer: parsedDetails.vehicles.immobilizer,
-                    centralLocking: parsedDetails.vehicles.centralLocking,
-                    rearCamera: parsedDetails.vehicles.rearCamera,
-                    camera360: parsedDetails.vehicles.camera360,
-                    dashCam: parsedDetails.vehicles.dashCam,
-                    nightVision: parsedDetails.vehicles.nightVision,
-                    parkingSensors: parsedDetails.vehicles.parkingSensors,
-                    parkingAid: parsedDetails.vehicles.parkingAid,
-                    parkingAidCamera: parsedDetails.vehicles.parkingAidCamera,
-                    parkingAidSensorsRear:
-                      parsedDetails.vehicles.parkingAidSensorsRear,
-                    parkingAidSensorsFront:
-                      parsedDetails.vehicles.parkingAidSensorsFront,
-                    climateControl: parsedDetails.vehicles.climateControl,
-                    heatedSeats: parsedDetails.vehicles.heatedSeats,
-                    ventilatedSeats: parsedDetails.vehicles.ventilatedSeats,
-                    dualZoneClimate: parsedDetails.vehicles.dualZoneClimate,
-                    rearAC: parsedDetails.vehicles.rearAC,
-                    airQualitySensor: parsedDetails.vehicles.airQualitySensor,
-                    airConditioning: parsedDetails.vehicles.airConditioning,
-                    twoZoneClimateControl:
-                      parsedDetails.vehicles.twoZoneClimateControl,
-                    bluetooth: parsedDetails.vehicles.bluetooth,
-                    appleCarPlay: parsedDetails.vehicles.appleCarPlay,
-                    androidAuto: parsedDetails.vehicles.androidAuto,
-                    premiumSound: parsedDetails.vehicles.premiumSound,
-                    wirelessCharging: parsedDetails.vehicles.wirelessCharging,
-                    usbPorts: parsedDetails.vehicles.usbPorts,
-                    cdPlayer: parsedDetails.vehicles.cdPlayer,
-                    dvdPlayer: parsedDetails.vehicles.dvdPlayer,
-                    rearSeatEntertainment:
-                      parsedDetails.vehicles.rearSeatEntertainment,
-                    androidCar: parsedDetails.vehicles.androidCar,
-                    onBoardComputer: parsedDetails.vehicles.onBoardComputer,
-                    dabRadio: parsedDetails.vehicles.dabRadio,
-                    handsFreeCalling: parsedDetails.vehicles.handsFreeCalling,
-                    integratedMusicStreaming:
-                      parsedDetails.vehicles.integratedMusicStreaming,
-                    radio: parsedDetails.vehicles.radio,
-                    soundSystem: parsedDetails.vehicles.soundSystem,
-                    wifiHotspot: parsedDetails.vehicles.wifiHotspot,
-                    ledHeadlights: parsedDetails.vehicles.ledHeadlights,
-                    adaptiveHeadlights:
-                      parsedDetails.vehicles.adaptiveHeadlights,
-                    ambientLighting: parsedDetails.vehicles.ambientLighting,
-                    fogLights: parsedDetails.vehicles.fogLights,
-                    automaticHighBeams:
-                      parsedDetails.vehicles.automaticHighBeams,
-                    ledDaytimeRunningLights:
-                      parsedDetails.vehicles.ledDaytimeRunningLights,
-                    daytimeRunningLights:
-                      parsedDetails.vehicles.daytimeRunningLights,
-                    headlightCleaning: parsedDetails.vehicles.headlightCleaning,
-                    lightSensor: parsedDetails.vehicles.lightSensor,
-                    keylessEntry: parsedDetails.vehicles.keylessEntry,
-                    sunroof: parsedDetails.vehicles.sunroof,
-                    spareKey: parsedDetails.vehicles.spareKey,
-                    remoteStart: parsedDetails.vehicles.remoteStart,
-                    powerTailgate: parsedDetails.vehicles.powerTailgate,
-                    autoDimmingMirrors:
-                      parsedDetails.vehicles.autoDimmingMirrors,
-                    rainSensingWipers: parsedDetails.vehicles.rainSensingWipers,
-                    mountainDrivingAssistant:
-                      parsedDetails.vehicles.mountainDrivingAssistant,
-                    electricalWindowLifter:
-                      parsedDetails.vehicles.electricalWindowLifter,
-                    electricalSideMirrors:
-                      parsedDetails.vehicles.electricalSideMirrors,
-                    electricSeats: parsedDetails.vehicles.electricSeats,
-                    headUpDisplay: parsedDetails.vehicles.headUpDisplay,
-                    leatherSteeringWheel:
-                      parsedDetails.vehicles.leatherSteeringWheel,
-                    lumbarSupport: parsedDetails.vehicles.lumbarSupport,
-                    multifunctionalSteeringWheel:
-                      parsedDetails.vehicles.multifunctionalSteeringWheel,
-                    navigationSystem: parsedDetails.vehicles.navigationSystem,
-                    rainSensor: parsedDetails.vehicles.rainSensor,
-                    automaticStartStop:
-                      parsedDetails.vehicles.automaticStartStop,
-                    automaticDazzlingInteriorMirrors:
-                      parsedDetails.vehicles.automaticDazzlingInteriorMirrors,
-                    switchingRockers: parsedDetails.vehicles.switchingRockers,
-                    armrest: parsedDetails.vehicles.armrest,
-                    voiceControl: parsedDetails.vehicles.voiceControl,
-                    touchscreen: parsedDetails.vehicles.touchscreen,
-                    aluminumRims: parsedDetails.vehicles.aluminumRims,
-                    luggageCompartmentSeparation:
-                      parsedDetails.vehicles.luggageCompartmentSeparation,
-                    summerTires: parsedDetails.vehicles.summerTires,
-                    powerSteering: parsedDetails.vehicles.powerSteering,
-                    wheelType: parsedDetails.vehicles.wheelType,
-                    bodyType: parsedDetails.vehicles.bodyType,
-                    insuranceType: parsedDetails.vehicles.insuranceType,
-                    upholsteryMaterial:
-                      parsedDetails.vehicles.upholsteryMaterial,
-                    accidentFree: parsedDetails.vehicles.accidentFree,
-                    importStatus: parsedDetails.vehicles.importStatus,
-                    startType: parsedDetails.vehicles.startType,
-                    frontSuspension:
-                      parsedDetails.vehicles.frontSuspension || [],
-                    rearSuspension: parsedDetails.vehicles.rearSuspension || [],
-                    riderAids: parsedDetails.vehicles.riderAids || [],
-                    electronics: parsedDetails.vehicles.electronics || [],
-                    seatType: parsedDetails.vehicles.seatType,
-                    seatMaterial: parsedDetails.vehicles.seatMaterial,
-                    seatHeight:
-                      parseInt(parsedDetails.vehicles.seatHeight) || null,
-                    handlebarType: parsedDetails.vehicles.handlebarType,
-                    storageOptions: parsedDetails.vehicles.storageOptions || [],
-                    seatBelts: parsedDetails.vehicles.seatBelts,
-                    protectiveEquipment:
-                      parsedDetails.vehicles.protectiveEquipment || [],
-                    frontAirbags: parsedDetails.vehicles.frontAirbags,
-                    sideAirbags: parsedDetails.vehicles.sideAirbags,
-                    curtainAirbags: parsedDetails.vehicles.curtainAirbags,
-                    kneeAirbags: parsedDetails.vehicles.kneeAirbags,
-                    cruiseControl: parsedDetails.vehicles.cruiseControl,
-                    laneDepartureWarning:
-                      parsedDetails.vehicles.laneDepartureWarning,
-                    laneKeepAssist: parsedDetails.vehicles.laneKeepAssist,
-                    automaticEmergencyBraking:
-                      parsedDetails.vehicles.automaticEmergencyBraking,
-                    additionalNotes: parsedDetails.vehicles.additionalNotes,
-                    gearbox: parsedDetails.vehicles.gearbox,
-                    attachments: parsedDetails.vehicles.attachments || [],
+                    interiorColor: parsedDetails.vehicles.interiorColor || null,
+                    engine: parsedDetails.vehicles.engine || null,
+                    warranty: parsedDetails.vehicles.warranty || null,
+                    previousOwners: parsedDetails.vehicles.previousOwners ? Number(parsedDetails.vehicles.previousOwners) : null,
+                    // Essential properties for CARS and MOTORCYCLES only
+                    horsepower: parsedDetails.vehicles.horsepower ? Number(parsedDetails.vehicles.horsepower) : null,
+                    engineSize: parsedDetails.vehicles.engineSize || null,
+                    driveType: parsedDetails.vehicles.driveType || null,
+                    bodyStyle: parsedDetails.vehicles.bodyStyle || null,
+                    bodyType: parsedDetails.vehicles.bodyType || null,
+                    // Motorcycle specific
+                    motorcycleType: parsedDetails.vehicles.motorcycleType || null,
+                    engineConfiguration: parsedDetails.vehicles.engineConfiguration || null,
+                    frameType: parsedDetails.vehicles.frameType || null,
+                    // Common features
+                    abs: parsedDetails.vehicles.abs || null,
+                    airConditioning: parsedDetails.vehicles.airConditioning || null,
+                    bluetooth: parsedDetails.vehicles.bluetooth || null,
+                    centralLocking: parsedDetails.vehicles.centralLocking || null,
+                    immobilizer: parsedDetails.vehicles.immobilizer || null,
                   },
                 }
               : undefined,
