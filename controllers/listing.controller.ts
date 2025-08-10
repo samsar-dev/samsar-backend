@@ -467,6 +467,14 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       if (parsedDetails?.vehicles) {
         // Validate vehicleType
         const vehicleType = parsedDetails.vehicles.vehicleType;
+        if (vehicleType === undefined || vehicleType === null || vehicleType === '') {
+          return res.code(400).send({
+            success: false,
+            error: "vehicleType is required for vehicle listings",
+            status: 400,
+            data: null,
+          });
+        }
         if (!Object.values(VehicleType).includes(vehicleType as VehicleType)) {
           return res.code(400).send({
             success: false,
