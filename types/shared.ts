@@ -33,12 +33,8 @@ export enum ListingCategory {
 }
 
 export enum VehicleType {
-  CAR = "CAR",
-  TRUCK = "TRUCK",
-  MOTORCYCLE = "MOTORCYCLE",
-  RV = "RV",
-  OTHER = "OTHER",
-  TRACTOR = "TRACTOR",
+  CARS = "CARS",
+  MOTORCYCLES = "MOTORCYCLES",
 }
 
 export enum PropertyType {
@@ -83,71 +79,6 @@ export interface VehicleDetails {
   registrationStatus?: string;
   horsepower?: number;
   torque?: number;
-  // Bus-specific fields
-  seatingCapacity?: number;
-  luggageSpace?: number;
-  comfortFeatures?: string[];
-  seatType?: string[];
-  seatMaterial?: string;
-  wheelchairAccessible?: boolean;
-  wheelchairLift?: boolean;
-  accessibilityFeatures?: string[];
-  emergencyExits?: number;
-  safetyFeatures?: string[];
-  seatBelts?: string;
-  emissionStandard?: string;
-  enginePower?: string;
-  engineTorque?: string;
-  suspension?: string[];
-  brakeSystem?: string[];
-  entertainmentFeatures?: string[];
-  navigationSystem?: string;
-  communicationSystem?: string[];
-  maintenanceHistory?: string;
-  lastInspectionDate?: string;
-  certifications?: string[];
-  luggageCompartments?: number;
-  luggageRacks?: boolean;
-  fuelTankCapacity?: string;
-  // Tractor-specific fields
-  hours?: number;
-  driveSystem?: string;
-  engineSpecs?: string[];
-  engineManufacturer?: string;
-  engineModel?: string;
-  displacement?: string;
-  cylinders?: string;
-  emissions?: string;
-  hydraulicSystem?: string;
-  hydraulicFlow?: number;
-  hydraulicOutlets?: number;
-  ptoSystem?: string[];
-  ptoHorsepower?: number;
-  frontAttachments?: string[];
-  rearAttachments?: string[];
-  threePointHitch?: string;
-  hitchCapacity?: number;
-  cabFeatures?: string[];
-  seating?: string[];
-  steeringSystem?: string[];
-  lighting?: string[];
-  precisionFarming?: string[];
-  monitor?: string[];
-  electricalSystem?: string;
-  modifications?: string;
-  // Legacy tractor fields
-  attachments?: string[];
-  tires?: string;
-  implementType?: string;
-  width?: number;
-  weight?: number;
-  maxLoadCapacity?: number;
-  wheelbase?: number;
-  turningRadius?: number;
-  powerTakeOff?: boolean;
-  frontLoader?: boolean;
-  rearLoader?: boolean;
-  fuelEfficiency?: string;
 }
 
 export interface RealEstateDetails {

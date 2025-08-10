@@ -6,15 +6,8 @@ export enum ListingCategory {
 
 // 🌟 Vehicle Types
 export enum VehicleType {
-  CAR = "CAR",
-  TRUCK = "TRUCK",
-  VAN = "VAN",
-  BUS = "BUS",
-  MOTORCYCLE = "MOTORCYCLE",
-  RV = "RV",
-  CONSTRUCTION = "CONSTRUCTION",
-  TRACTOR = "TRACTOR",
-  OTHER = "OTHER",
+  CARS = "CARS",
+  MOTORCYCLES = "MOTORCYCLES",
 }
 
 // 🌟 Property Types

@@ -275,7 +275,7 @@ model VehicleDetails {
   bodyType                         String?
   brakeSystem                      String[]          @default([])
   burglarAlarmSystem               Boolean?
-  busType                          String?
+ 
   cabFeatures                      String[]          @default([])
   camera360                        Boolean?
   cargoVolume                      Int?
@@ -456,7 +456,6 @@ model VehicleDetails {
   operatorCabType                  String?
   payload                          Int?
   ptoType                          String?
-  truckType                        String?
   hydraulicOutlets                 Int?
   registrationStatus               String?
   coolingSystem                    String?
@@ -620,15 +619,8 @@ enum NotificationType {
 }
 
 enum VehicleType {
-  CAR
-  TRUCK
-  MOTORCYCLE
-  RV
-  OTHER
-  VAN
-  BUS
-  CONSTRUCTION
-  TRACTOR
+  CARS
+  MOTORCYCLES
 }
 
 enum FuelType {

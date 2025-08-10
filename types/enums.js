@@ -24,14 +24,7 @@ var ListingCategory;
 var VehicleType;
 (function (VehicleType) {
   VehicleType["CAR"] = "CAR";
-  VehicleType["TRUCK"] = "TRUCK";
-  VehicleType["VAN"] = "VAN";
-  VehicleType["BUS"] = "BUS";
   VehicleType["MOTORCYCLE"] = "MOTORCYCLE";
-  VehicleType["RV"] = "RV";
-  VehicleType["CONSTRUCTION"] = "CONSTRUCTION";
-  VehicleType["TRACTOR"] = "TRACTOR";
-  VehicleType["OTHER"] = "OTHER";
 })(VehicleType || (exports.VehicleType = VehicleType = {}));
 // 🌟 Property Types
 var PropertyType;

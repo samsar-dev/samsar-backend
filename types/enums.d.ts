@@ -4,14 +4,7 @@ export declare enum ListingCategory {
 }
 export declare enum VehicleType {
   CAR = "CAR",
-  TRUCK = "TRUCK",
-  VAN = "VAN",
-  BUS = "BUS",
   MOTORCYCLE = "MOTORCYCLE",
-  RV = "RV",
-  CONSTRUCTION = "CONSTRUCTION",
-  TRACTOR = "TRACTOR",
-  OTHER = "OTHER",
 }
 export declare enum PropertyType {
   HOUSE = "HOUSE",
