@@ -220,7 +220,6 @@ const allowedOrigins = [
   'https://samsar-frontend.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
-  'http://localhost:4173',
 ].filter(Boolean) as string[];
 
 await fastify.register(cors, {
