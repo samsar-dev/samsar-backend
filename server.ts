@@ -198,14 +198,12 @@ fastify.addHook("onRequest", async (request, reply) => {
 
 fastify.decorate("authenticate", async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    // Check if Authorization header exists before trying to verify
-    if (!request.headers.authorization) {
-      return reply.status(401).send({ message: 'Authorization header is missing' });
-    }
+    // Let jwtVerify() handle both Authorization header AND cookie authentication
+    // It will automatically check Authorization header first, then fall back to cookie
     await request.jwtVerify();
   } catch (err) {
     // Send a clear 401 response on verification failure
-    reply.status(401).send(err);
+    reply.status(401).send({ message: 'Unauthorized' });
   }
 });
 
@@ -217,8 +215,9 @@ await fastify.register(import("@fastify/etag"), {
 // CORS - Allow all origins for testing
 const allowedOrigins = [
   process.env.FRONTEND_URL,
- ' https://samsar.app',
-  'https://samsar-frontend.vercel.app', // Production Frontend
+  'https://samsar.app',
+  'https://www.samsar.app',
+  'https://samsar-frontend.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:4173',
@@ -226,11 +225,32 @@ const allowedOrigins = [
 
 await fastify.register(cors, {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) {
       callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'), false);
+      return;
     }
+
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    // Allow Vercel preview URLs dynamically
+    if (origin.endsWith('.vercel.app') && origin.includes('samsar')) {
+      callback(null, true);
+      return;
+    }
+
+    // Allow localhost with any port for development
+    if (origin.startsWith('http://localhost:') || origin.startsWith('https://localhost:')) {
+      callback(null, true);
+      return;
+    }
+
+    console.warn(`CORS: Blocked origin: ${origin}`);
+    callback(new Error('Not allowed by CORS'), false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
