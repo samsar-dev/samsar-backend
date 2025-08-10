@@ -13,6 +13,10 @@ import {
 } from "../controllers/auth.controller.js";
 import { resendVerification } from "../controllers/resend-verification.controller.js";
 import {
+  sendEmailChangeVerification,
+  changeEmailWithVerification,
+} from "../controllers/email-change.controller.js";
+import {
   validate,
   RegisterSchema,
   LoginSchema,
@@ -427,5 +431,55 @@ export default async function authRoutes(fastify: FastifyInstance) {
         });
       }
     },
+  );
+
+  // Send email change verification
+  fastify.post(
+    "/send-email-change-verification",
+    {
+      preHandler: [authenticate],
+      config: {
+        rateLimit: {
+          ...authRateLimit,
+          timeWindow: "5 minutes",
+          max: 3, // Only 3 email change requests per 5 minutes
+        },
+      },
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            newEmail: { type: "string", format: "email" },
+          },
+          required: ["newEmail"],
+        },
+      },
+    },
+    sendEmailChangeVerification,
+  );
+
+  // Change email with verification code
+  fastify.post(
+    "/change-email-with-verification",
+    {
+      preHandler: [authenticate],
+      config: {
+        rateLimit: {
+          ...authRateLimit,
+          timeWindow: "5 minutes",
+          max: 5, // Allow 5 verification attempts per 5 minutes
+        },
+      },
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            verificationCode: { type: "string", minLength: 6, maxLength: 6 },
+          },
+          required: ["verificationCode"],
+        },
+      },
+    },
+    changeEmailWithVerification,
   );
 }

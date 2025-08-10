@@ -36,11 +36,30 @@ function isImage(mimetype: string) {
   return mimetype.startsWith("image/");
 }
 
-// Process image with sharp
+// Process image with sharp - TEMPORARILY DISABLED FOR TESTING
 export const processImage = async (
   buffer: Buffer,
   originalMimetype: string,
 ): Promise<{ buffer: Buffer; format: string }> => {
+  console.log("🔧 TESTING MODE: Image compression disabled");
+  console.log(`Original image: ${(buffer.length / 1024).toFixed(1)}KB, mimetype: ${originalMimetype}`);
+  
+  // Return original buffer without any processing for testing
+  let format = "jpg";
+  if (originalMimetype === "image/png") {
+    format = "png";
+  } else if (originalMimetype === "image/webp") {
+    format = "webp";
+  } else if (originalMimetype === "image/jpeg") {
+    format = "jpg";
+  }
+  
+  return {
+    buffer: buffer, // Return original buffer without compression
+    format: format,
+  };
+  
+  /* ORIGINAL CODE - COMMENTED OUT FOR TESTING
   // Extract metadata to preserve orientation and other important data
   const metadata = await sharp(buffer).metadata();
 
@@ -79,6 +98,7 @@ export const processImage = async (
       format: "webp",
     };
   }
+  */
 };
 
 // Middleware: Process & upload all images
