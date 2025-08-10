@@ -467,7 +467,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       if (parsedDetails?.vehicles) {
         listingData.vehicleDetails = {
           create: {
-            vehicleType: parsedDetails.vehicles.vehicleType,
+            vehicleType: parsedDetails.vehicles.vehicleType as VehicleType,
             make: parsedDetails.vehicles.make || undefined,
             model: parsedDetails.vehicles.model || undefined,
             year: parsedDetails.vehicles.year
