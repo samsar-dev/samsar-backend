@@ -37,7 +37,7 @@ const __dirname = getDirname(import.meta.url);
 
 // Load environment variables
 dotenv.config();
-console.log("✅ JWT_SECRET from process.env:", process.env.JWT_SECRET);
+
 
 // -----------------
 // Create HTTP server manually
@@ -81,22 +81,53 @@ export const io = new SocketIOServer(httpServer, {
 fastify.decorate("io", io);
 
 io.use((socket, next) => {
-  console.log("Incoming socket headers:", socket.handshake.headers);
-  try {
-    const tokenWithBearer =
-      socket.handshake.headers.authorization ||
-      socket.handshake.auth.token ||
-      socket.handshake.query.token;
 
-    if (!tokenWithBearer) {
+  try {
+    // Try to get token from multiple sources
+    let token: string | null = null;
+    
+    // 1. Check authorization header
+    const authHeader = socket.handshake.headers.authorization;
+    if (authHeader) {
+      token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader;
+
+    }
+    
+    // 2. Check auth object
+    if (!token && socket.handshake.auth.token) {
+      const authToken = socket.handshake.auth.token;
+      token = authToken.startsWith("Bearer ") ? authToken.split(" ")[1] : authToken;
+
+    }
+    
+    // 3. Check query parameters
+    if (!token && socket.handshake.query.token) {
+      const queryToken = socket.handshake.query.token as string;
+      token = queryToken.startsWith("Bearer ") ? queryToken.split(" ")[1] : queryToken;
+
+    }
+    
+    // 4. Check cookies (most important for our case)
+    if (!token && socket.handshake.headers.cookie) {
+      const cookies = socket.handshake.headers.cookie;
+      const sessionTokenMatch = cookies.match(/session_token=([^;]+)/);
+      if (sessionTokenMatch) {
+        token = sessionTokenMatch[1];
+
+      }
+    }
+
+    if (!token) {
+      console.log("❌ No token found in any source:", {
+        hasAuthHeader: !!socket.handshake.headers.authorization,
+        hasAuthToken: !!socket.handshake.auth.token,
+        hasQueryToken: !!socket.handshake.query.token,
+        hasCookie: !!socket.handshake.headers.cookie,
+      });
       return next(new Error("Token missing"));
     }
 
-    const token = tokenWithBearer.startsWith("Bearer ")
-      ? tokenWithBearer.split(" ")[1]
-      : tokenWithBearer;
 
-    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ token:", token);
 
     // Verify and decode JWT token
     const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
@@ -106,7 +137,7 @@ io.use((socket, next) => {
     (socket as AuthSocket).user = decoded;
     next();
   } catch (error) {
-    console.log("🚀 ~ file: server.ts:78 ~ io.use ~ error:", error);
+
     next(error as ExtendedError);
   }
 });
@@ -248,7 +279,7 @@ await fastify.register(cors, {
       return;
     }
 
-    console.warn(`CORS: Blocked origin: ${origin}`);
+
     callback(new Error('Not allowed by CORS'), false);
   },
   credentials: true,
@@ -267,12 +298,12 @@ await fastify.register(cors, {
 // Logging (only development)
 if (process.env.NODE_ENV === "development") {
   fastify.addHook("onRequest", async (request) => {
-    console.log(`📥 ${request.method} ${request.url}`);
+
   });
 
   // Comment out the onSend hook for logging to prevent conflicts
   fastify.addHook("onSend", async (request, reply, payload) => {
-    console.log(`📤 Response ${reply.statusCode}`);
+
     return payload; // Return payload unchanged
   });
 }
@@ -333,7 +364,7 @@ await fastify.register(locationRoutes);
 
 // Error handling
 fastify.setErrorHandler((error, _, reply) => {
-  console.error(error);
+
   reply.status(error.statusCode || 500).send({
     success: false,
     error: {
@@ -362,7 +393,7 @@ export const usersSocketId = new Map<string, string>();
 async function startServer() {
   try {
     await prisma.$connect();
-    console.log("✅ Connected to database");
+
 
     // Register contact routes
     const { default: contactRoutes } = await import(
@@ -375,43 +406,43 @@ async function startServer() {
       "./routes/listingPermission.routes.js"
     );
     await fastify.register(listingPermissionRoutes, { prefix: "/api" });
-    console.log("✅ Contact routes registered");
+
 
     const port = Number(process.env.PORT || 5000);
     await fastify.listen({ port, host: "0.0.0.0" });
 
-    console.log(`🚀 Server running on http://localhost:${port}`);
-    console.log("✅ all user sockets:", usersSocketId);
+
+
 
     // Socket.io handlers
     io.on("connection", (socket: AuthSocket) => {
       const user = socket.user;
       usersSocketId.set(user.sub, socket.id);
-      console.log("✅ New socket connected:", socket.id);
-      console.log("User payload:", socket.user);
-      console.log("all user sockets:", usersSocketId);
+
+
+
 
       socket.on(NEW_MESSAGE, (data: NewMessageData) => {
-        console.log("newMessages");
+
         newMessages(data);
       });
 
       socket.on(PRICE_CHANGE, (data: PriceChangeData) => {
-        console.log("Price change data:", data);
+
         handlePriceChange(data);
       });
 
       socket.on("join", (data) => {
-        console.log("User joined:", data);
+
       });
 
       socket.on("disconnect", () => {
         // usersSocketId.delete(user.id);
-        console.log("User disconnected:", socket.id);
+
       });
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+
     process.exit(1);
   }
 }

@@ -11,26 +11,18 @@ export const REFRESH_COOKIE_NAME = "refresh_token";
 // Helper to append a cookie without overriding existing Set-Cookie headers
 const appendSetCookie = (reply: FastifyReply, cookie: string) => {
   const existing = reply.raw.getHeader("Set-Cookie");
-  console.log("📋 appendSetCookie called:", {
-    cookiePreview: cookie.substring(0, 50) + "...",
-    existingHeaders: existing,
-  });
 
   if (!existing) {
     reply.raw.setHeader("Set-Cookie", cookie);
-    console.log("✅ Set new Set-Cookie header");
+
   } else if (Array.isArray(existing)) {
     reply.raw.setHeader("Set-Cookie", [...existing, cookie]);
-    console.log("✅ Appended to existing Set-Cookie array");
+
   } else {
     reply.raw.setHeader("Set-Cookie", [existing as string, cookie]);
-    console.log("✅ Converted to array and appended");
+
   }
 
-  console.log(
-    "📋 Final Set-Cookie headers:",
-    reply.raw.getHeader("Set-Cookie"),
-  );
 };
 
 export const setSessionCookie = (
@@ -38,11 +30,10 @@ export const setSessionCookie = (
   token: string,
   maxAge: number,
 ) => {
-  console.log("🔑 setSessionCookie called:", {
-    tokenLength: token.length,
-    maxAge,
-    nodeEnv: process.env.NODE_ENV,
-  });
+  // Session cookie being set
+
+  // Debug environment variables for production detection
+
 
   // Determine if we're actually in production based on environment
   const isActualProduction =
@@ -51,24 +42,27 @@ export const setSessionCookie = (
       process.env.VERCEL_ENV === "production" ||
       process.env.PRODUCTION === "true");
 
+
+
   const options = {
     path: "/",
+    domain: isActualProduction ? undefined : "localhost", // Set domain for development
     secure: isActualProduction,
     httponly: true,
     samesite: isActualProduction ? "None" : "Lax",
     "max-age": maxAge,
   } as const;
 
-  console.log("🍪 Cookie options:", options);
+
 
   const cookie = `${SESSION_COOKIE_NAME}=${token}; ${Object.entries(options)
     .filter(([, v]) => v !== false && v !== undefined && v !== null)
     .map(([k, v]) => (typeof v === "boolean" ? k : `${k}=${v}`))
     .join("; ")}`;
 
-  console.log("🍪 Generated session cookie:", cookie.substring(0, 100) + "...");
+
   appendSetCookie(reply, cookie);
-  console.log("✅ Session cookie appended to response");
+
 };
 
 export const setRefreshCookie = (
@@ -76,11 +70,7 @@ export const setRefreshCookie = (
   token: string,
   maxAge: number,
 ) => {
-  console.log("🔄 setRefreshCookie called:", {
-    tokenLength: token.length,
-    maxAge,
-    nodeEnv: process.env.NODE_ENV,
-  });
+  // Setting refresh cookie
 
   // Use same production detection logic
   const isActualProduction =
@@ -89,15 +79,18 @@ export const setRefreshCookie = (
       process.env.VERCEL_ENV === "production" ||
       process.env.PRODUCTION === "true");
 
+
+
   const options = {
     path: "/auth/refresh",
+    domain: isActualProduction ? undefined : "localhost", // Set domain for development
     secure: isActualProduction,
     httponly: true,
-    samesite: "None",
+    samesite: isActualProduction ? "None" : "Lax", // Use Lax for development
     "max-age": maxAge,
   } as const;
 
-  console.log("🔄 Refresh cookie options:", options);
+
 
   const cookie = `${REFRESH_COOKIE_NAME}=${token}; ${Object.entries(options)
     .filter(([, v]) => v !== false && v !== undefined && v !== null)
@@ -108,7 +101,7 @@ export const setRefreshCookie = (
 };
 
 export const clearSessionCookies = (reply: FastifyReply) => {
-  console.log("🧹 clearSessionCookies called");
+
 
   // Use same production detection logic
   const isActualProduction =
@@ -124,7 +117,7 @@ export const clearSessionCookies = (reply: FastifyReply) => {
     samesite: isActualProduction ? "None" : "Lax",
   };
 
-  console.log("🧹 Clear session cookie options:", options);
+
 
   // Clear session cookie
   const sessionCookie = `${SESSION_COOKIE_NAME}=; Max-Age=0; ${Object.entries(
@@ -145,7 +138,7 @@ export const clearSessionCookies = (reply: FastifyReply) => {
     ...(isActualProduction && { Domain: ".samsar.app" }),
   };
 
-  console.log("🧹 Clear refresh cookie options:", refreshOptions);
+
 
   const refreshCookie = `${REFRESH_COOKIE_NAME}=; Max-Age=0; ${Object.entries(
     refreshOptions,
