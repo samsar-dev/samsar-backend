@@ -2,9 +2,6 @@ import { FastifyInstance } from 'fastify';
 import { diagnosticController } from '../controllers/diagnostic.controller.js';
 
 export default async function diagnosticRoutes(fastify: FastifyInstance) {
-  // Health check - accessible without authentication
-  fastify.get('/health', diagnosticController.health);
-  
   // Detailed headers for debugging - accessible without authentication
   fastify.get('/diagnostic-headers', diagnosticController.headers);
   

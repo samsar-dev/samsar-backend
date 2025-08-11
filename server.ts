@@ -308,13 +308,31 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
-// Health route
-fastify.get("/api/health", async (_, reply) => {
+// Health route with Syria diagnostic info
+fastify.get("/api/health", async (request, reply) => {
+  const headers = request.headers;
+  const ip = request.ip;
+  
   reply.status(200).send({
     status: "healthy",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV,
+    server: "Railway Backend",
+    clientInfo: {
+      ip: ip,
+      realIp: headers['cf-connecting-ip'] || headers['x-forwarded-for'] || ip,
+      country: headers['cf-ipcountry'] || 'Unknown',
+      userAgent: headers['user-agent'],
+      ray: headers['cf-ray'] || 'No Cloudflare'
+    },
+    syriaTest: {
+      isFromSyria: headers['cf-ipcountry'] === 'SY',
+      accessible: true,
+      message: headers['cf-ipcountry'] === 'SY' ? 
+        '✅ Railway backend is accessible from Syria!' : 
+        '✅ Backend is accessible from your location'
+    }
   });
 });
 
