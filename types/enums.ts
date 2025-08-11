@@ -8,6 +8,10 @@ export enum ListingCategory {
 export enum VehicleType {
   CARS = "CARS",
   MOTORCYCLES = "MOTORCYCLES",
+  VANS = "VANS",
+  TRUCKS = "TRUCKS", 
+  BUSES = "BUSES",
+  TRACTORS = "TRACTORS",
 }
 
 // 🌟 Property Types

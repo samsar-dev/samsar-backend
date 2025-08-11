@@ -362,6 +362,10 @@ await fastify.register(reportRoutes, { prefix: "/api/reports" });
 import locationRoutes from "./routes/location.routes.js";
 await fastify.register(locationRoutes);
 
+// Register diagnostic routes for Syria connectivity testing
+import diagnosticRoutes from "./routes/diagnostic.routes.js";
+await fastify.register(diagnosticRoutes, { prefix: "/api" });
+
 // Error handling
 fastify.setErrorHandler((error, _, reply) => {
 

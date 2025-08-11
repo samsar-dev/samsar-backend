@@ -14,7 +14,16 @@ import {
 import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType } from "../types/enums.js";
 import { filterListingDetails } from "../utils/listing.utils.js";
-import { addListingImages } from "../controllers/listing.controller.js";
+import { 
+  addListingImages, 
+  createListing, 
+  getListings, 
+  getListing, 
+  updateListing, 
+  deleteListing, 
+  toggleSaveListing 
+} from "../controllers/listing.controller.js";
+import { VehicleValidatorFactory, RealEstateValidatorFactory } from "../validators/index.js";
 import { Param } from "@prisma/client/runtime/library";
 interface ListingQuery {
   mainCategory?: string;
@@ -914,166 +923,106 @@ export default async function (fastify: FastifyInstance) {
             },
             userId: user.id,
             listingAction,
-            vehicleDetails: parsedDetails.vehicles
-              ? {
-                  create: {
-                    vehicleType: parsedDetails.vehicles.vehicleType as VehicleType,
-                    make: parsedDetails.vehicles.make,
-                    model: parsedDetails.vehicles.model,
-                    year: parsedDetails.vehicles.year || new Date().getFullYear(),
-                    mileage: parsedDetails.vehicles.mileage ? Number(parsedDetails.vehicles.mileage) : null,
-                    fuelType: parsedDetails.vehicles.fuelType || null,
-                    transmissionType: parsedDetails.vehicles.transmissionType || null,
-                    color: parsedDetails.vehicles.color || null,
-                    condition: parsedDetails.vehicles.condition || null,
-                    features: parsedDetails.vehicles.features || [],
-                    interiorColor: parsedDetails.vehicles.interiorColor || null,
-                    engine: parsedDetails.vehicles.engine || null,
-                    warranty: parsedDetails.vehicles.warranty || null,
-                    previousOwners: parsedDetails.vehicles.previousOwners ? Number(parsedDetails.vehicles.previousOwners) : null,
-                    // Essential properties for CARS and MOTORCYCLES only
-                    horsepower: parsedDetails.vehicles.horsepower ? Number(parsedDetails.vehicles.horsepower) : null,
-                    engineSize: parsedDetails.vehicles.engineSize || null,
-                    driveType: parsedDetails.vehicles.driveType || null,
-                    bodyStyle: parsedDetails.vehicles.bodyStyle || null,
-                    bodyType: parsedDetails.vehicles.bodyType || null,
-                    // Motorcycle specific
-                    motorcycleType: parsedDetails.vehicles.motorcycleType || null,
-                    engineConfiguration: parsedDetails.vehicles.engineConfiguration || null,
-                    frameType: parsedDetails.vehicles.frameType || null,
-                    // Common features
-                    abs: parsedDetails.vehicles.abs || null,
-                    airConditioning: parsedDetails.vehicles.airConditioning || null,
-                    bluetooth: parsedDetails.vehicles.bluetooth || null,
-                    centralLocking: parsedDetails.vehicles.centralLocking || null,
-                    immobilizer: parsedDetails.vehicles.immobilizer || null,
-                  },
-                }
-              : undefined,
-            realEstateDetails: parsedDetails.realEstate
-              ? {
-                  create: {
-                    propertyType:
-                      parsedDetails.realEstate.propertyType || "HOUSE",
-                    size: parsedDetails.realEstate.size?.toString() || null,
-                    yearBuilt:
-                      parseInt(
-                        parsedDetails.realEstate.yearBuilt?.toString(),
-                      ) || null,
-                    bedrooms:
-                      parseInt(
-                        parsedDetails.realEstate.houseDetails?.bedrooms?.toString(),
-                      ) || null,
-                    bathrooms:
-                      parseInt(
-                        parsedDetails.realEstate.houseDetails?.bathrooms?.toString(),
-                      ) || null,
-                    totalArea:
-                      parseInt(
-                        parsedDetails.realEstate.houseDetails?.totalArea?.toString(),
-                      ) || null,
-                    condition:
-                      parsedDetails.realEstate.condition?.toString() || null,
-                    parkingSpaces:
-                      parseInt(
-                        parsedDetails.realEstate.parkingSpaces?.toString(),
-                      ) || null,
-                    constructionType:
-                      parsedDetails.realEstate.constructionType || null,
-                    features: parsedDetails.realEstate.features || [],
-                    parking: parsedDetails.realEstate.parking || null,
-                    floor: parsedDetails.realEstate.floor || null,
-                    totalFloors: parsedDetails.realEstate.totalFloors || null,
-                    elevator: parsedDetails.realEstate.elevator,
-                    balcony: parsedDetails.realEstate.balcony,
-                    storage: parsedDetails.realEstate.storage,
-                    heating: parsedDetails.realEstate.heating || null,
-                    cooling: parsedDetails.realEstate.cooling || null,
-                    buildingAmenities:
-                      parsedDetails.realEstate.buildingAmenities || [],
-                    energyRating: parsedDetails.realEstate.energyRating || null,
-                    furnished: parsedDetails.realEstate.furnished || null,
-                    view: parsedDetails.realEstate.view || null,
-                    securityFeatures:
-                      parsedDetails.realEstate.securityFeatures || [],
-                    fireSafety: parsedDetails.realEstate.fireSafety || [],
-                    flooringType: parsedDetails.realEstate.flooringType || null,
-                    internetIncluded: parsedDetails.realEstate.internetIncluded,
-                    windowType: parsedDetails.realEstate.windowType || null,
-                    accessibilityFeatures:
-                      parsedDetails.realEstate.accessibilityFeatures || [],
-                    renovationHistory:
-                      parsedDetails.realEstate.renovationHistory || null,
-                    parkingType: parsedDetails.realEstate.parkingType || null,
-                    utilities: parsedDetails.realEstate.utilities || [],
-                    exposureDirection:
-                      parsedDetails.realEstate.exposureDirection || [],
-                    storageType: parsedDetails.realEstate.storageType || [],
-                    halfBathrooms:
-                      parseInt(parsedDetails.realEstate.halfBathrooms) || null,
-                    stories: parseInt(parsedDetails.realEstate.stories) || null,
-                    basement: parsedDetails.realEstate.basement || null,
-                    attic: parsedDetails.realEstate.attic || null,
-                    flooringTypes: parsedDetails.realEstate.flooringTypes || [],
-                    parcelNumber: parsedDetails.realEstate.parcelNumber || null,
-                    topography: parsedDetails.realEstate.topography || [],
-                    elevation: parsedDetails.realEstate.elevation
-                      ? parseInt(parsedDetails.realEstate.elevation.toString())
-                      : null,
-                    waterFeatures:
-                      parsedDetails.realEstate.waterFeatures || null,
-                    naturalFeatures:
-                      parsedDetails.realEstate.naturalFeatures || null,
-                    buildable: parsedDetails.realEstate.buildable || null,
-                    buildingRestrictions:
-                      parsedDetails.realEstate.buildingRestrictions || null,
-                    permitsInPlace:
-                      parsedDetails.realEstate.permitsInPlace || null,
-                    environmentalFeatures:
-                      parsedDetails.realEstate.environmentalFeatures || null,
-                    soilTypes: parsedDetails.realEstate.soilTypes || [],
-                    petPolicy: parsedDetails.realEstate.petPolicy || null,
+            vehicleDetails: await (async () => {
+              if (!parsedDetails.vehicles) return undefined;
+              
+              const vehicleType = parsedDetails.vehicles.vehicleType as VehicleType;
+              
+              // Use our clean validator factory
+              const validationResult = VehicleValidatorFactory.validate(vehicleType, parsedDetails.vehicles);
+              
+              if (validationResult.errors.length > 0) {
+                throw new Error(`Vehicle validation failed: ${validationResult.errors.join(', ')}`);
+              }
 
-                    // 🆕 Added fields based on updated schema:
-                    livingArea: parsedDetails.realEstate.livingArea
-                      ? parseFloat(
-                          parsedDetails.realEstate.livingArea.toString(),
-                        )
-                      : null,
-                    energyFeatures:
-                      parsedDetails.realEstate.energyFeatures || null,
-                    basementFeatures:
-                      parsedDetails.realEstate.basementFeatures || null,
-                    windowFeatures:
-                      parsedDetails.realEstate.windowFeatures || null,
-                    kitchenFeatures:
-                      parsedDetails.realEstate.kitchenFeatures || null,
-                    bathroomFeatures:
-                      parsedDetails.realEstate.bathroomFeatures || null,
-                    roofAge: parsedDetails.realEstate.roofAge
-                      ? parseInt(parsedDetails.realEstate.roofAge.toString())
-                      : null,
-                    exteriorFeatures:
-                      parsedDetails.realEstate.exteriorFeatures || null,
-                    outdoorFeatures:
-                      parsedDetails.realEstate.outdoorFeatures || null,
-                    landscaping: parsedDetails.realEstate.landscaping || null,
-                    smartHomeFeatures:
-                      parsedDetails.realEstate.smartHomeFeatures || null,
-                    communityFeatures:
-                      parsedDetails.realEstate.communityFeatures || null,
-                    hoaFeatures: parsedDetails.realEstate.hoaFeatures || null,
-                    appliances: parsedDetails.realEstate.appliances || null,
-                    petFeatures: parsedDetails.realEstate.petFeatures || null,
-                    accessibility:
-                      parsedDetails.realEstate.accessibility || null,
-                    storageFeatures:
-                      parsedDetails.realEstate.storageFeatures || null,
-                    floorLevel: parsedDetails.realEstate.floorLevel || null,
-                    isBuildable: parsedDetails.realEstate.isBuildable || null,
-                  },
+              // Use the mapped data from the validator
+              const mappedVehicleData = validationResult.mappedData;
+              if (!mappedVehicleData) return undefined;
+
+              // Create base vehicle details with type conversion for Prisma compatibility
+              const vehicleDetails: any = {
+                vehicleType: mappedVehicleData.vehicleType as any,
+                make: mappedVehicleData.make || undefined,
+                model: mappedVehicleData.model || undefined,
+                year: mappedVehicleData.year || undefined,
+                mileage: mappedVehicleData.mileage || null,
+                fuelType: mappedVehicleData.fuelType as any || null,
+                transmissionType: mappedVehicleData.transmissionType as any || null,
+                color: mappedVehicleData.color || null,
+                condition: mappedVehicleData.condition as any || null,
+                engine: (mappedVehicleData as any).engine || null,
+                warranty: (mappedVehicleData as any).warranty || null,
+                serviceHistory: (mappedVehicleData as any).serviceHistory || null,
+                previousOwners: (mappedVehicleData as any).previousOwners || null,
+                registrationStatus: (mappedVehicleData as any).registrationStatus || null,
+              };
+
+              // Add type-specific fields based on validator results
+              if ('interiorColor' in mappedVehicleData) {
+                vehicleDetails.interiorColor = (mappedVehicleData as any).interiorColor || null;
+              }
+              if ('doors' in mappedVehicleData) {
+                vehicleDetails.doors = (mappedVehicleData as any).doors || null;
+              }
+              if ('seats' in mappedVehicleData) {
+                vehicleDetails.seats = (mappedVehicleData as any).seats || null;
+              }
+              if ('engineCapacity' in mappedVehicleData) {
+                vehicleDetails.engineCapacity = (mappedVehicleData as any).engineCapacity || null;
+              }
+              if ('payloadCapacity' in mappedVehicleData) {
+                vehicleDetails.payloadCapacity = (mappedVehicleData as any).payloadCapacity || null;
+              }
+
+              return { create: vehicleDetails };
+            })(),
+            realEstateDetails: await (async () => {
+              if (!parsedDetails.realEstate) return undefined;
+              
+              const propertyType = parsedDetails.realEstate.propertyType as PropertyType;
+              
+              // Use our clean real estate validator factory
+              const validationResult = RealEstateValidatorFactory.validate(propertyType, parsedDetails.realEstate);
+              
+              if (validationResult.errors.length > 0) {
+                throw new Error(`Real estate validation failed: ${validationResult.errors.join(', ')}`);
+              }
+
+              // Use the mapped data from the validator
+              const mappedRealEstateData = validationResult.mappedData;
+              if (!mappedRealEstateData) return undefined;
+
+              // Create flexible real estate details mapping
+              const realEstateDetails: any = {
+                propertyType: (mappedRealEstateData as any).propertyType || "OTHER",
+              };
+
+              // Map all possible fields from the validator result
+              const fieldMappings = [
+                'size', 'condition', 'constructionType', 'features', 'parking', 
+                'accessibilityFeatures', 'balcony', 'buildingAmenities', 'cooling',
+                'elevator', 'energyRating', 'exposureDirection', 'fireSafety',
+                'floor', 'flooringType', 'furnished', 'heating', 'internetIncluded',
+                'parkingType', 'petPolicy', 'renovationHistory', 'securityFeatures',
+                'storage', 'storageType', 'totalFloors', 'utilities', 'view',
+                'windowType', 'totalArea', 'yearBuilt', 'bedrooms', 'bathrooms',
+                'floorLevel', 'isBuildable', 'elevation', 'buildable', 'buildingRestrictions',
+                'environmentalFeatures', 'naturalFeatures', 'parcelNumber', 'permitsInPlace',
+                'soilTypes', 'topography', 'waterFeatures', 'accessibility', 'appliances',
+                'communityFeatures', 'energyFeatures', 'exteriorFeatures', 'hoaFeatures',
+                'kitchenFeatures', 'landscaping', 'livingArea', 'halfBathrooms', 'stories',
+                'attic', 'basement', 'flooringTypes', 'basementFeatures', 'bathroomFeatures'
+              ];
+
+              // Map all available fields from the validator result
+              fieldMappings.forEach(field => {
+                if (field in (mappedRealEstateData as any)) {
+                  realEstateDetails[field] = (mappedRealEstateData as any)[field] || null;
                 }
-              : undefined,
+              });
+
+              return { create: realEstateDetails };
+            })(),
           },
           include: {
             images: true,

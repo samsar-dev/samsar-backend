@@ -3,11 +3,9 @@ import {
   ListingAction,
   Prisma,
   NotificationType,
-  VehicleType,
-  FuelType,
-  TransmissionType,
-  Condition,
 } from "@prisma/client";
+import { VehicleType, FuelType, TransmissionType, Condition, PropertyType } from "../types/enums.js";
+import { VehicleValidatorFactory, RealEstateValidatorFactory } from "../validators/index.js";
 import prisma from "../src/lib/prismaClient.js";
 import {
   uploadToR2,
@@ -250,16 +248,16 @@ const formatListingResponse = (
     vehicleDetails: listing.vehicleDetails
       ? {
           id: listing.vehicleDetails.id,
-          vehicleType: listing.vehicleDetails.vehicleType,
+          vehicleType: listing.vehicleDetails.vehicleType as any,
           make: listing.vehicleDetails.make,
           model: listing.vehicleDetails.model,
           year: listing.vehicleDetails.year,
           mileage: listing.vehicleDetails.mileage || undefined,
-          fuelType: listing.vehicleDetails.fuelType || undefined,
+          fuelType: listing.vehicleDetails.fuelType as any,
           transmissionType:
-            listing.vehicleDetails.transmissionType || undefined,
+            listing.vehicleDetails.transmissionType as any || undefined,
           color: listing.vehicleDetails.color || undefined,
-          condition: listing.vehicleDetails.condition || undefined,
+          condition: listing.vehicleDetails.condition as any || undefined,
           listingId: listing.vehicleDetails.listingId,
           interiorColor: listing.vehicleDetails.interiorColor || undefined,
           engine: listing.vehicleDetails.engine || undefined,
@@ -273,7 +271,7 @@ const formatListingResponse = (
     realEstateDetails: listing.realEstateDetails
       ? {
           id: listing.realEstateDetails.id,
-          propertyType: listing.realEstateDetails.propertyType,
+          propertyType: listing.realEstateDetails.propertyType as any,
           size: listing.realEstateDetails.size || undefined,
           yearBuilt: listing.realEstateDetails.yearBuilt
             ? String(listing.realEstateDetails.yearBuilt)
@@ -416,6 +414,15 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     // Parse details if it's a string
     const parsedDetails =
       typeof details === "string" ? JSON.parse(details) : details;
+    
+    // Debug logging to see exactly what's being received
+    console.log("=== DEBUG: Request Body ===");
+    console.log("Raw details:", details);
+    console.log("Parsed details:", parsedDetails);
+    console.log("Parsed vehicles:", parsedDetails?.vehicles);
+    console.log("Vehicle type from parsed:", parsedDetails?.vehicles?.vehicleType);
+    console.log("Type of vehicleType:", typeof parsedDetails?.vehicles?.vehicleType);
+    console.log("=== END DEBUG ===");
 
     const errors = validateListingData(req.body);
     if (errors.length > 0) {
@@ -465,72 +472,108 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
 
       // Add vehicle details if present
       if (parsedDetails?.vehicles) {
-        // Validate vehicleType
-        const vehicleType = parsedDetails.vehicles.vehicleType;
-        if (vehicleType === undefined || vehicleType === null || vehicleType === '') {
-          return res.code(400).send({
-            success: false,
-            error: "vehicleType is required for vehicle listings",
-            status: 400,
-            data: null,
-          });
-        }
-        if (!Object.values(VehicleType).includes(vehicleType as VehicleType)) {
-          return res.code(400).send({
-            success: false,
-            error: `Invalid vehicleType: ${vehicleType}. Expected one of: ${Object.values(VehicleType).join(', ')}`,
-            status: 400,
-            data: null,
-          });
-        }
+        const vehicleType = parsedDetails.vehicles.vehicleType as VehicleType;
         
-        listingData.vehicleDetails = {
-          create: {
-            vehicleType: vehicleType as VehicleType,
-            make: parsedDetails.vehicles.make || undefined,
-            model: parsedDetails.vehicles.model || undefined,
-            year: parsedDetails.vehicles.year
-              ? parseInt(parsedDetails.vehicles.year, 10)
-              : undefined,
-            mileage: parsedDetails.vehicles.mileage
-              ? parseInt(parsedDetails.vehicles.mileage, 10)
-              : null,
-            fuelType: parsedDetails.vehicles.fuelType || null,
-            transmissionType: parsedDetails.vehicles.transmissionType || null,
-            color: parsedDetails.vehicles.color || null,
-            condition: parsedDetails.vehicles.condition || null,
-          } as Prisma.VehicleDetailsCreateWithoutListingInput,
-        };
+        // Use the validator factory for clean validation
+        const validationResult = VehicleValidatorFactory.validate(vehicleType, parsedDetails.vehicles);
+        
+        if (validationResult.errors.length > 0) {
+          return res.code(400).send({
+            success: false,
+            error: "Vehicle validation failed",
+            errors: validationResult.errors,
+            validator: VehicleValidatorFactory.getValidatorName(vehicleType),
+            status: 400,
+            data: null,
+          });
+        }
+
+        // Use the mapped data from the validator
+        const mappedVehicleData = validationResult.mappedData;
+        if (mappedVehicleData) {
+          // Create base vehicle details
+          const vehicleDetails: any = {
+            vehicleType: mappedVehicleData.vehicleType as any, // Type conversion for Prisma compatibility
+            make: mappedVehicleData.make || undefined,
+            model: mappedVehicleData.model || undefined,
+            year: mappedVehicleData.year || undefined,
+            mileage: mappedVehicleData.mileage || null,
+            fuelType: mappedVehicleData.fuelType as any || null,
+            transmissionType: mappedVehicleData.transmissionType as any || null,
+            color: mappedVehicleData.color || null,
+            condition: mappedVehicleData.condition as any || null,
+            engine: (mappedVehicleData as any).engine || null,
+            warranty: (mappedVehicleData as any).warranty || null,
+            serviceHistory: (mappedVehicleData as any).serviceHistory || null,
+            previousOwners: (mappedVehicleData as any).previousOwners || null,
+            registrationStatus: (mappedVehicleData as any).registrationStatus || null,
+          };
+
+          // Add type-specific fields
+          if ('interiorColor' in mappedVehicleData) {
+            vehicleDetails.interiorColor = (mappedVehicleData as any).interiorColor || null;
+          }
+
+          listingData.vehicleDetails = {
+            create: vehicleDetails as Prisma.VehicleDetailsCreateWithoutListingInput,
+          };
+        }
       }
 
       // Add real estate details if present
       if (parsedDetails?.realEstate) {
-        listingData.realEstateDetails = {
-          create: {
-            propertyType: parsedDetails.realEstate.propertyType || undefined,
-            totalArea: parsedDetails.realEstate.totalArea
-              ? parseFloat(parsedDetails.realEstate.totalArea)
-              : undefined,
-            bedrooms: parsedDetails.realEstate.bedrooms
-              ? parseInt(parsedDetails.realEstate.bedrooms, 10)
-              : undefined,
-            bathrooms: parsedDetails.realEstate.bathrooms
-              ? parseFloat(parsedDetails.realEstate.bathrooms)
-              : undefined,
-            yearBuilt: parsedDetails.realEstate.yearBuilt
-              ? parseInt(parsedDetails.realEstate.yearBuilt, 10)
-              : undefined,
-            floorLevel: parsedDetails.realEstate.floorLevel
-              ? parseInt(parsedDetails.realEstate.floorLevel, 10)
-              : undefined,
-            isBuildable:
-              typeof parsedDetails.realEstate.isBuildable === "boolean"
-                ? parsedDetails.realEstate.isBuildable
-                : undefined,
-            usageType: parsedDetails.realEstate.usageType || undefined,
-            condition: parsedDetails.realEstate.condition || undefined,
-          } as Prisma.RealEstateDetailsCreateWithoutListingInput,
-        };
+        const propertyType = parsedDetails.realEstate.propertyType as PropertyType;
+        
+        // Use our clean real estate validator factory
+        const validationResult = RealEstateValidatorFactory.validate(propertyType, parsedDetails.realEstate);
+        
+        if (validationResult.errors.length > 0) {
+          return res.code(400).send({
+            success: false,
+            error: "Real estate validation failed",
+            errors: validationResult.errors,
+            validator: RealEstateValidatorFactory.getValidatorName(propertyType),
+            status: 400,
+            data: null,
+          });
+        }
+
+        // Use the mapped data from the validator
+        const mappedRealEstateData = validationResult.mappedData;
+        if (mappedRealEstateData) {
+          // Create flexible real estate details mapping
+          const realEstateDetails: any = {
+            propertyType: (mappedRealEstateData as any).propertyType || "OTHER",
+          };
+
+          // Map all possible fields from the validator result
+          const fieldMappings = [
+            'size', 'condition', 'constructionType', 'features', 'parking', 
+            'accessibilityFeatures', 'balcony', 'buildingAmenities', 'cooling',
+            'elevator', 'energyRating', 'exposureDirection', 'fireSafety',
+            'floor', 'flooringType', 'furnished', 'heating', 'internetIncluded',
+            'parkingType', 'petPolicy', 'renovationHistory', 'securityFeatures',
+            'storage', 'storageType', 'totalFloors', 'utilities', 'view',
+            'windowType', 'totalArea', 'yearBuilt', 'bedrooms', 'bathrooms',
+            'floorLevel', 'isBuildable', 'elevation', 'buildable', 'buildingRestrictions',
+            'environmentalFeatures', 'naturalFeatures', 'parcelNumber', 'permitsInPlace',
+            'soilTypes', 'topography', 'waterFeatures', 'accessibility', 'appliances',
+            'communityFeatures', 'energyFeatures', 'exteriorFeatures', 'hoaFeatures',
+            'kitchenFeatures', 'landscaping', 'livingArea', 'halfBathrooms', 'stories',
+            'attic', 'basement', 'flooringTypes', 'basementFeatures', 'bathroomFeatures'
+          ];
+
+          // Map all available fields from the validator result
+          fieldMappings.forEach(field => {
+            if (field in (mappedRealEstateData as any)) {
+              realEstateDetails[field] = (mappedRealEstateData as any)[field] || null;
+            }
+          });
+
+          listingData.realEstateDetails = {
+            create: realEstateDetails as Prisma.RealEstateDetailsCreateWithoutListingInput,
+          };
+        }
       }
 
       // Create the listing
