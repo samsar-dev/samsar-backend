@@ -20,6 +20,7 @@ export interface CarDetails {
   doors?: number;
   seats?: number;
   airbags?: number;
+  seatingCapacity?: number;
   sunroof?: boolean;
   navigationSystem?: boolean;
   bluetooth?: boolean;
@@ -67,8 +68,15 @@ export const validateCarData = (data: any): string[] => {
     errors.push(`Invalid fuel type. Must be one of: ${Object.values(FuelType).join(', ')}`);
   }
 
-  if (data.transmissionType && !Object.values(TransmissionType).includes(data.transmissionType)) {
-    errors.push(`Invalid transmission type. Must be one of: ${Object.values(TransmissionType).join(', ')}`);
+  // Handle transmission type validation with frontend compatibility
+  if (data.transmissionType) {
+    const validTransmissionTypes = [
+      ...Object.values(TransmissionType),
+      'continuouslyVariable' // Frontend compatibility
+    ];
+    if (!validTransmissionTypes.includes(data.transmissionType)) {
+      errors.push(`Invalid transmission type. Must be one of: ${Object.values(TransmissionType).join(', ')}`);
+    }
   }
 
   if (data.condition && !Object.values(Condition).includes(data.condition)) {
@@ -95,6 +103,14 @@ export const validateCarData = (data: any): string[] => {
 };
 
 export const mapCarData = (data: any): Partial<CarDetails> => {
+  // Map frontend transmission type to backend enum
+  const mapTransmissionType = (frontendType: string): string | undefined => {
+    if (frontendType === 'continuouslyVariable') {
+      return 'continuouslyVariable'; // Map to Prisma enum value
+    }
+    return frontendType;
+  };
+
   return {
     vehicleType: data.vehicleType as VehicleType,
     make: data.make?.trim(),
@@ -102,18 +118,19 @@ export const mapCarData = (data: any): Partial<CarDetails> => {
     year: Number(data.year),
     mileage: data.mileage ? Number(data.mileage) : undefined,
     fuelType: data.fuelType as FuelType,
-    transmissionType: data.transmissionType as TransmissionType,
+    transmissionType: data.transmissionType ? mapTransmissionType(data.transmissionType) as TransmissionType : undefined,
     color: data.color?.trim(),
     interiorColor: data.interiorColor?.trim(),
     condition: data.condition as Condition,
     engine: data.engine?.trim(),
     warranty: data.warranty?.trim(),
-    serviceHistory: Array.isArray(data.serviceHistory) ? data.serviceHistory : undefined,
+    serviceHistory: data.serviceHistory?.set ? data.serviceHistory.set : (Array.isArray(data.serviceHistory) ? data.serviceHistory : []),
     previousOwners: data.previousOwners ? Number(data.previousOwners) : undefined,
     registrationStatus: data.registrationStatus?.trim(),
     doors: data.doors ? Number(data.doors) : undefined,
     seats: data.seats ? Number(data.seats) : undefined,
     airbags: data.airbags ? Number(data.airbags) : undefined,
+    seatingCapacity: data.seats ? Number(data.seats) : undefined,
     sunroof: Boolean(data.sunroof),
     navigationSystem: Boolean(data.navigationSystem),
     bluetooth: Boolean(data.bluetooth),

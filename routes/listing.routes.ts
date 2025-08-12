@@ -500,7 +500,7 @@ export default async function (fastify: FastifyInstance) {
         if (
           formattedListing &&
           formattedListing.details &&
-          formattedListing.details.vehicles
+          formattedListing.details
         ) {
           console.log(
             "Formatted listing:",
@@ -508,7 +508,7 @@ export default async function (fastify: FastifyInstance) {
           );
           console.log(
             "Formatted vehicle details:",
-            JSON.stringify(formattedListing.details.vehicles, null, 2),
+            JSON.stringify(formattedListing.details, null, 2),
           );
         }
 
@@ -924,12 +924,14 @@ export default async function (fastify: FastifyInstance) {
             userId: user.id,
             listingAction,
             vehicleDetails: await (async () => {
-              if (!parsedDetails.vehicles) return undefined;
+              // Support both flat vehicle details and nested under 'vehicles' key
+              const vehicleData = parsedDetails.vehicles || parsedDetails;
+              if (!vehicleData.vehicleType) return undefined;
               
-              const vehicleType = parsedDetails.vehicles.vehicleType as VehicleType;
+              const vehicleType = vehicleData.vehicleType as VehicleType;
               
-              // Use our clean validator factory
-              const validationResult = VehicleValidatorFactory.validate(vehicleType, parsedDetails.vehicles);
+              // Use our clean validator factory with the correct data
+              const validationResult = VehicleValidatorFactory.validate(vehicleType, vehicleData);
               
               if (validationResult.errors.length > 0) {
                 throw new Error(`Vehicle validation failed: ${validationResult.errors.join(', ')}`);

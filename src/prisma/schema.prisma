@@ -258,6 +258,8 @@ model VehicleDetails {
   airConditioning                  Boolean?
   airQualitySensor                 Boolean?
   airbags                          Int?
+  doors                            Int?
+  seats                            Int?
   aluminumRims                     Boolean?
   ambientLighting                  Boolean?
   androidAuto                      Boolean?

@@ -20,6 +20,8 @@ export const carAdvancedFields = [
   "registrationExpiry",
   "warranty",
   "engineSize",
+  "doors",
+  "seats",
   "horsepower",
   "torque",
   "roofType",

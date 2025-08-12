@@ -412,17 +412,20 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     } = req.body as ListingCreateBody;
 
     // Parse details if it's a string
-    const parsedDetails =
-      typeof details === "string" ? JSON.parse(details) : details;
+    const parsedDetails = typeof details === "string" ? JSON.parse(details) : details || {};
     
     // Debug logging to see exactly what's being received
     console.log("=== DEBUG: Request Body ===");
     console.log("Raw details:", details);
     console.log("Parsed details:", parsedDetails);
-    console.log("Parsed vehicles:", parsedDetails?.vehicles);
-    console.log("Vehicle type from parsed:", parsedDetails?.vehicles?.vehicleType);
-    console.log("Type of vehicleType:", typeof parsedDetails?.vehicles?.vehicleType);
+    console.log("Vehicle type:", parsedDetails?.vehicleType);
+    console.log("Type of vehicleType:", typeof parsedDetails?.vehicleType);
     console.log("=== END DEBUG ===");
+    
+    // Ensure vehicleType is set from subCategory if not provided
+    if (!parsedDetails.vehicleType && subCategory) {
+      parsedDetails.vehicleType = subCategory;
+    }
 
     const errors = validateListingData(req.body);
     if (errors.length > 0) {
@@ -470,62 +473,81 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         },
       };
 
-      // Add vehicle details if present
-      if (parsedDetails?.vehicles) {
-        const vehicleType = parsedDetails.vehicles.vehicleType as VehicleType;
-        
-        // Use the validator factory for clean validation
-        const validationResult = VehicleValidatorFactory.validate(vehicleType, parsedDetails.vehicles);
-        
-        if (validationResult.errors.length > 0) {
-          return res.code(400).send({
-            success: false,
-            error: "Vehicle validation failed",
-            errors: validationResult.errors,
-            validator: VehicleValidatorFactory.getValidatorName(vehicleType),
-            status: 400,
-            data: null,
-          });
+      // Add vehicle details if present (single vehicle per listing)
+      // Handle both flat and nested vehicle details structure
+      const vehicleData = parsedDetails.vehicles || parsedDetails;
+      
+      // If we have any vehicle data, process it
+      if (Object.keys(vehicleData).length > 0) {
+        // If vehicleType is not set but we have subCategory, use that
+        if (!vehicleData.vehicleType && subCategory) {
+          vehicleData.vehicleType = subCategory;
         }
+        
+        if (vehicleData.vehicleType) {
+          const vehicleType = vehicleData.vehicleType as VehicleType;
+          
+          // Log the data being validated
+          console.log('Validating vehicle data:', JSON.stringify(vehicleData, null, 2));
+          
+          // Use the validator factory for clean validation
+          const validationResult = VehicleValidatorFactory.validate(vehicleType, vehicleData);
+          
+          if (validationResult.errors.length > 0) {
+            console.log('Validation errors:', validationResult.errors);
+            return res.code(400).send({
+              success: false,
+              error: "Vehicle validation failed",
+              errors: validationResult.errors,
+              validator: VehicleValidatorFactory.getValidatorName(vehicleType),
+              status: 400,
+              data: null,
+            });
+          }
 
-        // Use the mapped data from the validator
-        const mappedVehicleData = validationResult.mappedData;
-        if (mappedVehicleData) {
-          // Create base vehicle details
+          // Use the mapped data from the validator
+          const mappedVehicleData = validationResult.mappedData || vehicleData;
+          
+          console.log('Mapped vehicle data:', JSON.stringify(mappedVehicleData, null, 2));
+          
+          // Create base vehicle details with all possible fields
           const vehicleDetails: any = {
-            vehicleType: mappedVehicleData.vehicleType as any, // Type conversion for Prisma compatibility
-            make: mappedVehicleData.make || undefined,
-            model: mappedVehicleData.model || undefined,
-            year: mappedVehicleData.year || undefined,
-            mileage: mappedVehicleData.mileage || null,
+            vehicleType: (mappedVehicleData.vehicleType || subCategory) as any,
+            make: mappedVehicleData.make || null,
+            model: mappedVehicleData.model || null,
+            year: mappedVehicleData.year ? parseInt(mappedVehicleData.year) : null,
+            mileage: mappedVehicleData.mileage ? parseFloat(mappedVehicleData.mileage) : null,
             fuelType: mappedVehicleData.fuelType as any || null,
             transmissionType: mappedVehicleData.transmissionType as any || null,
             color: mappedVehicleData.color || null,
-            condition: mappedVehicleData.condition as any || null,
-            engine: (mappedVehicleData as any).engine || null,
-            warranty: (mappedVehicleData as any).warranty || null,
-            serviceHistory: (mappedVehicleData as any).serviceHistory || null,
-            previousOwners: (mappedVehicleData as any).previousOwners || null,
-            registrationStatus: (mappedVehicleData as any).registrationStatus || null,
+            condition: (mappedVehicleData.condition || condition) as any || null,
+            engine: mappedVehicleData.engine || null,
+            engineSize: mappedVehicleData.engineSize || null,
+            warranty: mappedVehicleData.warranty || null,
+            serviceHistory: mappedVehicleData.serviceHistory || null,
+            previousOwners: mappedVehicleData.previousOwners ? parseInt(mappedVehicleData.previousOwners) : null,
+            registrationStatus: mappedVehicleData.registrationStatus || null,
+            interiorColor: mappedVehicleData.interiorColor || null,
+            // Add any additional fields that might be in the data
+            ...(mappedVehicleData.engineNumber && { engineNumber: mappedVehicleData.engineNumber }),
+            ...(mappedVehicleData.vin && { vin: mappedVehicleData.vin }),
+            ...(mappedVehicleData.licensePlate && { licensePlate: mappedVehicleData.licensePlate }),
           };
 
-          // Add type-specific fields
-          if ('interiorColor' in mappedVehicleData) {
-            vehicleDetails.interiorColor = (mappedVehicleData as any).interiorColor || null;
-          }
-
+          console.log('Final vehicle details to save:', JSON.stringify(vehicleDetails, null, 2));
+          
           listingData.vehicleDetails = {
             create: vehicleDetails as Prisma.VehicleDetailsCreateWithoutListingInput,
           };
         }
       }
 
-      // Add real estate details if present
-      if (parsedDetails?.realEstate) {
-        const propertyType = parsedDetails.realEstate.propertyType as PropertyType;
+      // Add real estate details if present (single property per listing)
+      if (parsedDetails?.propertyType) {
+        const propertyType = parsedDetails.propertyType as PropertyType;
         
         // Use our clean real estate validator factory
-        const validationResult = RealEstateValidatorFactory.validate(propertyType, parsedDetails.realEstate);
+        const validationResult = RealEstateValidatorFactory.validate(propertyType, parsedDetails);
         
         if (validationResult.errors.length > 0) {
           return res.code(400).send({
