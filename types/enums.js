@@ -50,12 +50,10 @@ var FuelType;
 })(FuelType || (exports.FuelType = FuelType = {}));
 var TransmissionType;
 (function (TransmissionType) {
-  TransmissionType["AUTOMATIC"] = "automatic";
-  TransmissionType["MANUAL"] = "manual";
-  TransmissionType["SEMI_AUTOMATIC"] = "semiAutomatic";
-  TransmissionType["CONTINUOUSLY_VARIABLE"] = "cvt";
-  TransmissionType["DUAL_CLUTCH"] = "dualClutch";
-  TransmissionType["OTHER"] = "other";
+  TransmissionType["AUTOMATIC"] = "AUTOMATIC";
+  TransmissionType["MANUAL"] = "MANUAL";
+  TransmissionType["AUTOMATIC_MANUAL"] = "AUTOMATIC_MANUAL";
+  TransmissionType["OTHER"] = "OTHER";
 })(TransmissionType || (exports.TransmissionType = TransmissionType = {}));
 var Condition;
 (function (Condition) {

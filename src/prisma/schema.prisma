@@ -626,32 +626,29 @@ enum VehicleType {
 }
 
 enum FuelType {
-  gasoline
-  diesel
-  electric
-  hybrid
-  pluginHybrid
-  lpg
-  cng
-  other
-  biodiesel
+  GASOLINE
+  DIESEL
+  ELECTRIC
+  HYBRID
+  PLUGIN_HYBRID
+  LPG
+  CNG
+  OTHER
+  BIODIESEL
 }
 
 enum TransmissionType {
-  automatic
-  manual
-  semiAutomatic
-  continuouslyVariable
-  dualClutch
-  other
+  AUTOMATIC
+  MANUAL
+  AUTOMATIC_MANUAL
 }
 
 enum Condition {
-  new
-  likeNew
-  excellent
-  good
-  fair
-  poor
-  salvage
+  NEW
+  LIKE_NEW
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  SALVAGE
 }

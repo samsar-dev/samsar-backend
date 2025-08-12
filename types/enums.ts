@@ -39,10 +39,8 @@ export enum FuelType {
 export enum TransmissionType {
   AUTOMATIC = "AUTOMATIC",
   MANUAL = "MANUAL",
-  SEMI_AUTOMATIC = "SEMI_AUTOMATIC",
-  CONTINUOUSLY_VARIABLE = "CONTINUOUSLY_VARIABLE",
-  DUAL_CLUTCH = "DUAL_CLUTCH",
-  OTHER = "OTHER",
+  AUTOMATIC_MANUAL = "AUTOMATIC_MANUAL",
+  OTHER = "OTHER"
 }
 
 export enum Condition {
