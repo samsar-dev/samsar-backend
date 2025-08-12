@@ -1,7 +1,7 @@
 // 🌟 Listing Categories
 export enum ListingCategory {
-  VEHICLES = "vehicles",
-  REAL_ESTATE = "realEstate",
+  VEHICLES = "VEHICLES",
+  REAL_ESTATE = "REAL_ESTATE",
 }
 
 // 🌟 Vehicle Types
@@ -26,50 +26,47 @@ export enum PropertyType {
 
 // 🌟 Vehicle Details
 export enum FuelType {
-  GASOLINE = "gasoline",
-  DIESEL = "diesel",
-  ELECTRIC = "electric",
-  HYBRID = "hybrid",
-  PLUGIN_HYBRID = "pluginHybrid",
-  LPG = "lpg",
-  CNG = "cng",
-  OTHER = "other",
+  GASOLINE = "GASOLINE",
+  DIESEL = "DIESEL",
+  ELECTRIC = "ELECTRIC",
+  HYBRID = "HYBRID",
+  PLUGIN_HYBRID = "PLUGIN_HYBRID",
+  LPG = "LPG",
+  CNG = "CNG",
+  OTHER = "OTHER",
 }
 
 export enum TransmissionType {
-  AUTOMATIC = "automatic",
-  MANUAL = "manual",
-  SEMI_AUTOMATIC = "semiAutomatic",
-  CONTINUOUSLY_VARIABLE = "cvt",
-  DUAL_CLUTCH = "dualClutch",
-  OTHER = "other",
+  AUTOMATIC = "AUTOMATIC",
+  MANUAL = "MANUAL",
+  SEMI_AUTOMATIC = "SEMI_AUTOMATIC",
+  CONTINUOUSLY_VARIABLE = "CONTINUOUSLY_VARIABLE",
+  DUAL_CLUTCH = "DUAL_CLUTCH",
+  OTHER = "OTHER",
 }
 
 export enum Condition {
-  NEW = "new",
-  LIKE_NEW = "likeNew",
-  EXCELLENT = "excellent",
-  GOOD = "good",
-  FAIR = "fair",
-  POOR = "poor",
-  SALVAGE = "salvage",
+  NEW = "NEW",
+  LIKE_NEW = "LIKE_NEW",
+  EXCELLENT = "EXCELLENT",
+  GOOD = "GOOD",
+  FAIR = "FAIR",
+  POOR = "POOR",
+  NOT_WORKING = "NOT_WORKING"
 }
 
 // 🌟 Settings Related Enums
 export enum LanguageCode {
-  EN = "en",
-  ES = "es",
-  FR = "fr",
-  DE = "de",
-  AR = "ar",
+  EN = "EN",
+  AR = "AR",
 }
 // 🌟 Listing Status
 export enum ListingStatus {
-  ACTIVE = "active",
-  INACTIVE = "inactive",
-  SOLD = "sold",
-  RENTED = "rented",
-  PENDING = "pending",
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  SOLD = "SOLD",
+  RENTED = "RENTED",
+  PENDING = "PENDING",
 }
 
 // 🌟 Listing Action Types
@@ -80,26 +77,26 @@ export enum ListingAction {
 
 // 🌟 Report System Enums
 export enum ReportType {
-  USER = "user",
-  LISTING = "listing",
-  MESSAGE = "message",
-  COMMENT = "comment",
+  USER = "USER",
+  LISTING = "LISTING",
+  MESSAGE = "MESSAGE",
+  COMMENT = "COMMENT",
 }
 
 export enum ReportStatus {
-  PENDING = "pending",
-  INVESTIGATING = "investigating",
-  RESOLVED = "resolved",
-  DISMISSED = "dismissed",
+  PENDING = "PENDING",
+  INVESTIGATING = "INVESTIGATING",
+  RESOLVED = "RESOLVED",
+  DISMISSED = "DISMISSED",
 }
 
 export enum ReportReason {
-  SPAM = "spam",
-  INAPPROPRIATE = "inappropriate",
-  MISLEADING = "misleading",
-  OFFENSIVE = "offensive",
-  HARASSMENT = "harassment",
-  OTHER = "other",
+  SPAM = "SPAM",
+  INAPPROPRIATE = "INAPPROPRIATE",
+  MISLEADING = "MISLEADING",
+  OFFENSIVE = "OFFENSIVE",
+  HARASSMENT = "HARASSMENT",
+  OTHER = "OTHER",
 }
 
 // 🌟 Notification Types
