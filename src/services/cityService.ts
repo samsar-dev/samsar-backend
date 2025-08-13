@@ -1,84 +1,121 @@
 import { CityCoordinates, CityWithDistance } from "../../types/city.js";
-import { findCitiesInRadius } from "../utils/geoUtils.js";
 
-// This should be populated from a database in a real application
-// For now, we'll use a simplified version of the cities data
-const syrianCities: CityCoordinates[] = [
+// Import comprehensive Syrian cities data from your frontend database
+// This data should ideally be loaded from a database, but for now we'll import it directly
+import { syrianCities as comprehensiveCities } from "../data/syrianCities.js";
+
+// Convert the comprehensive data to our backend format
+const syrianCities: CityCoordinates[] = comprehensiveCities.flatMap(city => [
+  // Add the main city
   {
-    name: "Damascus",
-    latitude: 33.5131,
-    longitude: 36.2913,
+    name: city.name,
+    latitude: city.latitude,
+    longitude: city.longitude,
   },
-  {
-    name: "Aleppo",
-    latitude: 36.2018,
-    longitude: 37.1556,
-  },
-  {
-    name: "Homs",
-    latitude: 34.7324,
-    longitude: 36.7132,
-  },
-  {
-    name: "Hama",
-    latitude: 35.1318,
-    longitude: 36.7578,
-  },
-  {
-    name: "Latakia",
-    latitude: 35.5216,
-    longitude: 35.7924,
-  },
-  {
-    name: "Tartus",
-    latitude: 34.895,
-    longitude: 35.8867,
-  },
-  {
-    name: "Deir ez-Zor",
-    latitude: 35.3333,
-    longitude: 40.15,
-  },
-  {
-    name: "Al-Hasakah",
-    latitude: 36.5119,
-    longitude: 40.7422,
-  },
-  {
-    name: "Qamishli",
-    latitude: 37.05,
-    longitude: 41.2167,
-  },
-  {
-    name: "Raqqa",
-    latitude: 35.95,
-    longitude: 39.0167,
-  },
-];
+  // Add all neighbors as separate cities
+  ...city.neighbors.map(neighbor => ({
+    name: neighbor.name,
+    latitude: neighbor.latitude,
+    longitude: neighbor.longitude,
+  }))
+]);
 
 export class CityService {
   /**
-   * Find all cities within a specified radius from a given point
-   */
-  static findNearbyCities(
-    lat: number,
-    lng: number,
-    radiusKm: number,
-    limit?: number,
-  ): CityWithDistance[] {
-    let results = findCitiesInRadius(syrianCities, lat, lng, radiusKm);
-
-    if (limit) {
-      results = results.slice(0, limit);
-    }
-
-    return results;
-  }
-
-  /**
-   * Get all cities (for frontend to use)
+   * Get all Syrian cities
    */
   static getAllCities(): CityCoordinates[] {
     return syrianCities;
+  }
+
+  /**
+   * Get total count of cities in database
+   */
+  static getTotalCityCount(): number {
+    return syrianCities.length;
+  }
+
+  /**
+   * Search cities by name with intelligent filtering
+   */
+  static searchCities(query: string, limit: number = 10): CityCoordinates[] {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const searchTerm = query.toLowerCase().trim();
+    
+    // Exact matches first
+    const exactMatches = syrianCities.filter(city => 
+      city.name.toLowerCase() === searchTerm
+    );
+
+    // Starts with matches
+    const startsWithMatches = syrianCities.filter(city => 
+      city.name.toLowerCase().startsWith(searchTerm) && 
+      !exactMatches.some(exact => exact.name === city.name)
+    );
+
+    // Contains matches
+    const containsMatches = syrianCities.filter(city => 
+      city.name.toLowerCase().includes(searchTerm) && 
+      !exactMatches.some(exact => exact.name === city.name) &&
+      !startsWithMatches.some(starts => starts.name === city.name)
+    );
+
+    // Combine results with priority order
+    const allMatches = [...exactMatches, ...startsWithMatches, ...containsMatches];
+    
+    return allMatches.slice(0, limit);
+  }
+
+  /**
+   * Find nearby cities within a given radius (in kilometers)
+   */
+  static findNearbyCities(
+    latitude: number,
+    longitude: number,
+    radiusKm: number = 50,
+    limit: number = 10
+  ): CityWithDistance[] {
+    const nearbyCities = syrianCities
+      .map(city => ({
+        ...city,
+        distance: this.calculateDistance(latitude, longitude, city.latitude, city.longitude)
+      }))
+      .filter(city => city.distance <= radiusKm)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, limit);
+
+    return nearbyCities;
+  }
+
+  /**
+   * Calculate distance between two points using Haversine formula
+   */
+  private static calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = this.toRadians(lat2 - lat1);
+    const dLon = this.toRadians(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(lat1)) *
+        Math.cos(this.toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  /**
+   * Convert degrees to radians
+   */
+  private static toRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
   }
 }

@@ -42,10 +42,9 @@ export class VehicleValidatorFactory {
         }
         break;
 
-      case VehicleType.VANS:
-      case VehicleType.TRUCKS:
-      case VehicleType.BUSES:
-      case VehicleType.TRACTORS:
+      case VehicleType.PASSENGER_VEHICLES:
+      case VehicleType.COMMERCIAL_TRANSPORT:
+      case VehicleType.CONSTRUCTION_VEHICLES:
         errors = validateCommercialData(data);
         if (errors.length === 0) {
           mappedData = mapCommercialData(data);
@@ -64,15 +63,18 @@ export class VehicleValidatorFactory {
     return [
       VehicleType.CARS,
       VehicleType.MOTORCYCLES,
-      VehicleType.VANS,
-      VehicleType.TRUCKS,
-      VehicleType.BUSES,
-      VehicleType.TRACTORS,
+      VehicleType.PASSENGER_VEHICLES,
+      VehicleType.COMMERCIAL_TRANSPORT,
+      VehicleType.CONSTRUCTION_VEHICLES,
     ];
   }
 
   static isCommercialVehicle(vehicleType: VehicleType): boolean {
-    return [VehicleType.VANS, VehicleType.TRUCKS, VehicleType.BUSES, VehicleType.TRACTORS].includes(vehicleType);
+    return [
+      VehicleType.PASSENGER_VEHICLES,
+      VehicleType.COMMERCIAL_TRANSPORT,
+      VehicleType.CONSTRUCTION_VEHICLES,
+    ].includes(vehicleType);
   }
 
   static getValidatorName(vehicleType: VehicleType): string {
@@ -81,11 +83,12 @@ export class VehicleValidatorFactory {
         return "Car Validator";
       case VehicleType.MOTORCYCLES:
         return "Motorcycle Validator";
-      case VehicleType.VANS:
-      case VehicleType.TRUCKS:
-      case VehicleType.BUSES:
-      case VehicleType.TRACTORS:
-        return "Commercial Vehicle Validator";
+      case VehicleType.PASSENGER_VEHICLES:
+        return "Passenger Vehicle Validator";
+      case VehicleType.COMMERCIAL_TRANSPORT:
+        return "Commercial Transport Validator";
+      case VehicleType.CONSTRUCTION_VEHICLES:
+        return "Construction Vehicle Validator";
       default:
         return "Unknown Validator";
     }

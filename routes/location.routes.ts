@@ -113,13 +113,13 @@ export default async function (fastify: FastifyInstance) {
   });
 
   /**
-   * Search for locations using Mapbox Geocoding API
+   * Search for locations using comprehensive Syrian cities database with Mapbox fallback
    */
   fastify.get<{ Querystring: SearchQuery }>(
     "/api/locations/search",
     async (req, reply) => {
       try {
-        const { q, limit = 5, proximity, country = "sy" } = req.query;
+        const { q, limit = 10, proximity, country = "sy" } = req.query;
 
         if (!q) {
           return reply.code(400).send({
@@ -131,49 +131,93 @@ export default async function (fastify: FastifyInstance) {
           });
         }
 
-        // Construct the Mapbox API URL
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          q as string,
-        )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=${country}&limit=${limit}${proximity ? `&proximity=${proximity}` : ""}`;
+        // First, search in our comprehensive Syrian cities database
+        const localResults = CityService.searchCities(q as string, parseInt(limit as string));
+        
+        if (localResults.length > 0) {
+          // Transform local results to match the expected interface
+          const results = localResults.map((city) => ({
+            place_id: `syrian_city_${city.name.toLowerCase().replace(/\s+/g, '_')}`,
+            display_name: `${city.name}, Syria`,
+            lat: city.latitude,
+            lon: city.longitude,
+            address: {
+              city: city.name,
+              country: "Syria",
+              country_code: "sy",
+            },
+            namedetails: {
+              name: city.name,
+            },
+          }));
 
-        const response = await axios.get(url);
-        const features = response.data.features;
+          return reply.send({
+            success: true,
+            data: results,
+            source: "comprehensive_database",
+            total_cities_available: CityService.getTotalCityCount(),
+          });
+        }
 
-        // Transform Mapbox response to match our interface
-        const results = features.map((feature) => ({
-          place_id: feature.id,
-          display_name: feature.place_name,
-          lat: feature.geometry.coordinates[1],
-          lon: feature.geometry.coordinates[0],
-          address: {
-            city: feature.context?.find((ctx) => ctx.id.includes("place"))
-              ?.text,
-            municipality: feature.context?.find((ctx) =>
-              ctx.id.includes("locality"),
-            )?.text,
-            country: feature.context?.find((ctx) => ctx.id.includes("country"))
-              ?.text,
-            country_code: feature.context?.find((ctx) =>
-              ctx.id.includes("country"),
-            )?.short_code,
-          },
-          namedetails: {
-            name: feature.text,
-            "name:ar": feature.properties?.name_ar,
-            "name:en": feature.properties?.name_en,
-          },
-        }));
+        // Fallback to Mapbox API if no local results found and API token is available
+        if (MAPBOX_ACCESS_TOKEN) {
+          try {
+            const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+              q as string,
+            )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=${country}&limit=${limit}${proximity ? `&proximity=${proximity}` : ""}`;
 
-        reply.send({
+            const response = await axios.get(url);
+            const features = response.data.features;
+
+            // Transform Mapbox response to match our interface
+            const results = features.map((feature) => ({
+              place_id: feature.id,
+              display_name: feature.place_name,
+              lat: feature.geometry.coordinates[1],
+              lon: feature.geometry.coordinates[0],
+              address: {
+                city: feature.context?.find((ctx) => ctx.id.includes("place"))
+                  ?.text,
+                municipality: feature.context?.find((ctx) =>
+                  ctx.id.includes("locality"),
+                )?.text,
+                country: feature.context?.find((ctx) => ctx.id.includes("country"))
+                  ?.text,
+                country_code: feature.context?.find((ctx) =>
+                  ctx.id.includes("country"),
+                )?.short_code,
+              },
+              namedetails: {
+                name: feature.text,
+                "name:ar": feature.properties?.name_ar,
+                "name:en": feature.properties?.name_en,
+              },
+            }));
+
+            return reply.send({
+              success: true,
+              data: results,
+              source: "mapbox_api",
+            });
+          } catch (mapboxError) {
+            console.warn("Mapbox API failed, returning empty results:", mapboxError);
+          }
+        }
+
+        // Return empty results if both local and Mapbox searches fail
+        return reply.send({
           success: true,
-          data: results,
+          data: [],
+          source: "no_results",
+          message: "No locations found for the given query",
         });
+
       } catch (error) {
         console.error("Error searching locations:", error);
         reply.code(500).send({
           success: false,
           error: {
-            code: "GEOCODING_ERROR",
+            code: "SEARCH_ERROR",
             message: "Failed to search locations",
           },
         });

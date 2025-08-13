@@ -101,7 +101,7 @@ export const validateCommercialData = (data: any): string[] => {
     errors.push("Previous owners must be a non-negative number");
   }
 
-  const validSubtypes = ['VANS', 'BUSES', 'TRACTORS'];
+  const validSubtypes = ['VANS', 'TRUCKS', 'BUSES', 'TRACTORS'];
   if (data.vehicleSubtype && !validSubtypes.includes(data.vehicleSubtype)) {
     errors.push(`Invalid vehicle subtype. Must be one of: ${validSubtypes.join(', ')}`);
   }
