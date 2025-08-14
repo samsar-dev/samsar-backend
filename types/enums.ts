@@ -25,6 +25,9 @@ export enum PropertyType {
   LAND = "LAND",
   OFFICE = "OFFICE",
   VILLA = "VILLA",
+  CONDO = "CONDO",
+  COMMERCIAL = "COMMERCIAL",
+  OTHER = "OTHER",
 }
 
 // 🌟 Vehicle Details

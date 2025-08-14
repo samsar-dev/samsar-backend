@@ -883,14 +883,23 @@ export default async function (fastify: FastifyInstance) {
           return;
         }
 
-        // Parse and validate details
+        // Parse and validate details with enhanced logging
         let parsedDetails;
         try {
           parsedDetails =
             typeof details === "string" ? JSON.parse(details) : details;
-          console.log("Details sent to DB:", parsedDetails);
+          console.log("🔍 Raw details received:", JSON.stringify(parsedDetails, null, 2));
+          
+          // Log the structure to help with debugging
+          if (parsedDetails) {
+            console.log("📋 Details structure analysis:");
+            console.log("- Has vehicles key:", !!parsedDetails.vehicles);
+            console.log("- Has vehicleType at root:", !!parsedDetails.vehicleType);
+            console.log("- Has selectedFeatures:", !!parsedDetails.selectedFeatures);
+            console.log("- selectedFeatures length:", parsedDetails.selectedFeatures?.length || 0);
+          }
         } catch (error) {
-          console.error("Error parsing/validating details:", error);
+          console.error("❌ Error parsing/validating details:", error);
           return reply.code(400).send({
             success: false,
             error: "Invalid details format",
@@ -902,17 +911,18 @@ export default async function (fastify: FastifyInstance) {
 
         // Get processed image URLs
         const imageUrls = request.processedImages?.map((img) => img.url) || [];
-        console.log("Processed image URLs:", imageUrls);
+        console.log(" Processed image URLs:", imageUrls);
 
+        // Create the listing first (without nested vehicle details)
         const listing = await prisma.listing.create({
           data: {
             title,
             description,
             price: Number(price),
             location,
-            latitude: Number(latitude) || 0, // Ensure it's a number, default to 0
-            longitude: Number(longitude) || 0, // Ensure it's a number, default to 0
-            category: mainCategory, // For backwards compatibility
+            latitude: Number(latitude) || 0,
+            longitude: Number(longitude) || 0,
+            category: mainCategory,
             mainCategory,
             subCategory,
             images: {
@@ -923,111 +933,6 @@ export default async function (fastify: FastifyInstance) {
             },
             userId: user.id,
             listingAction,
-            vehicleDetails: await (async () => {
-              // Support both flat vehicle details and nested under 'vehicles' key
-              const vehicleData = parsedDetails.vehicles || parsedDetails;
-              if (!vehicleData.vehicleType) return undefined;
-              
-              const vehicleType = vehicleData.vehicleType as VehicleType;
-              
-              // Use our clean validator factory with the correct data
-              const validationResult = VehicleValidatorFactory.validate(vehicleType, vehicleData);
-              
-              if (validationResult.errors.length > 0) {
-                throw new Error(`Vehicle validation failed: ${validationResult.errors.join(', ')}`);
-              }
-
-              // Use the mapped data from the validator
-              const mappedVehicleData = validationResult.mappedData;
-              if (!mappedVehicleData) return undefined;
-
-              // Create base vehicle details with type conversion for Prisma compatibility
-              const vehicleDetails: any = {
-                vehicleType: mappedVehicleData.vehicleType as any,
-                make: mappedVehicleData.make || undefined,
-                model: mappedVehicleData.model || undefined,
-                year: mappedVehicleData.year || undefined,
-                mileage: mappedVehicleData.mileage || null,
-                fuelType: mappedVehicleData.fuelType as any || null,
-                transmissionType: mappedVehicleData.transmissionType as any || null,
-                color: mappedVehicleData.color || null,
-                condition: mappedVehicleData.condition as any || null,
-                engine: (mappedVehicleData as any).engine || null,
-                warranty: (mappedVehicleData as any).warranty || null,
-                serviceHistory: (mappedVehicleData as any).serviceHistory || null,
-                previousOwners: (mappedVehicleData as any).previousOwners || null,
-                registrationStatus: (mappedVehicleData as any).registrationStatus || null,
-              };
-
-              // Add type-specific fields based on validator results
-              if ('interiorColor' in mappedVehicleData) {
-                vehicleDetails.interiorColor = (mappedVehicleData as any).interiorColor || null;
-              }
-              if ('doors' in mappedVehicleData) {
-                vehicleDetails.doors = (mappedVehicleData as any).doors || null;
-              }
-              if ('seats' in mappedVehicleData) {
-                vehicleDetails.seats = (mappedVehicleData as any).seats || null;
-              }
-              if ('engineCapacity' in mappedVehicleData) {
-                vehicleDetails.engineCapacity = (mappedVehicleData as any).engineCapacity || null;
-              }
-              if ('payloadCapacity' in mappedVehicleData) {
-                vehicleDetails.payloadCapacity = (mappedVehicleData as any).payloadCapacity || null;
-              }
-
-              return { create: vehicleDetails };
-            })(),
-            realEstateDetails: await (async () => {
-              if (!parsedDetails.realEstate) return undefined;
-              
-              const propertyType = parsedDetails.realEstate.propertyType as PropertyType;
-              
-              // Use our clean real estate validator factory
-              const validationResult = RealEstateValidatorFactory.validate(propertyType, parsedDetails.realEstate);
-              
-              if (validationResult.errors.length > 0) {
-                throw new Error(`Real estate validation failed: ${validationResult.errors.join(', ')}`);
-              }
-
-              // Use the mapped data from the validator
-              const mappedRealEstateData = validationResult.mappedData;
-              if (!mappedRealEstateData) return undefined;
-
-              // Create flexible real estate details mapping
-              const realEstateDetails: any = {
-                propertyType: (mappedRealEstateData as any).propertyType || "OTHER",
-              };
-
-              // Map all possible fields from the validator result
-              const fieldMappings = [
-                'size', 'condition', 'constructionType', 'features', 'parking', 
-                'accessibilityFeatures', 'balcony', 'buildingAmenities', 'cooling',
-                'elevator', 'energyRating', 'exposureDirection', 'fireSafety',
-                'floor', 'flooringType', 'furnished', 'heating', 'internetIncluded',
-                'parkingType', 'petPolicy', 'renovationHistory', 'securityFeatures',
-                'storage', 'storageType', 'totalFloors', 'utilities', 'view',
-                'windowType', 'totalArea', 'yearBuilt', 'bedrooms', 'bathrooms',
-                'floorLevel', 'isBuildable', 'elevation', 'buildable', 'buildingRestrictions',
-                'environmentalFeatures', 'naturalFeatures', 'parcelNumber', 'permitsInPlace',
-                'soilTypes', 'topography', 'waterFeatures', 'accessibility', 'appliances',
-                'communityFeatures', 'energyFeatures', 'exteriorFeatures', 'hoaFeatures',
-                'kitchenFeatures', 'landscaping', 'livingArea', 'halfBathrooms', 'stories',
-                'attic', 'basement', 'flooringTypes', 'basementFeatures', 'bathroomFeatures',
-                // Villa-specific fields
-                'gardenArea', 'pool', 'furnishing', 'security', 'orientation', 'buildingAge',
-                'maintenanceFee', 'energyRating'
-              ];
-
-              // Map all available fields from the validator result
-              fieldMappings.forEach(field => {
-                if (field in (mappedRealEstateData as any)) {
-                  realEstateDetails[field] = (mappedRealEstateData as any)[field] || null;
-                }
-              });
-
-              return { create: realEstateDetails };
-            })(),
           },
           include: {
             images: true,
@@ -1035,16 +940,125 @@ export default async function (fastify: FastifyInstance) {
               select: {
                 id: true,
                 username: true,
-                profilePicture: true,
               },
             },
-            favorites: true,
-
-            realEstateDetails: true,
           },
         });
 
         console.log("✅ Created listing:", listing);
+
+        // Now create vehicle details separately if this is a vehicle listing
+        if (mainCategory === 'vehicles' || subCategory === 'cars') {
+          try {
+            const vehicleData = parsedDetails.vehicles || parsedDetails;
+            console.log('🔍 Vehicle data check:', JSON.stringify(vehicleData, null, 2));
+            
+            if (vehicleData.vehicleType) {
+              const vehicleType = vehicleData.vehicleType as VehicleType;
+              
+              // Use our enhanced validator factory with comprehensive field mapping
+              const validationResult = VehicleValidatorFactory.validate(vehicleType, vehicleData);
+              
+              if (validationResult.errors.length > 0) {
+                console.warn(`Vehicle validation warnings: ${validationResult.errors.join(', ')}`);
+              }
+
+              // Use the mapped data from the validator
+              const mappedVehicleData = validationResult.mappedData;
+              if (mappedVehicleData) {
+                // Create comprehensive vehicle details matching exact Prisma schema
+                const vehicleDetails: any = {
+                  listingId: listing.id, // Now we have the listing ID!
+                  // Required fields
+                  vehicleType: mappedVehicleData.vehicleType as any,
+                  make: mappedVehicleData.make || "",
+                  model: mappedVehicleData.model || "",
+                  year: mappedVehicleData.year || 0,
+                  
+                  // Optional basic fields
+                  mileage: mappedVehicleData.mileage || null,
+                  fuelType: mappedVehicleData.fuelType as any || null,
+                  transmissionType: mappedVehicleData.transmissionType as any || null,
+                  color: (mappedVehicleData as any).exteriorColor || (mappedVehicleData as any).color || null,
+                  interiorColor: (mappedVehicleData as any).interiorColor || null,
+                  condition: mappedVehicleData.condition as any || null,
+                  
+                  // Engine and technical specs
+                  engine: (mappedVehicleData as any).engine || null,
+                  engineSize: (mappedVehicleData as any).engineSize || null,
+                  horsepower: (mappedVehicleData as any).horsepower || null,
+                  
+                  // Documentation and history
+                  warranty: (mappedVehicleData as any).warranty || null,
+                  previousOwners: (mappedVehicleData as any).previousOwners || null,
+                  registrationStatus: (mappedVehicleData as any).registrationStatus || null,
+                  registrationExpiry: (mappedVehicleData as any).registrationExpiry || null,
+                  serviceHistory: (mappedVehicleData as any).serviceHistory ? [(mappedVehicleData as any).serviceHistory] : [],
+                  
+                  // Advanced Flutter fields
+                  bodyType: (mappedVehicleData as any).bodyType || null,
+                  driveType: (mappedVehicleData as any).driveType || null,
+                  importStatus: (mappedVehicleData as any).importStatus || null,
+                  accidentFree: (mappedVehicleData as any).accidental === "No" || (mappedVehicleData as any).accidental === "false" || false,
+                  
+                  // Physical specifications
+                  doors: (mappedVehicleData as any).doors || null,
+                  seats: (mappedVehicleData as any).seats || null,
+                  airbags: (mappedVehicleData as any).airbags || (mappedVehicleData as any).noOfAirbags || null,
+                  seatingCapacity: (mappedVehicleData as any).seats || null,
+                  
+                  // Feature flags from selectedFeatures array - matching exact Prisma field names
+                  sunroof: (mappedVehicleData as any).sunroof || false,
+                  bluetooth: (mappedVehicleData as any).bluetooth || false,
+                  appleCarPlay: (mappedVehicleData as any).appleCarplay || false,
+                  androidAuto: (mappedVehicleData as any).androidAuto || false,
+                  wirelessCharging: (mappedVehicleData as any).wirelessCharging || false,
+                  usbPorts: (mappedVehicleData as any).usbPorts || false,
+                  cruiseControl: (mappedVehicleData as any).cruiseControl || false,
+                  parkingSensors: (mappedVehicleData as any).parkingSensors || (mappedVehicleData as any).parkingSensor || false,
+                  rearCamera: (mappedVehicleData as any).backupCamera || (mappedVehicleData as any).rearCamera || false,
+                  camera360: (mappedVehicleData as any).camera360 || false,
+                  heatedSeats: (mappedVehicleData as any).heatedSeats || false,
+                  electricSeats: (mappedVehicleData as any).electricSeats || false,
+                  seatMaterial: (mappedVehicleData as any).leatherSeats ? "Leather" : null,
+                  aluminumRims: (mappedVehicleData as any).alloyWheels || false,
+                  centralLocking: (mappedVehicleData as any).centralLocking || false,
+                  powerSteering: (mappedVehicleData as any).powerSteering || false,
+                  immobilizer: (mappedVehicleData as any).immobilizer || false,
+                  abs: (mappedVehicleData as any).abs || false,
+                  tractionControl: (mappedVehicleData as any).tractionControl || false,
+                  laneAssist: (mappedVehicleData as any).laneAssist || false,
+                  blindSpotMonitor: (mappedVehicleData as any).blindSpotMonitor || false,
+                  ledHeadlights: (mappedVehicleData as any).ledHeadlights || false,
+                  fogLights: (mappedVehicleData as any).fogLights || false,
+                  
+                  // Navigation system as string (Prisma schema expects string, not boolean)
+                  navigationSystem: (mappedVehicleData as any).navigationSystem ? "Built-in" : null,
+                };
+
+                // Add legacy compatibility fields
+                if ('engineCapacity' in mappedVehicleData) {
+                  vehicleDetails.engineCapacity = (mappedVehicleData as any).engineCapacity || null;
+                }
+                if ('payloadCapacity' in mappedVehicleData) {
+                  vehicleDetails.payloadCapacity = (mappedVehicleData as any).payloadCapacity || null;
+                }
+
+                console.log('📊 Final vehicle details to be stored:', JSON.stringify(vehicleDetails, null, 2));
+                
+                // Create the vehicle details record
+                const createdVehicleDetails = await prisma.vehicleDetails.create({
+                  data: vehicleDetails
+                });
+                
+                console.log('✅ VehicleDetails created successfully:', createdVehicleDetails.id);
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error creating VehicleDetails:', error);
+            // Don't fail the entire listing creation if vehicle details fail
+          }
+        }
 
         return reply.code(201).send({
           success: true,

@@ -1,6 +1,7 @@
-// Essential fields (required section)
+// Essential fields (required section) - Updated for Flutter compatibility
 export const carEssentialFields = [
   "color",
+  "exteriorColor", // Flutter field
   "interiorColor",
   "condition",
   "transmissionType",
@@ -9,19 +10,21 @@ export const carEssentialFields = [
   "previousOwners",
 ];
 
-// Advanced fields (optional section)
+// Advanced fields (optional section) - Updated for Flutter compatibility
 export const carAdvancedFields = [
-  "bodyStyle",
+  "bodyType", // Flutter field (was bodyStyle)
   "driveType",
   "engineNumber",
   "serviceHistory",
-  "accidentFree",
+  "accidental", // Flutter field (was accidentFree)
   "importStatus",
   "registrationExpiry",
   "warranty",
   "engineSize",
   "doors",
   "seats",
+  "airbags",
+  "noOfAirbags", // Flutter field
   "horsepower",
   "torque",
   "roofType",
@@ -32,7 +35,50 @@ export const carAdvancedFields = [
   "navigationSystem",
 ];
 
-// Safety feature fields (from featureGroup)
+// Feature fields mapped from Flutter selectedFeatures array
+export const carFeatureFields = [
+  // Safety features
+  "abs",
+  "tractionControl",
+  "laneAssist",
+  "blindSpotMonitor",
+  "cruiseControl",
+  
+  // Parking & Camera
+  "parkingSensors",
+  "parkingSensor",
+  "backupCamera",
+  "rearCamera",
+  "camera360",
+  
+  // Lighting
+  "ledHeadlights",
+  "fogLights",
+  
+  // Connectivity
+  "bluetooth",
+  "appleCarplay",
+  "androidAuto",
+  "wirelessCharging",
+  "usbPorts",
+  
+  // Comfort
+  "sunroof",
+  "panoramicRoof",
+  "heatedSeats",
+  "cooledSeats",
+  "leatherSeats",
+  "electricSeats",
+  
+  // Security & Convenience
+  "centralLocking",
+  "powerSteering",
+  "immobilizer",
+  "alarmSystem",
+  "alloyWheels",
+];
+
+// Legacy safety fields for backward compatibility
 export const carSafetyFields = [
   // Airbags
   "frontAirbags",
@@ -47,9 +93,10 @@ export const carSafetyFields = [
   "automaticEmergencyBraking",
 ];
 
-// All car fields combined
+// All car fields combined - Updated for Flutter compatibility
 export const allCarFields = [
   ...carEssentialFields,
   ...carAdvancedFields,
+  ...carFeatureFields,
   ...carSafetyFields,
 ];

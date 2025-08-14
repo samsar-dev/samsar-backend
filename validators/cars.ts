@@ -9,6 +9,7 @@ export interface CarDetails {
   fuelType?: FuelType;
   transmissionType?: TransmissionType;
   color?: string;
+  exteriorColor?: string; // Flutter field mapping
   interiorColor?: string;
   condition?: Condition;
   engine?: string;
@@ -17,20 +18,52 @@ export interface CarDetails {
   serviceHistory?: string[];
   previousOwners?: number;
   registrationStatus?: string;
+  registrationExpiry?: string; // Flutter advanced field
+  
+  // Advanced Flutter fields
+  bodyType?: string;
+  driveType?: string;
+  horsepower?: number;
+  accidental?: string;
+  importStatus?: string;
+  
   // Car-specific features
   doors?: number;
   seats?: number;
   airbags?: number;
+  noOfAirbags?: number; // Flutter field mapping
   seatingCapacity?: number;
+  
+  // Feature flags from Flutter selectedFeatures
   sunroof?: boolean;
+  panoramicRoof?: boolean;
   navigationSystem?: boolean;
   bluetooth?: boolean;
+  appleCarplay?: boolean;
+  androidAuto?: boolean;
+  wirelessCharging?: boolean;
+  usbPorts?: boolean;
   cruiseControl?: boolean;
   parkingSensors?: boolean;
+  parkingSensor?: boolean; // Flutter variant
   backupCamera?: boolean;
+  rearCamera?: boolean; // Flutter variant
+  camera360?: boolean;
   heatedSeats?: boolean;
+  cooledSeats?: boolean;
   leatherSeats?: boolean;
+  electricSeats?: boolean;
   alloyWheels?: boolean;
+  centralLocking?: boolean;
+  powerSteering?: boolean;
+  immobilizer?: boolean;
+  alarmSystem?: boolean;
+  abs?: boolean;
+  tractionControl?: boolean;
+  laneAssist?: boolean;
+  blindSpotMonitor?: boolean;
+  ledHeadlights?: boolean;
+  fogLights?: boolean;
 }
 
 export const validateCarData = (data: any): string[] => {
@@ -96,8 +129,32 @@ export const validateCarData = (data: any): string[] => {
     errors.push("Number of airbags must be between 0 and 12");
   }
 
+  if (data.noOfAirbags !== undefined && (typeof data.noOfAirbags !== 'number' || data.noOfAirbags < 0 || data.noOfAirbags > 12)) {
+    errors.push("Number of airbags must be between 0 and 12");
+  }
+
   if (data.previousOwners !== undefined && (typeof data.previousOwners !== 'number' || data.previousOwners < 0)) {
     errors.push("Previous owners must be a non-negative number");
+  }
+
+  if (data.horsepower !== undefined && (typeof data.horsepower !== 'number' || data.horsepower < 0)) {
+    errors.push("Horsepower must be a positive number");
+  }
+
+  // Validate body type options
+  if (data.bodyType) {
+    const validBodyTypes = ['sedan', 'suv', 'hatchback', 'coupe', 'convertible', 'wagon', 'minivan'];
+    if (!validBodyTypes.includes(data.bodyType.toLowerCase())) {
+      errors.push(`Invalid body type. Must be one of: ${validBodyTypes.join(', ')}`);
+    }
+  }
+
+  // Validate drive type options
+  if (data.driveType) {
+    const validDriveTypes = ['front_wheel_drive', 'rear_wheel_drive', 'all_wheel_drive', 'four_wheel_drive'];
+    if (!validDriveTypes.includes(data.driveType)) {
+      errors.push(`Invalid drive type. Must be one of: ${validDriveTypes.join(', ')}`);
+    }
   }
 
   return errors;
@@ -105,43 +162,84 @@ export const validateCarData = (data: any): string[] => {
 
 export const mapCarData = (data: any): Partial<CarDetails> => {
   const features = new Set(data.selectedFeatures || []);
+  
   // Map frontend transmission type to backend enum
   const mapTransmissionType = (frontendType: string): string | undefined => {
     if (frontendType === 'continuouslyVariable') {
-      return 'continuouslyVariable'; // Map to Prisma enum value
+      return 'continuouslyVariable';
     }
     return frontendType;
   };
 
+  // Handle both flat and nested data structures for future-proofing
+  const vehicleData = data.vehicles || data;
+
   return {
-    vehicleType: data.vehicleType as VehicleType,
-    make: data.make?.trim(),
-    model: data.model?.trim(),
-    year: Number(data.year),
-    mileage: data.mileage ? Number(data.mileage) : undefined,
-    fuelType: data.fuelType as FuelType,
-    transmissionType: data.transmissionType ? mapTransmissionType(data.transmissionType) as TransmissionType : undefined,
-    color: data.color?.trim(),
-    interiorColor: data.interiorColor?.trim(),
-    condition: data.condition as Condition,
-    engine: data.engine?.trim(),
-    engineSize: data.engineSize?.trim(),
-    warranty: data.warranty?.trim(),
-    serviceHistory: data.serviceHistory?.set ? data.serviceHistory.set : (Array.isArray(data.serviceHistory) ? data.serviceHistory : []),
-    previousOwners: data.previousOwners ? Number(data.previousOwners) : undefined,
-    registrationStatus: data.registrationStatus?.trim(),
-    doors: data.doors ? Number(data.doors) : undefined,
-    seats: data.seats ? Number(data.seats) : undefined,
-    airbags: data.airbags ? Number(data.airbags) : undefined,
-    seatingCapacity: data.seats ? Number(data.seats) : undefined,
+    vehicleType: vehicleData.vehicleType as VehicleType,
+    make: vehicleData.make?.trim(),
+    model: vehicleData.model?.trim(),
+    year: Number(vehicleData.year),
+    mileage: vehicleData.mileage ? Number(vehicleData.mileage) : undefined,
+    fuelType: vehicleData.fuelType as FuelType,
+    transmissionType: vehicleData.transmissionType ? mapTransmissionType(vehicleData.transmissionType) as TransmissionType : undefined,
+    
+    // Handle color field mapping
+    color: vehicleData.color?.trim() || vehicleData.exteriorColor?.trim(),
+    exteriorColor: vehicleData.exteriorColor?.trim() || vehicleData.color?.trim(),
+    interiorColor: vehicleData.interiorColor?.trim(),
+    
+    condition: vehicleData.condition as Condition,
+    engine: vehicleData.engine?.trim(),
+    engineSize: vehicleData.engineSize?.trim(),
+    warranty: vehicleData.warranty?.trim(),
+    serviceHistory: vehicleData.serviceHistory?.set ? vehicleData.serviceHistory.set : (Array.isArray(vehicleData.serviceHistory) ? vehicleData.serviceHistory : []),
+    previousOwners: vehicleData.previousOwners ? Number(vehicleData.previousOwners) : undefined,
+    registrationStatus: vehicleData.registrationStatus?.trim(),
+    registrationExpiry: vehicleData.registrationExpiry?.trim(),
+    
+    // Advanced Flutter fields
+    bodyType: vehicleData.bodyType?.trim(),
+    driveType: vehicleData.driveType?.trim(),
+    horsepower: vehicleData.horsepower ? Number(vehicleData.horsepower) : undefined,
+    accidental: vehicleData.accidental?.trim(),
+    importStatus: vehicleData.importStatus?.trim(),
+    
+    // Basic car specs
+    doors: vehicleData.doors ? Number(vehicleData.doors) : undefined,
+    seats: vehicleData.seats ? Number(vehicleData.seats) : undefined,
+    airbags: vehicleData.airbags ? Number(vehicleData.airbags) : undefined,
+    noOfAirbags: vehicleData.noOfAirbags ? Number(vehicleData.noOfAirbags) : undefined,
+    seatingCapacity: vehicleData.seats ? Number(vehicleData.seats) : undefined,
+    
+    // Map selectedFeatures array to individual boolean fields
     sunroof: features.has('sunroof'),
+    panoramicRoof: features.has('panoramic_roof'),
     navigationSystem: features.has('navigation_system'),
     bluetooth: features.has('bluetooth'),
+    appleCarplay: features.has('apple_carplay'),
+    androidAuto: features.has('android_auto'),
+    wirelessCharging: features.has('wireless_charging'),
+    usbPorts: features.has('usb_ports'),
     cruiseControl: features.has('cruise_control'),
-    parkingSensors: features.has('parking_sensors'),
-    backupCamera: features.has('backup_camera'),
+    parkingSensors: features.has('parking_sensors') || features.has('parking_sensor'),
+    parkingSensor: features.has('parking_sensor'),
+    backupCamera: features.has('backup_camera') || features.has('rear_camera'),
+    rearCamera: features.has('rear_camera'),
+    camera360: features.has('360_camera'),
     heatedSeats: features.has('heated_seats'),
+    cooledSeats: features.has('cooled_seats'),
     leatherSeats: features.has('leather_seats'),
+    electricSeats: features.has('electric_seats'),
     alloyWheels: features.has('alloy_wheels'),
+    centralLocking: features.has('central_locking'),
+    powerSteering: features.has('power_steering'),
+    immobilizer: features.has('immobilizer'),
+    alarmSystem: features.has('alarm_system'),
+    abs: features.has('abs'),
+    tractionControl: features.has('traction_control'),
+    laneAssist: features.has('lane_assist'),
+    blindSpotMonitor: features.has('blind_spot_monitor'),
+    ledHeadlights: features.has('led_headlights'),
+    fogLights: features.has('fog_lights'),
   };
 };
