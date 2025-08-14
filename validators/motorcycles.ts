@@ -90,6 +90,7 @@ export const validateMotorcycleData = (data: any): string[] => {
 };
 
 export const mapMotorcycleData = (data: any): Partial<MotorcycleDetails> => {
+  const features = new Set(data.selectedFeatures || []);
   return {
     vehicleType: data.vehicleType as VehicleType,
     make: data.make?.trim(),
@@ -108,13 +109,13 @@ export const mapMotorcycleData = (data: any): Partial<MotorcycleDetails> => {
     registrationStatus: data.registrationStatus?.trim(),
     engineCapacity: data.engineCapacity ? Number(data.engineCapacity) : undefined,
     motorcycleType: data.motorcycleType?.trim(),
-    abs: Boolean(data.abs),
-    windshield: Boolean(data.windshield),
-    saddlebags: Boolean(data.saddlebags),
-    crashBars: Boolean(data.crashBars),
-    heatedGrips: Boolean(data.heatedGrips),
-    quickShifter: Boolean(data.quickShifter),
-    tractionControl: Boolean(data.tractionControl),
+    abs: features.has('abs'),
+    windshield: features.has('windshield'),
+    saddlebags: features.has('saddlebags'),
+    crashBars: features.has('crash_bars'),
+    heatedGrips: features.has('heated_grips'),
+    quickShifter: features.has('quick_shifter'),
+    tractionControl: features.has('traction_control'),
     ridingModes: Array.isArray(data.ridingModes) ? data.ridingModes : undefined,
   };
 };

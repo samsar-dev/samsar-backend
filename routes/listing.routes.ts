@@ -1013,7 +1013,10 @@ export default async function (fastify: FastifyInstance) {
                 'soilTypes', 'topography', 'waterFeatures', 'accessibility', 'appliances',
                 'communityFeatures', 'energyFeatures', 'exteriorFeatures', 'hoaFeatures',
                 'kitchenFeatures', 'landscaping', 'livingArea', 'halfBathrooms', 'stories',
-                'attic', 'basement', 'flooringTypes', 'basementFeatures', 'bathroomFeatures'
+                'attic', 'basement', 'flooringTypes', 'basementFeatures', 'bathroomFeatures',
+                // Villa-specific fields
+                'gardenArea', 'pool', 'furnishing', 'security', 'orientation', 'buildingAge',
+                'maintenanceFee', 'energyRating'
               ];
 
               // Map all available fields from the validator result

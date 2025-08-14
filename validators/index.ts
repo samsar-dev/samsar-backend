@@ -8,10 +8,12 @@ import { HouseValidator, HouseDetails } from "./houses.js";
 import { ApartmentValidator, ApartmentDetails } from "./apartments.js";
 import { LandValidator, LandDetails } from "./land.js";
 import { OfficeValidator, OfficeDetails } from './offices.js';
+import { VillaValidator, VillaDetails } from './villa.js';
+import { StoreValidator, StoreDetails, validateStoreData, mapStoreData } from './store.js';
 
 
-export type VehicleDetails = CarDetails | MotorcycleDetails | PassengersDetails | ConstructionsDetails | CommercialsDetails;
-export type RealEstateDetails = HouseDetails | ApartmentDetails | LandDetails | OfficeDetails;
+export type VehicleDetails = CarDetails | MotorcycleDetails | PassengersDetails | ConstructionsDetails | CommercialsDetails | StoreDetails;
+export type RealEstateDetails = HouseDetails | ApartmentDetails | LandDetails | OfficeDetails | VillaDetails;
 
 export interface ValidatorResult {
   errors: string[];
@@ -64,6 +66,13 @@ export class VehicleValidatorFactory {
         }
         break;
 
+      case VehicleType.STORE:
+        errors = validateStoreData(data);
+        if (errors.length === 0) {
+          mappedData = mapStoreData(data);
+        }
+        break;
+
       default:
         errors.push(`Unsupported vehicle type: ${vehicleType}`);
         break;
@@ -79,6 +88,7 @@ export class VehicleValidatorFactory {
       VehicleType.PASSENGER_VEHICLES,
       VehicleType.COMMERCIAL_TRANSPORT,
       VehicleType.CONSTRUCTION_VEHICLES,
+      VehicleType.STORE,
     ];
   }
 
@@ -102,6 +112,8 @@ export class VehicleValidatorFactory {
         return "Commercial Transport Validator";
       case VehicleType.CONSTRUCTION_VEHICLES:
         return "Construction Vehicle Validator";
+      case VehicleType.STORE:
+        return "Store Validator";
       default:
         return "Unknown Validator";
     }
@@ -148,7 +160,13 @@ export class RealEstateValidatorFactory {
         }
         break;
 
-     
+      case PropertyType.VILLA:
+        const villaResult = VillaValidator.validate(data);
+        errors = villaResult.errors;
+        if (errors.length === 0) {
+          mappedData = villaResult.mappedData || undefined;
+        }
+        break;
 
       default:
         errors.push(`Unsupported property type: ${propertyType}`);
@@ -164,11 +182,12 @@ export class RealEstateValidatorFactory {
       PropertyType.APARTMENT,
       PropertyType.LAND,
       PropertyType.OFFICE,
+      PropertyType.VILLA,
     ];
   }
 
   static isResidentialProperty(propertyType: PropertyType): boolean {
-    return [PropertyType.HOUSE, PropertyType.APARTMENT].includes(propertyType);
+    return [PropertyType.HOUSE, PropertyType.APARTMENT, PropertyType.VILLA].includes(propertyType);
   }
 
   static getValidatorName(propertyType: PropertyType): string {
@@ -181,6 +200,8 @@ export class RealEstateValidatorFactory {
         return "Land Validator";
       case PropertyType.OFFICE:
         return "Office Validator";
+      case PropertyType.VILLA:
+        return "Villa Validator";
       default:
         return "Unknown Property Validator";
     }
@@ -201,4 +222,4 @@ export {
   mapCommercialsData,
 };
 
-export type { CarDetails, MotorcycleDetails, PassengersDetails, ConstructionsDetails, CommercialsDetails, HouseDetails, ApartmentDetails, LandDetails, OfficeDetails };
+export type { CarDetails, MotorcycleDetails, PassengersDetails, ConstructionsDetails, CommercialsDetails, HouseDetails, ApartmentDetails, LandDetails, OfficeDetails, VillaDetails, StoreDetails };

@@ -145,6 +145,7 @@ export const validateConstructionsData = (data: any): string[] => {
 };
 
 export const mapConstructionsData = (data: any): Partial<ConstructionsDetails> => {
+  const features = new Set(data.selectedFeatures || []);
   return {
     vehicleType: data.vehicleType as VehicleType,
     make: data.make?.trim(),
@@ -169,12 +170,12 @@ export const mapConstructionsData = (data: any): Partial<ConstructionsDetails> =
     hydraulicSystem: data.hydraulicSystem?.trim(),
     attachments: Array.isArray(data.attachments) ? data.attachments : undefined,
     cabType: data.cabType?.trim(),
-    airConditioning: Boolean(data.airConditioning),
-    heater: Boolean(data.heater),
-    radioSystem: Boolean(data.radioSystem),
-    gpsTracking: Boolean(data.gpsTracking),
-    backupAlarm: Boolean(data.backupAlarm),
-    workLights: Boolean(data.workLights),
+    airConditioning: features.has('air_conditioning'),
+    heater: features.has('heater'),
+    radioSystem: features.has('radio_system'),
+    gpsTracking: features.has('gps_tracking'),
+    backupAlarm: features.has('backup_alarm'),
+    workLights: features.has('work_lights'),
     operatingHours: data.operatingHours ? Number(data.operatingHours) : undefined,
     lastServiceDate: data.lastServiceDate?.trim(),
     nextServiceDue: data.nextServiceDue?.trim(),
@@ -182,10 +183,10 @@ export const mapConstructionsData = (data: any): Partial<ConstructionsDetails> =
     trackType: data.trackType?.trim(),
     tireType: data.tireType?.trim(),
     driveType: data.driveType?.trim(),
-    rolloverProtection: Boolean(data.rolloverProtection),
-    fallingObjectProtection: Boolean(data.fallingObjectProtection),
-    emergencyStop: Boolean(data.emergencyStop),
-    backupCamera: Boolean(data.backupCamera),
-    proximityAlarms: Boolean(data.proximityAlarms),
+    rolloverProtection: features.has('rollover_protection'),
+    fallingObjectProtection: features.has('falling_object_protection'),
+    emergencyStop: features.has('emergency_stop'),
+    backupCamera: features.has('backup_camera'),
+    proximityAlarms: features.has('proximity_alarms'),
   };
 };

@@ -15,6 +15,7 @@ export enum VehicleType {
   PASSENGER_VEHICLES = "PASSENGER_VEHICLES",
   COMMERCIAL_TRANSPORT = "COMMERCIAL_TRANSPORT",
   CONSTRUCTION_VEHICLES = "CONSTRUCTION_VEHICLES",
+  STORE = "STORE",
 }
 
 // 🌟 Property Types
@@ -23,6 +24,7 @@ export enum PropertyType {
   APARTMENT = "APARTMENT",
   LAND = "LAND",
   OFFICE = "OFFICE",
+  VILLA = "VILLA",
 }
 
 // 🌟 Vehicle Details

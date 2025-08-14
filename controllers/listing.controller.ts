@@ -17,6 +17,7 @@ import { MultipartAuthRequest } from "../types/auth.js";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
 import { UserPayload } from "../types/auth.js";
+import { formatListingIdForDisplay } from "../utils/listingIdFormatter.js";
 
 import { UserRole } from "../types/auth.js";
 
@@ -39,6 +40,7 @@ interface AuthenticatedUser {
 
 interface ListingResponse {
   id: string;
+  displayId: string;
   title: string;
   description: string;
   price: number;
@@ -51,6 +53,7 @@ interface ListingResponse {
   condition?: string;
   status: string;
   listingAction?: string;
+  sellerType?: string;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -210,6 +213,7 @@ type ListingCreateBody = {
     realEstate?: Record<string, unknown>;
   };
   listingAction?: ListingAction;
+  sellerType?: string;
   attributes?: Array<{ name: string; value: string }>;
   features?: Array<{ name: string; value: boolean }>;
 };
@@ -219,6 +223,7 @@ const formatListingResponse = (
 ): ListingResponse => {
   return {
     id: listing.id,
+    displayId: formatListingIdForDisplay(listing.id),
     title: listing.title,
     description: listing.description || "",
     price: listing.price,
@@ -231,6 +236,7 @@ const formatListingResponse = (
     condition: listing.condition || undefined,
     status: listing.status,
     listingAction: listing.listingAction || undefined,
+    sellerType: (listing as any).sellerType || undefined,
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
     userId: listing.userId,
@@ -407,6 +413,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       condition,
       details,
       listingAction,
+      sellerType,
       attributes,
       features,
     } = req.body as ListingCreateBody;
@@ -468,10 +475,11 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
+        sellerType,
         user: {
           connect: { id: userId },
         },
-      };
+      } as any;
 
       // Add vehicle details if present (single vehicle per listing)
       // Handle both flat and nested vehicle details structure

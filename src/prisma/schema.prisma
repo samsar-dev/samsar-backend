@@ -108,6 +108,7 @@ model Listing {
   location          String
   condition         String?
   listingAction     String?
+  sellerType        String?
   status            String             @default("ACTIVE")
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -631,6 +632,7 @@ enum VehicleType {
   PASSENGER_VEHICLES
   COMMERCIAL_TRANSPORT
   CONSTRUCTION_VEHICLES
+  STORE
 }
 
 enum FuelType {

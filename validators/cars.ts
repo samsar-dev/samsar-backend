@@ -104,6 +104,7 @@ export const validateCarData = (data: any): string[] => {
 };
 
 export const mapCarData = (data: any): Partial<CarDetails> => {
+  const features = new Set(data.selectedFeatures || []);
   // Map frontend transmission type to backend enum
   const mapTransmissionType = (frontendType: string): string | undefined => {
     if (frontendType === 'continuouslyVariable') {
@@ -133,14 +134,14 @@ export const mapCarData = (data: any): Partial<CarDetails> => {
     seats: data.seats ? Number(data.seats) : undefined,
     airbags: data.airbags ? Number(data.airbags) : undefined,
     seatingCapacity: data.seats ? Number(data.seats) : undefined,
-    sunroof: Boolean(data.sunroof),
-    navigationSystem: Boolean(data.navigationSystem),
-    bluetooth: Boolean(data.bluetooth),
-    cruiseControl: Boolean(data.cruiseControl),
-    parkingSensors: Boolean(data.parkingSensors),
-    backupCamera: Boolean(data.backupCamera),
-    heatedSeats: Boolean(data.heatedSeats),
-    leatherSeats: Boolean(data.leatherSeats),
-    alloyWheels: Boolean(data.alloyWheels),
+    sunroof: features.has('sunroof'),
+    navigationSystem: features.has('navigation_system'),
+    bluetooth: features.has('bluetooth'),
+    cruiseControl: features.has('cruise_control'),
+    parkingSensors: features.has('parking_sensors'),
+    backupCamera: features.has('backup_camera'),
+    heatedSeats: features.has('heated_seats'),
+    leatherSeats: features.has('leather_seats'),
+    alloyWheels: features.has('alloy_wheels'),
   };
 };
