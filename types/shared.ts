@@ -20,7 +20,7 @@ export interface ListingCreateInput {
   location: string;
   images: string[];
   details: ListingDetails;
-  listingAction?: "sale" | "rent";
+  listingAction?: "sale" | "rent" | "searching";
 }
 
 export interface ListingUpdateInput
@@ -133,7 +133,7 @@ export interface ListingBase {
   updatedAt: Date;
   userId: string;
   details: ListingDetails;
-  listingAction?: "sale" | "rent";
+  listingAction?: "sale" | "rent" | "searching";
   status: ListingStatus;
 }
 

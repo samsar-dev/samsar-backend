@@ -11,6 +11,7 @@ export interface MotorcycleDetails {
   color?: string;
   condition?: Condition;
   engine?: string;
+  engineSize?: string;
   warranty?: string;
   serviceHistory?: string[];
   previousOwners?: number;
@@ -100,6 +101,7 @@ export const mapMotorcycleData = (data: any): Partial<MotorcycleDetails> => {
     color: data.color?.trim(),
     condition: data.condition as Condition,
     engine: data.engine?.trim(),
+    engineSize: data.engineSize?.trim(),
     warranty: data.warranty?.trim(),
     serviceHistory: Array.isArray(data.serviceHistory) ? data.serviceHistory : undefined,
     previousOwners: data.previousOwners ? Number(data.previousOwners) : undefined,

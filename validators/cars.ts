@@ -12,6 +12,7 @@ export interface CarDetails {
   interiorColor?: string;
   condition?: Condition;
   engine?: string;
+  engineSize?: string;
   warranty?: string;
   serviceHistory?: string[];
   previousOwners?: number;
@@ -123,6 +124,7 @@ export const mapCarData = (data: any): Partial<CarDetails> => {
     interiorColor: data.interiorColor?.trim(),
     condition: data.condition as Condition,
     engine: data.engine?.trim(),
+    engineSize: data.engineSize?.trim(),
     warranty: data.warranty?.trim(),
     serviceHistory: data.serviceHistory?.set ? data.serviceHistory.set : (Array.isArray(data.serviceHistory) ? data.serviceHistory : []),
     previousOwners: data.previousOwners ? Number(data.previousOwners) : undefined,

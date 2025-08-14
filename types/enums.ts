@@ -21,10 +21,8 @@ export enum VehicleType {
 export enum PropertyType {
   HOUSE = "HOUSE",
   APARTMENT = "APARTMENT",
-  CONDO = "CONDO",
   LAND = "LAND",
-  COMMERCIAL = "COMMERCIAL",
-  OTHER = "OTHER",
+  OFFICE = "OFFICE",
 }
 
 // 🌟 Vehicle Details
@@ -74,6 +72,7 @@ export enum ListingStatus {
 export enum ListingAction {
   SALE = "SALE",
   RENT = "RENT",
+  SEARCHING = "SEARCHING", // For wanted/searching listings
 }
 
 // 🌟 Report System Enums

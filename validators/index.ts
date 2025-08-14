@@ -1,16 +1,17 @@
 import { VehicleType, PropertyType } from "../types/enums.js";
-import { validateCarData, mapCarData, CarDetails } from "./car.js";
-import { validateMotorcycleData, mapMotorcycleData, MotorcycleDetails } from "./motorcycle.js";
-import { validateCommercialData, mapCommercialData, CommercialDetails } from "./commercial.js";
-import { HouseValidator, HouseDetails } from "./house.js";
-import { ApartmentValidator, ApartmentDetails } from "./apartment.js";
-import { CondoValidator, CondoDetails } from "./condo.js";
+import { validateCarData, mapCarData, CarDetails } from "./cars.js";
+import { validateMotorcycleData, mapMotorcycleData, MotorcycleDetails } from "./motorcycles.js";
+import { validatePassengersData, mapPassengersData, PassengersDetails } from "./passengers.js";
+import { validateConstructionsData, mapConstructionsData, ConstructionsDetails } from "./constructions.js";
+import { validateCommercialsData, mapCommercialsData, CommercialsDetails } from "./commercials.js";
+import { HouseValidator, HouseDetails } from "./houses.js";
+import { ApartmentValidator, ApartmentDetails } from "./apartments.js";
 import { LandValidator, LandDetails } from "./land.js";
-import { CommercialRealEstateValidator, CommercialRealEstateDetails } from "./commercial-realestate.js";
-import { OtherPropertyValidator, OtherPropertyDetails } from "./other-property.js";
+import { OfficeValidator, OfficeDetails } from './offices.js';
 
-export type VehicleDetails = CarDetails | MotorcycleDetails | CommercialDetails;
-export type RealEstateDetails = HouseDetails | ApartmentDetails | CondoDetails | LandDetails | CommercialRealEstateDetails | OtherPropertyDetails;
+
+export type VehicleDetails = CarDetails | MotorcycleDetails | PassengersDetails | ConstructionsDetails | CommercialsDetails;
+export type RealEstateDetails = HouseDetails | ApartmentDetails | LandDetails | OfficeDetails;
 
 export interface ValidatorResult {
   errors: string[];
@@ -43,11 +44,23 @@ export class VehicleValidatorFactory {
         break;
 
       case VehicleType.PASSENGER_VEHICLES:
-      case VehicleType.COMMERCIAL_TRANSPORT:
-      case VehicleType.CONSTRUCTION_VEHICLES:
-        errors = validateCommercialData(data);
+        errors = validatePassengersData(data);
         if (errors.length === 0) {
-          mappedData = mapCommercialData(data);
+          mappedData = mapPassengersData(data);
+        }
+        break;
+
+      case VehicleType.COMMERCIAL_TRANSPORT:
+        errors = validateCommercialsData(data);
+        if (errors.length === 0) {
+          mappedData = mapCommercialsData(data);
+        }
+        break;
+
+      case VehicleType.CONSTRUCTION_VEHICLES:
+        errors = validateConstructionsData(data);
+        if (errors.length === 0) {
+          mappedData = mapConstructionsData(data);
         }
         break;
 
@@ -117,13 +130,15 @@ export class RealEstateValidatorFactory {
         }
         break;
 
-      case PropertyType.CONDO:
-        const condoResult = CondoValidator.validate(data);
-        errors = condoResult.errors;
+      case PropertyType.OFFICE:
+        const officeResult = OfficeValidator.validate(data);
+        errors = officeResult.errors;
         if (errors.length === 0) {
-          mappedData = condoResult.mappedData || undefined;
+          mappedData = officeResult.mappedData || undefined;
         }
         break;
+
+       
 
       case PropertyType.LAND:
         const landResult = LandValidator.validate(data);
@@ -133,21 +148,7 @@ export class RealEstateValidatorFactory {
         }
         break;
 
-      case PropertyType.COMMERCIAL:
-        const commercialResult = CommercialRealEstateValidator.validate(data);
-        errors = commercialResult.errors;
-        if (errors.length === 0) {
-          mappedData = commercialResult.mappedData || undefined;
-        }
-        break;
-
-      case PropertyType.OTHER:
-        const otherResult = OtherPropertyValidator.validate(data);
-        errors = otherResult.errors;
-        if (errors.length === 0) {
-          mappedData = otherResult.mappedData || undefined;
-        }
-        break;
+     
 
       default:
         errors.push(`Unsupported property type: ${propertyType}`);
@@ -161,15 +162,13 @@ export class RealEstateValidatorFactory {
     return [
       PropertyType.HOUSE,
       PropertyType.APARTMENT,
-      PropertyType.CONDO,
       PropertyType.LAND,
-      PropertyType.COMMERCIAL,
-      PropertyType.OTHER,
+      PropertyType.OFFICE,
     ];
   }
 
   static isResidentialProperty(propertyType: PropertyType): boolean {
-    return [PropertyType.HOUSE, PropertyType.APARTMENT, PropertyType.CONDO].includes(propertyType);
+    return [PropertyType.HOUSE, PropertyType.APARTMENT].includes(propertyType);
   }
 
   static getValidatorName(propertyType: PropertyType): string {
@@ -178,14 +177,10 @@ export class RealEstateValidatorFactory {
         return "House Validator";
       case PropertyType.APARTMENT:
         return "Apartment Validator";
-      case PropertyType.CONDO:
-        return "Condo Validator";
       case PropertyType.LAND:
         return "Land Validator";
-      case PropertyType.COMMERCIAL:
-        return "Commercial Real Estate Validator";
-      case PropertyType.OTHER:
-        return "Other Property Validator";
+      case PropertyType.OFFICE:
+        return "Office Validator";
       default:
         return "Unknown Property Validator";
     }
@@ -198,8 +193,12 @@ export {
   mapCarData,
   validateMotorcycleData,
   mapMotorcycleData,
-  validateCommercialData,
-  mapCommercialData,
+  validatePassengersData,
+  mapPassengersData,
+  validateConstructionsData,
+  mapConstructionsData,
+  validateCommercialsData,
+  mapCommercialsData,
 };
 
-export type { CarDetails, MotorcycleDetails, CommercialDetails };
+export type { CarDetails, MotorcycleDetails, PassengersDetails, ConstructionsDetails, CommercialsDetails, HouseDetails, ApartmentDetails, LandDetails, OfficeDetails };

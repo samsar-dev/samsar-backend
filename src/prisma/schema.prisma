@@ -606,6 +606,7 @@ enum ListingStatus {
 enum ListingAction {
   SALE
   RENT
+  SEARCHING
 }
 
 enum NotificationType {
@@ -623,6 +624,13 @@ enum NotificationType {
 enum VehicleType {
   CARS
   MOTORCYCLES
+  VANS
+  TRUCKS
+  BUSES
+  TRACTORS
+  PASSENGER_VEHICLES
+  COMMERCIAL_TRANSPORT
+  CONSTRUCTION_VEHICLES
 }
 
 enum FuelType {
