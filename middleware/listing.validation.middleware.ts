@@ -88,12 +88,7 @@ export async function validateListingCreate(
 
     // Attach validated data to request for use in route handler
     req.validatedData = normalizedData;
-
-    return reply.status(200).send({
-      success: true,
-      message: "Listing created successfully",
-      data: normalizedData,
-    });
+    
   } catch (error) {
     console.error("Validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);
@@ -155,6 +150,8 @@ export async function validateListingUpdate(
         vehicles: parsedDetails.vehicles ? ListingDataNormalizer.normalizeVehicleDetails(parsedDetails.vehicles, normalizedData.subCategory as any) : undefined,
         realEstate: parsedDetails.realEstate ? ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails.realEstate, normalizedData.subCategory as any) : undefined,
       };
+
+      return normalizedData;
     }
 
     if (parsedExistingImages) {
@@ -221,7 +218,7 @@ export async function validateListingUpdate(
 
     // Attach validated data to request for use in route handler
     req.validatedData = normalizedData;
-    
+
   } catch (error) {
     console.error("Update validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);

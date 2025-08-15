@@ -377,6 +377,10 @@ export default async function (fastify: FastifyInstance) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
 
+        if (validatedData.details?.vehicles?.statusCode == 400) {
+          return ResponseHelpers.badRequest(reply, validatedData.details?.vehicles)
+        }
+
         const {
           title,
           description,
@@ -389,19 +393,6 @@ export default async function (fastify: FastifyInstance) {
           listingAction,
           details,
         } = validatedData;
-
-        // Debug logging
-        console.log("📝 Creating listing with data:", {
-          title,
-          mainCategory,
-          subCategory,
-          details: details ? {
-            hasVehicles: !!details.vehicles,
-            hasRealEstate: !!details.realEstate,
-            vehicleType: details.vehicles?.vehicleType,
-            propertyType: details.realEstate?.propertyType,
-          } : null
-        });
 
         // Get processed image URLs
         const imageUrls = req.processedImages?.map((img) => img.url) || [];
@@ -427,12 +418,12 @@ export default async function (fastify: FastifyInstance) {
             url,
             order: index,
           })),
-        } : undefined;
+        } : undefined;;
 
         // Prepare vehicle details data - only include non-empty values
         const vehicleDetailsData = details?.vehicles ? {
           create: createSafeDbData({
-            vehicleType: details.vehicles.vehicleType || subCategory,
+            vehicleType: details.vehicles.vehicleType,
             make: details.vehicles.make,
             model: details.vehicles.model,
             year: details.vehicles.year,

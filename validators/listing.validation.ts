@@ -1,3 +1,4 @@
+import { request } from "http";
 import { 
   VehicleType, 
   PropertyType, 
@@ -7,7 +8,7 @@ import {
   ListingAction,
   ListingCategory 
 } from "../types/enums.js";
-
+import { ErrorHandler, ValidationError, ResponseHelpers } from "../utils/error.handler.js";
 // Base listing validation schema
 export interface ListingValidationSchema {
   title: string;
@@ -126,14 +127,14 @@ export class ListingValidator {
 
     if (!data.subCategory) {
       errors.push("Sub category is required");
-          } else {
-        // Validate subCategory based on mainCategory
-        if (data.mainCategory === ListingCategory.VEHICLES && !Object.values(VehicleType).includes(data.subCategory)) {
-          errors.push(`Invalid vehicle type. Must be one of: ${Object.values(VehicleType).join(', ')}`);
-        } else if (data.mainCategory === ListingCategory.REAL_ESTATE && !Object.values(PropertyType).includes(data.subCategory)) {
-          errors.push(`Invalid property type. Must be one of: ${Object.values(PropertyType).join(', ')}`);
-        }
+    } else {
+      // Validate subCategory based on mainCategory
+      if (data.mainCategory === ListingCategory.VEHICLES && !Object.values(VehicleType).includes(data.subCategory)) {
+        errors.push(`Invalid vehicle type. Must be one of: ${Object.values(VehicleType).join(', ')}`);
+      } else if (data.mainCategory === ListingCategory.REAL_ESTATE && !Object.values(PropertyType).includes(data.subCategory)) {
+        errors.push(`Invalid property type. Must be one of: ${Object.values(PropertyType).join(', ')}`);
       }
+    }
 
     if (!data.location || typeof data.location !== 'string' || data.location.trim().length === 0) {
       errors.push("Location is required and must be a non-empty string");
@@ -163,12 +164,11 @@ export class ListingValidator {
       return { isValid: false, errors };
     }
 
-    // Validate vehicleType - use subCategory if not provided, or validate if provided
+    // Validate vehicleType - it's required and must be from VehicleType enum
     if (!data.vehicleType) {
-      // If vehicleType is not provided, we'll use the subCategory
-      console.log(`Vehicle type not provided, using subCategory: ${vehicleType}`);
+      errors.push("Vehicle type is required in vehicle details");
     } else {
-      // If vehicleType is provided, validate it
+      // Validate that vehicleType exists in VehicleType enum
       if (!Object.values(VehicleType).includes(data.vehicleType)) {
         errors.push(`Invalid vehicle type. Must be one of: ${Object.values(VehicleType).join(', ')}`);
       } else if (data.vehicleType !== vehicleType) {
@@ -221,6 +221,10 @@ export class ListingValidator {
 
     if (data.previousOwners !== undefined && (typeof data.previousOwners !== 'number' || data.previousOwners < 0)) {
       errors.push("Previous owners must be a non-negative number");
+    }
+
+    if (data.vehicleType && !Object.values(VehicleType).includes(data.vehicleType)) {
+      errors.push(`Invalid vehicle type. Must be one of: ${Object.values(VehicleType).join(', ')}`);
     }
 
     return { isValid: errors.length === 0, errors };
@@ -321,20 +325,45 @@ export class ListingDataNormalizer {
     // Only include defined values to reduce payload size
     const normalized: Partial<VehicleDetailsSchema> = {};
     
-    // Use provided vehicleType or fallback to subCategory
+    // Use provided vehicleType or fallback to subCategory - validate it exists in VehicleType enum
+  
     if (data.vehicleType) {
-      normalized.vehicleType = data.vehicleType;
-    } else if (subCategory) {
-      normalized.vehicleType = subCategory;
-    }
+      if (Object.values(VehicleType).includes(data.vehicleType)) {
+        normalized.vehicleType = data.vehicleType;
+      } else {
+        return  new ValidationError(`Invalid vehicle type. Must be one of: ${Object.values(VehicleType).join(', ')}`);
+      }
+    } 
+
     if (data.make) normalized.make = data.make.trim();
     if (data.model) normalized.model = data.model.trim();
     if (data.year) normalized.year = Number(data.year);
     if (data.mileage !== undefined && data.mileage !== null) normalized.mileage = Number(data.mileage);
-    if (data.fuelType) normalized.fuelType = data.fuelType;
-    if (data.transmissionType) normalized.transmissionType = data.transmissionType;
+    if (data.fuelType) {
+      if (Object.values(FuelType).includes(data.fuelType)) {
+        normalized.fuelType = data.fuelType;
+      } else {
+        return new ValidationError(`Invalid fuel type. Must be one of: ${Object.values(FuelType).join(', ')}`);
+      }
+    }
+
+    if (data.transmissionType) {
+      if (Object.values(TransmissionType).includes(data.transmissionType)) {
+        normalized.transmissionType = data.transmissionType;
+      } else {
+        return new ValidationError(`Invalid transmission type. Must be one of: ${Object.values(TransmissionType).join(', ')}`);
+      }
+    }
+
     if (data.color) normalized.color = data.color.trim();
     if (data.condition) normalized.condition = data.condition;
+    if (data.condition) {
+      if (Object.values(Condition).includes(data.condition)) {
+        normalized.condition = data.condition;
+      } else {
+        return new ValidationError(`Invalid condition. Must be one of: ${Object.values(Condition).join(', ')}`);
+      }
+    }
     if (data.doors !== undefined && data.doors !== null) normalized.doors = Number(data.doors);
     if (data.seats !== undefined && data.seats !== null) normalized.seats = Number(data.seats);
     if (data.seatingCapacity !== undefined && data.seatingCapacity !== null) normalized.seatingCapacity = Number(data.seatingCapacity);
@@ -370,6 +399,8 @@ export class ListingDataNormalizer {
       normalized.propertyType = data.propertyType;
     } else if (subCategory) {
       normalized.propertyType = subCategory;
+    } else {
+      return new ValidationError(`Invalid property type. Must be one of: ${Object.values(PropertyType).join(', ')}`);
     }
     if (data.size) normalized.size = data.size.trim();
     if (data.yearBuilt !== undefined && data.yearBuilt !== null) normalized.yearBuilt = Number(data.yearBuilt);
@@ -381,7 +412,10 @@ export class ListingDataNormalizer {
     if (data.elevator === true || data.elevator === false) normalized.elevator = data.elevator;
     if (data.balcony === true || data.balcony === false) normalized.balcony = data.balcony;
     if (data.parking === true || data.parking === false) normalized.parking = data.parking;
-    if (data.furnished === true || data.furnished === false) normalized.furnished = data.furnished;
+    if (data.furnished === "yes" || data.furnished === "no") normalized.furnished = data.furnished;
+    else {
+      return new ValidationError(`Invalid furnished status. Must be one of: yes, no`);
+    }
     if (data.heating) normalized.heating = data.heating.trim();
     if (data.cooling) normalized.cooling = data.cooling.trim();
     if (data.features && Array.isArray(data.features)) normalized.features = data.features;
