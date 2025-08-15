@@ -14,16 +14,7 @@ import {
 import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType } from "../types/enums.js";
 import { filterListingDetails } from "../utils/listing.utils.js";
-import { 
-  addListingImages, 
-  createListing, 
-  getListings, 
-  getListing, 
-  updateListing, 
-  deleteListing, 
-  toggleSaveListing 
-} from "../controllers/listing.controller.js";
-import { VehicleValidatorFactory, RealEstateValidatorFactory } from "../validators/index.js";
+import { addListingImages } from "../controllers/listing.controller.js";
 import { Param } from "@prisma/client/runtime/library";
 interface ListingQuery {
   mainCategory?: string;
@@ -33,8 +24,6 @@ interface ListingQuery {
   page?: string;
   limit?: string;
   builtYear?: string;
-  year?: string; // For vehicle year
-  listingAction?: string; // For sale/rent filter
   preview?: string;
   publicAccess?: string;
   latitude?: string;
@@ -62,7 +51,7 @@ type SortField = (typeof validSortFields)[number];
 // Helper function to build orderBy object
 const buildOrderBy = (
   sortBy?: string,
-  sortOrder?: string,
+  sortOrder?: string
 ): Prisma.ListingOrderByWithRelationInput => {
   const order: SortOrder = sortOrder?.toLowerCase() === "desc" ? "desc" : "asc";
 
@@ -98,13 +87,13 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
     vehicles: listing.vehicleDetails
       ? (filterListingDetails(
           listing.vehicleDetails,
-          listing.subCategory,
+          listing.subCategory
         ) as VehicleDetails)
       : undefined,
     realEstate: listing.realEstateDetails
       ? (filterListingDetails(
           listing.realEstateDetails,
-          listing.subCategory,
+          listing.subCategory
         ) as RealEstateDetails)
       : undefined,
   };
@@ -148,11 +137,11 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
 
 // Helper function to handle authenticated routes
 const handleAuthRoute = (
-  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>,
+  handler: (req: AuthRequest, reply: FastifyReply) => Promise<void>
 ) => {
   return async (
     request: FastifyRequest,
-    reply: FastifyReply,
+    reply: FastifyReply
   ): Promise<void> => {
     try {
       console.log("Fetching favorite listings...", request);
@@ -198,7 +187,7 @@ export default async function (fastify: FastifyInstance) {
         listingId: (req.params as any).id,
       };
       return addListingImages(authReq, reply);
-    },
+    }
   );
   // Remove global auth middleware and handle auth per route
 
@@ -214,8 +203,6 @@ export default async function (fastify: FastifyInstance) {
         page = "1",
         limit = "10",
         builtYear,
-        year,
-        listingAction,
         preview = "false",
         publicAccess = "false",
         latitude,
@@ -230,11 +217,6 @@ export default async function (fastify: FastifyInstance) {
       }
       if (subCategory) {
         where.subCategory = subCategory as string;
-      }
-      
-      // Add listingAction filtering (for sale/rent)
-      if (listingAction) {
-        where.listingAction = listingAction as string;
       }
 
       // Add price range filtering
@@ -253,16 +235,6 @@ export default async function (fastify: FastifyInstance) {
           is: {
             ...(where.realEstateDetails?.is || {}),
             yearBuilt: parseInt(builtYear),
-          },
-        };
-      }
-      
-      // Vehicle year filter (nested)
-      if (year) {
-        where.vehicleDetails = {
-          is: {
-            ...(where.vehicleDetails?.is || {}),
-            year: parseInt(year),
           },
         };
       }
@@ -300,7 +272,7 @@ export default async function (fastify: FastifyInstance) {
             centerLat,
             centerLon,
             listing.latitude,
-            listing.longitude,
+            listing.longitude
           );
           return distance <= maxDistance;
         });
@@ -316,7 +288,7 @@ export default async function (fastify: FastifyInstance) {
         .map((listing) => formatListingResponse(listing))
         .filter(
           (listing): listing is Exclude<typeof listing, null> =>
-            listing !== null,
+            listing !== null
         );
 
       // Always return a response, even if empty
@@ -415,7 +387,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   fastify.get("/trending", async (_req, reply): Promise<void> => {
@@ -500,15 +472,15 @@ export default async function (fastify: FastifyInstance) {
         if (
           formattedListing &&
           formattedListing.details &&
-          formattedListing.details
+          formattedListing.details.vehicles
         ) {
           console.log(
             "Formatted listing:",
-            JSON.stringify(formattedListing, null, 2),
+            JSON.stringify(formattedListing, null, 2)
           );
           console.log(
             "Formatted vehicle details:",
-            JSON.stringify(formattedListing.details, null, 2),
+            JSON.stringify(formattedListing.details.vehicles, null, 2)
           );
         }
 
@@ -527,7 +499,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   // Get saved listings
@@ -559,7 +531,7 @@ export default async function (fastify: FastifyInstance) {
           });
 
           const formattedListings = savedListings.map((favorite) =>
-            formatListingResponse(favorite.listing),
+            formatListingResponse(favorite.listing)
           );
 
           return reply.send({
@@ -578,8 +550,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Save a listing to favorites
@@ -665,8 +637,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Delete a saved listing
@@ -724,8 +696,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Add save listing
@@ -793,7 +765,7 @@ export default async function (fastify: FastifyInstance) {
                   "Details:",
                   typeof reqBody.details === "string"
                     ? JSON.parse(reqBody.details)
-                    : reqBody.details,
+                    : reqBody.details
                 );
               }
             } catch (detailsError) {
@@ -810,8 +782,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // Note: You'll need to adapt upload.array and processImagesMiddleware to work with Fastify
@@ -883,23 +855,14 @@ export default async function (fastify: FastifyInstance) {
           return;
         }
 
-        // Parse and validate details with enhanced logging
+        // Parse and validate details
         let parsedDetails;
         try {
           parsedDetails =
             typeof details === "string" ? JSON.parse(details) : details;
-          console.log("🔍 Raw details received:", JSON.stringify(parsedDetails, null, 2));
-          
-          // Log the structure to help with debugging
-          if (parsedDetails) {
-            console.log("📋 Details structure analysis:");
-            console.log("- Has vehicles key:", !!parsedDetails.vehicles);
-            console.log("- Has vehicleType at root:", !!parsedDetails.vehicleType);
-            console.log("- Has selectedFeatures:", !!parsedDetails.selectedFeatures);
-            console.log("- selectedFeatures length:", parsedDetails.selectedFeatures?.length || 0);
-          }
+          console.log("Details sent to DB:", parsedDetails);
         } catch (error) {
-          console.error("❌ Error parsing/validating details:", error);
+          console.error("Error parsing/validating details:", error);
           return reply.code(400).send({
             success: false,
             error: "Invalid details format",
@@ -911,18 +874,17 @@ export default async function (fastify: FastifyInstance) {
 
         // Get processed image URLs
         const imageUrls = request.processedImages?.map((img) => img.url) || [];
-        console.log(" Processed image URLs:", imageUrls);
+        console.log("Processed image URLs:", imageUrls);
 
-        // Create the listing first (without nested vehicle details)
         const listing = await prisma.listing.create({
           data: {
             title,
             description,
             price: Number(price),
             location,
-            latitude: Number(latitude) || 0,
-            longitude: Number(longitude) || 0,
-            category: mainCategory,
+            latitude: Number(latitude) || 0, // Ensure it's a number, default to 0
+            longitude: Number(longitude) || 0, // Ensure it's a number, default to 0
+            category: mainCategory, // For backwards compatibility
             mainCategory,
             subCategory,
             images: {
@@ -933,6 +895,437 @@ export default async function (fastify: FastifyInstance) {
             },
             userId: user.id,
             listingAction,
+            vehicleDetails: parsedDetails.vehicles
+              ? {
+                  create: {
+                    vehicleType: parsedDetails.vehicles.vehicleType,
+                    make: parsedDetails.vehicles.make,
+                    model: parsedDetails.vehicles.model,
+                    year:
+                      parsedDetails.vehicles.year || new Date().getFullYear(),
+                    mileage: parsedDetails.vehicles.mileage
+                      ? Number(parsedDetails.vehicles.mileage)
+                      : 0,
+                    fuelType: parsedDetails.vehicles.fuelType,
+                    transmissionType: parsedDetails.vehicles.transmissionType,
+                    color: parsedDetails.vehicles.color || "#000000",
+                    condition: parsedDetails.vehicles.condition,
+                    features: parsedDetails.vehicles.features || [],
+                    interiorColor:
+                      parsedDetails.vehicles.interiorColor || "#000000",
+                    engine: parsedDetails.vehicles.engine || "",
+                    warranty: parsedDetails.vehicles.warranty || "",
+                    serviceHistory:
+                      parsedDetails.vehicles.serviceHistory || null,
+                    previousOwners:
+                      parsedDetails.vehicles.previousOwners !== undefined
+                        ? Number(parsedDetails.vehicles.previousOwners)
+                        : undefined,
+                    registrationStatus:
+                      parsedDetails.vehicles.registrationStatus || undefined,
+                    horsepower: parsedDetails.vehicles.horsepower,
+                    torque: parsedDetails.vehicles.torque,
+                    engineType: parsedDetails.vehicles.engineType,
+                    engineSize: parsedDetails.vehicles.engineSize,
+                    enginePowerOutput: parsedDetails.vehicles.enginePowerOutput,
+                    driveType: parsedDetails.vehicles.driveType,
+                    bodyStyle: parsedDetails.vehicles.bodyStyle,
+                    safetyFeatures: parsedDetails.vehicles.safetyFeatures || [],
+                    comfortFeatures:
+                      parsedDetails.vehicles.comfortFeatures || [],
+                    entertainmentSystem:
+                      parsedDetails.vehicles.entertainmentSystem || [],
+                    exteriorFeatures:
+                      parsedDetails.vehicles.exteriorFeatures || [],
+                    performanceFeatures:
+                      parsedDetails.vehicles.performanceFeatures || [],
+                    modifications: parsedDetails.vehicles.modifications || null,
+                    customFeatures: parsedDetails.vehicles.customFeatures || [],
+                    emissionStandard: parsedDetails.vehicles.emissionStandard,
+                    enginePower: parsedDetails.vehicles.enginePower,
+                    engineTorque: parsedDetails.vehicles.engineTorque,
+                    trunkCapacity: parsedDetails.vehicles.trunkCapacity,
+                    airbags: parsedDetails.vehicles.airbags,
+                    brakeType: parsedDetails.vehicles.brakeType,
+                    fuelTankCapacity: parsedDetails.vehicles.fuelTankCapacity,
+                    roofType: parsedDetails.vehicles.roofType,
+                    suspensionType: parsedDetails.vehicles.suspensionType,
+                    steeringType: parsedDetails.vehicles.steeringType,
+                    parkingAssist: parsedDetails.vehicles.parkingAssist || [],
+                    motorcycleType: parsedDetails.vehicles.motorcycleType,
+                    engineConfiguration:
+                      parsedDetails.vehicles.engineConfiguration,
+                    ridingStyle: parsedDetails.vehicles.ridingStyle,
+                    brakeSystem: parsedDetails.vehicles.brakeSystem || [],
+                    frameType: parsedDetails.vehicles.frameType,
+                    wheelSize: parsedDetails.vehicles.wheelSize,
+                    tireType: parsedDetails.vehicles.tireType,
+                    startingSystem: parsedDetails.vehicles.startingSystem,
+                    instrumentCluster:
+                      parsedDetails.vehicles.instrumentCluster || [],
+                    lightingSystem: parsedDetails.vehicles.lightingSystem || [],
+                    hours: parseInt(parsedDetails.vehicles.hours) || null,
+                    driveSystem: parsedDetails.vehicles.driveSystem,
+                    engineSpecs: parsedDetails.vehicles.engineSpecs || [],
+                    engineManufacturer:
+                      parsedDetails.vehicles.engineManufacturer,
+                    engineModel: parsedDetails.vehicles.engineModel,
+                    displacement: parsedDetails.vehicles.displacement,
+                    cylinders: parsedDetails.vehicles.cylinders,
+                    emissions: parsedDetails.vehicles.emissions,
+                    hydraulicFlow:
+                      parseInt(parsedDetails.vehicles.hydraulicFlow) || null,
+                    ptoSystem: parsedDetails.vehicles.ptoSystem || [],
+                    ptoHorsepower:
+                      parseInt(parsedDetails.vehicles.ptoHorsepower) || null,
+                    frontAttachments:
+                      parsedDetails.vehicles.frontAttachments || [],
+                    rearAttachments:
+                      parsedDetails.vehicles.rearAttachments || [],
+                    threePointHitch: parsedDetails.vehicles.threePointHitch,
+                    hitchCapacity:
+                      parseFloat(parsedDetails.vehicles.hitchCapacity) || null,
+                    cabFeatures: parsedDetails.vehicles.cabFeatures || [],
+                    seating: parsedDetails.vehicles.seating || [],
+                    steeringSystem: parsedDetails.vehicles.steeringSystem || [],
+                    lighting: parsedDetails.vehicles.lighting || [],
+                    precisionFarming:
+                      parsedDetails.vehicles.precisionFarming || [],
+                    vanType: parsedDetails.vehicles.vanType,
+                    cargoVolume:
+                      parseInt(parsedDetails.vehicles.cargoVolume) || null,
+                    roofHeight: parsedDetails.vehicles.roofHeight,
+                    loadingFeatures:
+                      parsedDetails.vehicles.loadingFeatures || [],
+                    truckType: parsedDetails.vehicles.truckType,
+                    cabType: parsedDetails.vehicles.cabType,
+                    bedLength: parsedDetails.vehicles.bedLength,
+                    payload: parseInt(parsedDetails.vehicles.payload) || null,
+                    seatingConfiguration:
+                      parsedDetails.vehicles.seatingConfiguration,
+                    interiorHeight: parsedDetails.vehicles.interiorHeight,
+                    interiorLength: parsedDetails.vehicles.interiorLength,
+                    temperatureRange: parsedDetails.vehicles.temperatureRange,
+                    equipmentType: parsedDetails.vehicles.equipmentType,
+                    operatingWeight: parsedDetails.vehicles.operatingWeight,
+                    maxLiftingCapacity:
+                      parsedDetails.vehicles.maxLiftingCapacity,
+                    hydraulicSystem: parsedDetails.vehicles.hydraulicSystem,
+                    operatorCabType: parsedDetails.vehicles.operatorCabType,
+                    gps: parsedDetails.vehicles.gps,
+                    ptoType: parsedDetails.vehicles.ptoType,
+                    hydraulicOutlets:
+                      parseInt(parsedDetails.vehicles.hydraulicOutlets) || null,
+                    busType: parsedDetails.vehicles.busType,
+                    seatingCapacity: parsedDetails.vehicles.seatingCapacity,
+                    luggageSpace: parsedDetails.vehicles.luggageSpace,
+                    wheelchairAccessible:
+                      parsedDetails.vehicles.wheelchairAccessible,
+                    wheelchairLift: parsedDetails.vehicles.wheelchairLift,
+                    accessibilityFeatures:
+                      parsedDetails.vehicles.accessibilityFeatures || [],
+                    emergencyExits: parsedDetails.vehicles.emergencyExits,
+                    luggageCompartments:
+                      parsedDetails.vehicles.luggageCompartments,
+                    luggageRacks: parsedDetails.vehicles.luggageRacks,
+                    warrantyPeriod: parsedDetails.vehicles.warrantyPeriod,
+                    serviceHistoryDetails:
+                      parsedDetails.vehicles.serviceHistoryDetails,
+                    customsCleared: parsedDetails.vehicles.customsCleared,
+                    communicationSystem:
+                      parsedDetails.vehicles.communicationSystem || [],
+                    lastInspectionDate:
+                      parsedDetails.vehicles.lastInspectionDate,
+                    certifications: parsedDetails.vehicles.certifications || [],
+                    monitor: parsedDetails.vehicles.monitor || [],
+                    electricalSystem: parsedDetails.vehicles.electricalSystem,
+                    maintenanceHistory:
+                      parsedDetails.vehicles.maintenanceHistory,
+                    blindSpotMonitor: parsedDetails.vehicles.blindSpotMonitor,
+                    laneAssist: parsedDetails.vehicles.laneAssist,
+                    adaptiveCruiseControl:
+                      parsedDetails.vehicles.adaptiveCruiseControl,
+                    tractionControl: parsedDetails.vehicles.tractionControl,
+                    abs: parsedDetails.vehicles.abs,
+                    emergencyBrakeAssist:
+                      parsedDetails.vehicles.emergencyBrakeAssist,
+                    tirePressureMonitoring:
+                      parsedDetails.vehicles.tirePressureMonitoring,
+                    distanceTempomat: parsedDetails.vehicles.distanceTempomat,
+                    distanceWarning: parsedDetails.vehicles.distanceWarning,
+                    passengerAirbag: parsedDetails.vehicles.passengerAirbag,
+                    glarelessHighBeam: parsedDetails.vehicles.glarelessHighBeam,
+                    esp: parsedDetails.vehicles.esp,
+                    driverAirbag: parsedDetails.vehicles.driverAirbag,
+                    highBeamAssistant: parsedDetails.vehicles.highBeamAssistant,
+                    speedLimitingSystem:
+                      parsedDetails.vehicles.speedLimitingSystem,
+                    isofix: parsedDetails.vehicles.isofix,
+                    fatigueWarningSystem:
+                      parsedDetails.vehicles.fatigueWarningSystem,
+                    emergencyCallSystem:
+                      parsedDetails.vehicles.emergencyCallSystem,
+                    sideAirbag: parsedDetails.vehicles.sideAirbag,
+                    trackHoldingAssistant:
+                      parsedDetails.vehicles.trackHoldingAssistant,
+                    deadAngleAssistant:
+                      parsedDetails.vehicles.deadAngleAssistant,
+                    trafficSignRecognition:
+                      parsedDetails.vehicles.trafficSignRecognition,
+                    burglarAlarmSystem:
+                      parsedDetails.vehicles.burglarAlarmSystem,
+                    immobilizer: parsedDetails.vehicles.immobilizer,
+                    centralLocking: parsedDetails.vehicles.centralLocking,
+                    rearCamera: parsedDetails.vehicles.rearCamera,
+                    camera360: parsedDetails.vehicles.camera360,
+                    dashCam: parsedDetails.vehicles.dashCam,
+                    nightVision: parsedDetails.vehicles.nightVision,
+                    parkingSensors: parsedDetails.vehicles.parkingSensors,
+                    parkingAid: parsedDetails.vehicles.parkingAid,
+                    parkingAidCamera: parsedDetails.vehicles.parkingAidCamera,
+                    parkingAidSensorsRear:
+                      parsedDetails.vehicles.parkingAidSensorsRear,
+                    parkingAidSensorsFront:
+                      parsedDetails.vehicles.parkingAidSensorsFront,
+                    climateControl: parsedDetails.vehicles.climateControl,
+                    heatedSeats: parsedDetails.vehicles.heatedSeats,
+                    ventilatedSeats: parsedDetails.vehicles.ventilatedSeats,
+                    dualZoneClimate: parsedDetails.vehicles.dualZoneClimate,
+                    rearAC: parsedDetails.vehicles.rearAC,
+                    airQualitySensor: parsedDetails.vehicles.airQualitySensor,
+                    airConditioning: parsedDetails.vehicles.airConditioning,
+                    twoZoneClimateControl:
+                      parsedDetails.vehicles.twoZoneClimateControl,
+                    bluetooth: parsedDetails.vehicles.bluetooth,
+                    appleCarPlay: parsedDetails.vehicles.appleCarPlay,
+                    androidAuto: parsedDetails.vehicles.androidAuto,
+                    premiumSound: parsedDetails.vehicles.premiumSound,
+                    wirelessCharging: parsedDetails.vehicles.wirelessCharging,
+                    usbPorts: parsedDetails.vehicles.usbPorts,
+                    cdPlayer: parsedDetails.vehicles.cdPlayer,
+                    dvdPlayer: parsedDetails.vehicles.dvdPlayer,
+                    rearSeatEntertainment:
+                      parsedDetails.vehicles.rearSeatEntertainment,
+                    androidCar: parsedDetails.vehicles.androidCar,
+                    onBoardComputer: parsedDetails.vehicles.onBoardComputer,
+                    dabRadio: parsedDetails.vehicles.dabRadio,
+                    handsFreeCalling: parsedDetails.vehicles.handsFreeCalling,
+                    integratedMusicStreaming:
+                      parsedDetails.vehicles.integratedMusicStreaming,
+                    radio: parsedDetails.vehicles.radio,
+                    soundSystem: parsedDetails.vehicles.soundSystem,
+                    wifiHotspot: parsedDetails.vehicles.wifiHotspot,
+                    ledHeadlights: parsedDetails.vehicles.ledHeadlights,
+                    adaptiveHeadlights:
+                      parsedDetails.vehicles.adaptiveHeadlights,
+                    ambientLighting: parsedDetails.vehicles.ambientLighting,
+                    fogLights: parsedDetails.vehicles.fogLights,
+                    automaticHighBeams:
+                      parsedDetails.vehicles.automaticHighBeams,
+                    ledDaytimeRunningLights:
+                      parsedDetails.vehicles.ledDaytimeRunningLights,
+                    daytimeRunningLights:
+                      parsedDetails.vehicles.daytimeRunningLights,
+                    headlightCleaning: parsedDetails.vehicles.headlightCleaning,
+                    lightSensor: parsedDetails.vehicles.lightSensor,
+                    keylessEntry: parsedDetails.vehicles.keylessEntry,
+                    sunroof: parsedDetails.vehicles.sunroof,
+                    spareKey: parsedDetails.vehicles.spareKey,
+                    remoteStart: parsedDetails.vehicles.remoteStart,
+                    powerTailgate: parsedDetails.vehicles.powerTailgate,
+                    autoDimmingMirrors:
+                      parsedDetails.vehicles.autoDimmingMirrors,
+                    rainSensingWipers: parsedDetails.vehicles.rainSensingWipers,
+                    mountainDrivingAssistant:
+                      parsedDetails.vehicles.mountainDrivingAssistant,
+                    electricalWindowLifter:
+                      parsedDetails.vehicles.electricalWindowLifter,
+                    electricalSideMirrors:
+                      parsedDetails.vehicles.electricalSideMirrors,
+                    electricSeats: parsedDetails.vehicles.electricSeats,
+                    headUpDisplay: parsedDetails.vehicles.headUpDisplay,
+                    leatherSteeringWheel:
+                      parsedDetails.vehicles.leatherSteeringWheel,
+                    lumbarSupport: parsedDetails.vehicles.lumbarSupport,
+                    multifunctionalSteeringWheel:
+                      parsedDetails.vehicles.multifunctionalSteeringWheel,
+                    navigationSystem: parsedDetails.vehicles.navigationSystem,
+                    rainSensor: parsedDetails.vehicles.rainSensor,
+                    automaticStartStop:
+                      parsedDetails.vehicles.automaticStartStop,
+                    automaticDazzlingInteriorMirrors:
+                      parsedDetails.vehicles.automaticDazzlingInteriorMirrors,
+                    switchingRockers: parsedDetails.vehicles.switchingRockers,
+                    armrest: parsedDetails.vehicles.armrest,
+                    voiceControl: parsedDetails.vehicles.voiceControl,
+                    touchscreen: parsedDetails.vehicles.touchscreen,
+                    aluminumRims: parsedDetails.vehicles.aluminumRims,
+                    luggageCompartmentSeparation:
+                      parsedDetails.vehicles.luggageCompartmentSeparation,
+                    summerTires: parsedDetails.vehicles.summerTires,
+                    powerSteering: parsedDetails.vehicles.powerSteering,
+                    wheelType: parsedDetails.vehicles.wheelType,
+                    bodyType: parsedDetails.vehicles.bodyType,
+                    insuranceType: parsedDetails.vehicles.insuranceType,
+                    upholsteryMaterial:
+                      parsedDetails.vehicles.upholsteryMaterial,
+                    accidentFree: parsedDetails.vehicles.accidentFree,
+                    importStatus: parsedDetails.vehicles.importStatus,
+                    startType: parsedDetails.vehicles.startType,
+                    frontSuspension:
+                      parsedDetails.vehicles.frontSuspension || [],
+                    rearSuspension: parsedDetails.vehicles.rearSuspension || [],
+                    riderAids: parsedDetails.vehicles.riderAids || [],
+                    electronics: parsedDetails.vehicles.electronics || [],
+                    seatType: parsedDetails.vehicles.seatType,
+                    seatMaterial: parsedDetails.vehicles.seatMaterial,
+                    seatHeight:
+                      parseInt(parsedDetails.vehicles.seatHeight) || null,
+                    handlebarType: parsedDetails.vehicles.handlebarType,
+                    storageOptions: parsedDetails.vehicles.storageOptions || [],
+                    seatBelts: parsedDetails.vehicles.seatBelts,
+                    protectiveEquipment:
+                      parsedDetails.vehicles.protectiveEquipment || [],
+                    frontAirbags: parsedDetails.vehicles.frontAirbags,
+                    sideAirbags: parsedDetails.vehicles.sideAirbags,
+                    curtainAirbags: parsedDetails.vehicles.curtainAirbags,
+                    kneeAirbags: parsedDetails.vehicles.kneeAirbags,
+                    cruiseControl: parsedDetails.vehicles.cruiseControl,
+                    laneDepartureWarning:
+                      parsedDetails.vehicles.laneDepartureWarning,
+                    laneKeepAssist: parsedDetails.vehicles.laneKeepAssist,
+                    automaticEmergencyBraking:
+                      parsedDetails.vehicles.automaticEmergencyBraking,
+                    additionalNotes: parsedDetails.vehicles.additionalNotes,
+                    gearbox: parsedDetails.vehicles.gearbox,
+                    attachments: parsedDetails.vehicles.attachments || [],
+                  },
+                }
+              : undefined,
+            realEstateDetails: parsedDetails.realEstate
+              ? {
+                  create: {
+                    propertyType:
+                      parsedDetails.realEstate.propertyType || "HOUSE",
+                    size: parsedDetails.realEstate.size?.toString() || null,
+                    yearBuilt:
+                      parseInt(
+                        parsedDetails.realEstate.yearBuilt?.toString()
+                      ) || null,
+                    bedrooms:
+                      parseInt(
+                        parsedDetails.realEstate.houseDetails?.bedrooms?.toString()
+                      ) || null,
+                    bathrooms:
+                      parseInt(
+                        parsedDetails.realEstate.houseDetails?.bathrooms?.toString()
+                      ) || null,
+                    totalArea:
+                      parseInt(
+                        parsedDetails.realEstate.houseDetails?.totalArea?.toString()
+                      ) || null,
+                    condition:
+                      parsedDetails.realEstate.condition?.toString() || null,
+                    parkingSpaces:
+                      parseInt(
+                        parsedDetails.realEstate.parkingSpaces?.toString()
+                      ) || null,
+                    constructionType:
+                      parsedDetails.realEstate.constructionType || null,
+                    features: parsedDetails.realEstate.features || [],
+                    parking: parsedDetails.realEstate.parking || null,
+                    floor: parsedDetails.realEstate.floor || null,
+                    totalFloors: parsedDetails.realEstate.totalFloors || null,
+                    elevator: parsedDetails.realEstate.elevator,
+                    balcony: parsedDetails.realEstate.balcony,
+                    storage: parsedDetails.realEstate.storage,
+                    heating: parsedDetails.realEstate.heating || null,
+                    cooling: parsedDetails.realEstate.cooling || null,
+                    buildingAmenities:
+                      parsedDetails.realEstate.buildingAmenities || [],
+                    energyRating: parsedDetails.realEstate.energyRating || null,
+                    furnished: parsedDetails.realEstate.furnished || null,
+                    view: parsedDetails.realEstate.view || null,
+                    securityFeatures:
+                      parsedDetails.realEstate.securityFeatures || [],
+                    fireSafety: parsedDetails.realEstate.fireSafety || [],
+                    flooringType: parsedDetails.realEstate.flooringType || null,
+                    internetIncluded: parsedDetails.realEstate.internetIncluded,
+                    windowType: parsedDetails.realEstate.windowType || null,
+                    accessibilityFeatures:
+                      parsedDetails.realEstate.accessibilityFeatures || [],
+                    renovationHistory:
+                      parsedDetails.realEstate.renovationHistory || null,
+                    parkingType: parsedDetails.realEstate.parkingType || null,
+                    utilities: parsedDetails.realEstate.utilities || [],
+                    exposureDirection:
+                      parsedDetails.realEstate.exposureDirection || [],
+                    storageType: parsedDetails.realEstate.storageType || [],
+                    halfBathrooms:
+                      parseInt(parsedDetails.realEstate.halfBathrooms) || null,
+                    stories: parseInt(parsedDetails.realEstate.stories) || null,
+                    basement: parsedDetails.realEstate.basement || null,
+                    attic: parsedDetails.realEstate.attic || null,
+                    flooringTypes: parsedDetails.realEstate.flooringTypes || [],
+                    parcelNumber: parsedDetails.realEstate.parcelNumber || null,
+                    topography: parsedDetails.realEstate.topography || [],
+                    elevation: parsedDetails.realEstate.elevation
+                      ? parseInt(parsedDetails.realEstate.elevation.toString())
+                      : null,
+                    waterFeatures:
+                      parsedDetails.realEstate.waterFeatures || null,
+                    naturalFeatures:
+                      parsedDetails.realEstate.naturalFeatures || null,
+                    buildable: parsedDetails.realEstate.buildable || null,
+                    buildingRestrictions:
+                      parsedDetails.realEstate.buildingRestrictions || null,
+                    permitsInPlace:
+                      parsedDetails.realEstate.permitsInPlace || null,
+                    environmentalFeatures:
+                      parsedDetails.realEstate.environmentalFeatures || null,
+                    soilTypes: parsedDetails.realEstate.soilTypes || [],
+                    petPolicy: parsedDetails.realEstate.petPolicy || null,
+
+                    // 🆕 Added fields based on updated schema:
+                    livingArea: parsedDetails.realEstate.livingArea
+                      ? parseFloat(
+                          parsedDetails.realEstate.livingArea.toString()
+                        )
+                      : null,
+                    energyFeatures:
+                      parsedDetails.realEstate.energyFeatures || null,
+                    basementFeatures:
+                      parsedDetails.realEstate.basementFeatures || null,
+                    windowFeatures:
+                      parsedDetails.realEstate.windowFeatures || null,
+                    kitchenFeatures:
+                      parsedDetails.realEstate.kitchenFeatures || null,
+                    bathroomFeatures:
+                      parsedDetails.realEstate.bathroomFeatures || null,
+                    roofAge: parsedDetails.realEstate.roofAge
+                      ? parseInt(parsedDetails.realEstate.roofAge.toString())
+                      : null,
+                    exteriorFeatures:
+                      parsedDetails.realEstate.exteriorFeatures || null,
+                    outdoorFeatures:
+                      parsedDetails.realEstate.outdoorFeatures || null,
+                    landscaping: parsedDetails.realEstate.landscaping || null,
+                    smartHomeFeatures:
+                      parsedDetails.realEstate.smartHomeFeatures || null,
+                    communityFeatures:
+                      parsedDetails.realEstate.communityFeatures || null,
+                    hoaFeatures: parsedDetails.realEstate.hoaFeatures || null,
+                    appliances: parsedDetails.realEstate.appliances || null,
+                    petFeatures: parsedDetails.realEstate.petFeatures || null,
+                    accessibility:
+                      parsedDetails.realEstate.accessibility || null,
+                    storageFeatures:
+                      parsedDetails.realEstate.storageFeatures || null,
+                    floorLevel: parsedDetails.realEstate.floorLevel || null,
+                    isBuildable: parsedDetails.realEstate.isBuildable || null,
+                  },
+                }
+              : undefined,
           },
           include: {
             images: true,
@@ -940,125 +1333,16 @@ export default async function (fastify: FastifyInstance) {
               select: {
                 id: true,
                 username: true,
+                profilePicture: true,
               },
             },
+            favorites: true,
+
+            realEstateDetails: true,
           },
         });
 
         console.log("✅ Created listing:", listing);
-
-        // Now create vehicle details separately if this is a vehicle listing
-        if (mainCategory === 'vehicles' || subCategory === 'cars') {
-          try {
-            const vehicleData = parsedDetails.vehicles || parsedDetails;
-            console.log('🔍 Vehicle data check:', JSON.stringify(vehicleData, null, 2));
-            
-            if (vehicleData.vehicleType) {
-              const vehicleType = vehicleData.vehicleType as VehicleType;
-              
-              // Use our enhanced validator factory with comprehensive field mapping
-              const validationResult = VehicleValidatorFactory.validate(vehicleType, vehicleData);
-              
-              if (validationResult.errors.length > 0) {
-                console.warn(`Vehicle validation warnings: ${validationResult.errors.join(', ')}`);
-              }
-
-              // Use the mapped data from the validator
-              const mappedVehicleData = validationResult.mappedData;
-              if (mappedVehicleData) {
-                // Create comprehensive vehicle details matching exact Prisma schema
-                const vehicleDetails: any = {
-                  listingId: listing.id, // Now we have the listing ID!
-                  // Required fields
-                  vehicleType: mappedVehicleData.vehicleType as any,
-                  make: mappedVehicleData.make || "",
-                  model: mappedVehicleData.model || "",
-                  year: mappedVehicleData.year || 0,
-                  
-                  // Optional basic fields
-                  mileage: mappedVehicleData.mileage || null,
-                  fuelType: mappedVehicleData.fuelType as any || null,
-                  transmissionType: mappedVehicleData.transmissionType as any || null,
-                  color: (mappedVehicleData as any).exteriorColor || (mappedVehicleData as any).color || null,
-                  interiorColor: (mappedVehicleData as any).interiorColor || null,
-                  condition: mappedVehicleData.condition as any || null,
-                  
-                  // Engine and technical specs
-                  engine: (mappedVehicleData as any).engine || null,
-                  engineSize: (mappedVehicleData as any).engineSize || null,
-                  horsepower: (mappedVehicleData as any).horsepower || null,
-                  
-                  // Documentation and history
-                  warranty: (mappedVehicleData as any).warranty || null,
-                  previousOwners: (mappedVehicleData as any).previousOwners || null,
-                  registrationStatus: (mappedVehicleData as any).registrationStatus || null,
-                  registrationExpiry: (mappedVehicleData as any).registrationExpiry || null,
-                  serviceHistory: (mappedVehicleData as any).serviceHistory ? [(mappedVehicleData as any).serviceHistory] : [],
-                  
-                  // Advanced Flutter fields
-                  bodyType: (mappedVehicleData as any).bodyType || null,
-                  driveType: (mappedVehicleData as any).driveType || null,
-                  importStatus: (mappedVehicleData as any).importStatus || null,
-                  accidentFree: (mappedVehicleData as any).accidental === "No" || (mappedVehicleData as any).accidental === "false" || false,
-                  
-                  // Physical specifications
-                  doors: (mappedVehicleData as any).doors || null,
-                  seats: (mappedVehicleData as any).seats || null,
-                  airbags: (mappedVehicleData as any).airbags || (mappedVehicleData as any).noOfAirbags || null,
-                  seatingCapacity: (mappedVehicleData as any).seats || null,
-                  
-                  // Feature flags from selectedFeatures array - matching exact Prisma field names
-                  sunroof: (mappedVehicleData as any).sunroof || false,
-                  bluetooth: (mappedVehicleData as any).bluetooth || false,
-                  appleCarPlay: (mappedVehicleData as any).appleCarplay || false,
-                  androidAuto: (mappedVehicleData as any).androidAuto || false,
-                  wirelessCharging: (mappedVehicleData as any).wirelessCharging || false,
-                  usbPorts: (mappedVehicleData as any).usbPorts || false,
-                  cruiseControl: (mappedVehicleData as any).cruiseControl || false,
-                  parkingSensors: (mappedVehicleData as any).parkingSensors || (mappedVehicleData as any).parkingSensor || false,
-                  rearCamera: (mappedVehicleData as any).backupCamera || (mappedVehicleData as any).rearCamera || false,
-                  camera360: (mappedVehicleData as any).camera360 || false,
-                  heatedSeats: (mappedVehicleData as any).heatedSeats || false,
-                  electricSeats: (mappedVehicleData as any).electricSeats || false,
-                  seatMaterial: (mappedVehicleData as any).leatherSeats ? "Leather" : null,
-                  aluminumRims: (mappedVehicleData as any).alloyWheels || false,
-                  centralLocking: (mappedVehicleData as any).centralLocking || false,
-                  powerSteering: (mappedVehicleData as any).powerSteering || false,
-                  immobilizer: (mappedVehicleData as any).immobilizer || false,
-                  abs: (mappedVehicleData as any).abs || false,
-                  tractionControl: (mappedVehicleData as any).tractionControl || false,
-                  laneAssist: (mappedVehicleData as any).laneAssist || false,
-                  blindSpotMonitor: (mappedVehicleData as any).blindSpotMonitor || false,
-                  ledHeadlights: (mappedVehicleData as any).ledHeadlights || false,
-                  fogLights: (mappedVehicleData as any).fogLights || false,
-                  
-                  // Navigation system as string (Prisma schema expects string, not boolean)
-                  navigationSystem: (mappedVehicleData as any).navigationSystem ? "Built-in" : null,
-                };
-
-                // Add legacy compatibility fields
-                if ('engineCapacity' in mappedVehicleData) {
-                  vehicleDetails.engineCapacity = (mappedVehicleData as any).engineCapacity || null;
-                }
-                if ('payloadCapacity' in mappedVehicleData) {
-                  vehicleDetails.payloadCapacity = (mappedVehicleData as any).payloadCapacity || null;
-                }
-
-                console.log('📊 Final vehicle details to be stored:', JSON.stringify(vehicleDetails, null, 2));
-                
-                // Create the vehicle details record
-                const createdVehicleDetails = await prisma.vehicleDetails.create({
-                  data: vehicleDetails
-                });
-                
-                console.log('✅ VehicleDetails created successfully:', createdVehicleDetails.id);
-              }
-            }
-          } catch (error) {
-            console.error('❌ Error creating VehicleDetails:', error);
-            // Don't fail the entire listing creation if vehicle details fail
-          }
-        }
 
         return reply.code(201).send({
           success: true,
@@ -1084,7 +1368,7 @@ export default async function (fastify: FastifyInstance) {
                 "Details:",
                 typeof reqBody.details === "string"
                   ? JSON.parse(reqBody.details)
-                  : reqBody.details,
+                  : reqBody.details
               );
             }
           } catch (detailsError) {
@@ -1099,7 +1383,7 @@ export default async function (fastify: FastifyInstance) {
           data: null,
         });
       }
-    },
+    }
   );
 
   fastify.get<{ Querystring: { page?: string; limit?: string } }>(
@@ -1141,7 +1425,7 @@ export default async function (fastify: FastifyInstance) {
             success: true,
             data: {
               listings: listings.map((listing) =>
-                formatListingResponse(listing),
+                formatListingResponse(listing)
               ),
               total,
               page: Number(page),
@@ -1160,8 +1444,8 @@ export default async function (fastify: FastifyInstance) {
             },
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   fastify.get(
@@ -1207,8 +1491,8 @@ export default async function (fastify: FastifyInstance) {
             },
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   // This route has been moved above the authentication middleware to make it public
@@ -1265,7 +1549,7 @@ export default async function (fastify: FastifyInstance) {
               ...vehicleDetails,
               seatingCapacity: Math.max(
                 0,
-                Number(vehicleDetails.seatingCapacity || 0),
+                Number(vehicleDetails.seatingCapacity || 0)
               ),
             };
           }
@@ -1297,12 +1581,12 @@ export default async function (fastify: FastifyInstance) {
               // Ensure we only keep valid image URLs that exist in the database
               const validImageUrls = currentImages.map((img) => img.url);
               parsedExistingImages = parsedExistingImages.filter((url) =>
-                validImageUrls.includes(url),
+                validImageUrls.includes(url)
               );
 
               console.log(
                 "🔍 [DEBUG] Valid existing images:",
-                parsedExistingImages,
+                parsedExistingImages
               );
             } catch (error) {
               console.error("🔍 [DEBUG] Error parsing existing images:", error);
@@ -1367,7 +1651,7 @@ export default async function (fastify: FastifyInstance) {
                 ? {
                     update: filterListingDetails(
                       realEstateDetails,
-                      realEstateDetails.propertyType,
+                      realEstateDetails.propertyType
                     ) as RealEstateDetails,
                   }
                 : undefined,
@@ -1376,7 +1660,7 @@ export default async function (fastify: FastifyInstance) {
                 ? {
                     update: filterListingDetails(
                       vehicleDetails,
-                      vehicleDetails.vehicleType,
+                      vehicleDetails.vehicleType
                     ) as VehicleDetails,
                   }
                 : undefined,
@@ -1399,7 +1683,7 @@ export default async function (fastify: FastifyInstance) {
           return reply.send({
             success: true,
             data: formatListingResponse(
-              listing as unknown as ListingWithRelations,
+              listing as unknown as ListingWithRelations
             ),
             status: 200,
           });
@@ -1415,8 +1699,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   fastify.put<{ Params: { id: string } }>(
@@ -1500,8 +1784,8 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 
   fastify.delete<{ Params: { id: string } }>(
@@ -1592,7 +1876,7 @@ export default async function (fastify: FastifyInstance) {
             data: null,
           });
         }
-      },
-    ),
+      }
+    )
   );
 }
