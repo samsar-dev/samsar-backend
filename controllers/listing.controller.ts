@@ -1085,6 +1085,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       existingImages,
       attributes,
       features,
+      details,
     } = req.body as {
       title: string;
       description: string;
@@ -1098,6 +1099,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       existingImages?: string[] | string;
       attributes?: Array<{ name: string; value: string }>;
       features?: Array<{ name: string; value: boolean }>;
+      details?: any;
     };
 
     const oldListing = await prisma.listing.findUnique({
@@ -1219,59 +1221,242 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     // Ensure price is a number and handle potential string input
     const newPrice = typeof price === "string" ? parseFloat(price) : price;
 
+    // Parse details if provided
+    const parsedDetails = typeof details === "string" ? JSON.parse(details) : details || {};
+    
+    console.log("🔍 [updateListing] Processing details:", parsedDetails);
+
     // Check if price has changed and is a valid number
     const isPriceChanged = !isNaN(newPrice) && oldListing.price !== newPrice;
 
-    const listing = await prisma.listing.update({
-      where: { id },
-      data: {
-        title,
-        description,
-        price: newPrice,
-        mainCategory,
-        subCategory,
-        location,
-        latitude:
-          typeof latitude === "string" ? parseFloat(latitude) : latitude,
-        longitude:
-          typeof longitude === "string" ? parseFloat(longitude) : longitude,
-        condition,
-        attributes: attributes
-          ? {
-              deleteMany: {},
-              create: attributes,
-            }
-          : undefined,
-        features: features
-          ? {
-              deleteMany: {},
-              create: features,
-            }
-          : undefined,
-        images:
-          imagesToCreate.length > 0
+    // Start transaction to handle nested updates
+    const listing = await prisma.$transaction(async (tx) => {
+      // First, update the main listing
+      const updatedListing = await tx.listing.update({
+        where: { id },
+        data: {
+          title,
+          description,
+          price: newPrice,
+          mainCategory,
+          subCategory,
+          location,
+          latitude:
+            typeof latitude === "string" ? parseFloat(latitude) : latitude,
+          longitude:
+            typeof longitude === "string" ? parseFloat(longitude) : longitude,
+          condition,
+          attributes: attributes
             ? {
                 deleteMany: {},
-                create: imagesToCreate.map((img) => ({
-                  url: img.url,
-                  order: img.order,
-                })),
+                create: attributes,
               }
             : undefined,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            profilePicture: true,
-          },
+          features: features
+            ? {
+                deleteMany: {},
+                create: features,
+              }
+            : undefined,
+          images:
+            imagesToCreate.length > 0
+              ? {
+                  deleteMany: {},
+                  create: imagesToCreate.map((img) => ({
+                    url: img.url,
+                    order: img.order,
+                  })),
+                }
+              : undefined,
         },
-        images: true,
-        favorites: true,
-        attributes: true,
-        features: true,
-      },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              profilePicture: true,
+            },
+          },
+          images: true,
+          favorites: true,
+          attributes: true,
+          features: true,
+          vehicleDetails: {
+            select: {
+              id: true,
+              vehicleType: true,
+              make: true,
+              model: true,
+              year: true,
+              mileage: true,
+              fuelType: true,
+              transmissionType: true,
+              color: true,
+              condition: true,
+              listingId: true,
+              interiorColor: true,
+              engine: true,
+              warranty: true,
+              serviceHistory: true,
+              previousOwners: true,
+              registrationStatus: true,
+            },
+          },
+          realEstateDetails: true,
+        },
+      });
+
+      // Handle vehicle details update if provided
+      if (parsedDetails && Object.keys(parsedDetails).length > 0) {
+        const vehicleData = parsedDetails.vehicles || parsedDetails;
+        
+        // If we have vehicle data, process it
+        if (vehicleData && Object.keys(vehicleData).length > 0) {
+          // Set vehicleType from subCategory if not provided
+          if (!vehicleData.vehicleType && subCategory) {
+            vehicleData.vehicleType = subCategory;
+          }
+          
+          if (vehicleData.vehicleType) {
+            const vehicleType = vehicleData.vehicleType as VehicleType;
+            
+            console.log('🔍 [updateListing] Validating vehicle data:', JSON.stringify(vehicleData, null, 2));
+            
+            // Use the validator factory for clean validation
+            const validationResult = VehicleValidatorFactory.validate(vehicleType, vehicleData);
+            
+            if (validationResult.errors.length > 0) {
+              console.log('❌ Vehicle validation errors:', validationResult.errors);
+              throw new Error(`Vehicle validation failed: ${validationResult.errors.join(', ')}`);
+            }
+
+            // Use the mapped data from the validator
+            const mappedVehicleData = validationResult.mappedData || vehicleData;
+            
+            console.log('✅ Mapped vehicle data:', JSON.stringify(mappedVehicleData, null, 2));
+            
+            // Create base vehicle details with all possible fields
+            const vehicleDetails: any = {
+              vehicleType: (mappedVehicleData.vehicleType || subCategory) as any,
+              make: mappedVehicleData.make || null,
+              model: mappedVehicleData.model || null,
+              year: mappedVehicleData.year ? parseInt(mappedVehicleData.year) : null,
+              mileage: mappedVehicleData.mileage ? parseFloat(mappedVehicleData.mileage) : null,
+              fuelType: mappedVehicleData.fuelType as any || null,
+              transmissionType: mappedVehicleData.transmissionType as any || null,
+              color: mappedVehicleData.color || null,
+              condition: (mappedVehicleData.condition || condition) as any || null,
+              engine: mappedVehicleData.engine || null,
+              engineSize: mappedVehicleData.engineSize || null,
+              warranty: mappedVehicleData.warranty || null,
+              serviceHistory: mappedVehicleData.serviceHistory || null,
+              previousOwners: mappedVehicleData.previousOwners ? parseInt(mappedVehicleData.previousOwners) : null,
+              registrationStatus: mappedVehicleData.registrationStatus || null,
+              interiorColor: mappedVehicleData.interiorColor || null,
+              // Add any additional fields that might be in the data
+              ...(mappedVehicleData.engineNumber && { engineNumber: mappedVehicleData.engineNumber }),
+              ...(mappedVehicleData.vin && { vin: mappedVehicleData.vin }),
+              ...(mappedVehicleData.licensePlate && { licensePlate: mappedVehicleData.licensePlate }),
+            };
+
+            console.log('🔧 Final vehicle details to save:', JSON.stringify(vehicleDetails, null, 2));
+            
+            // Check if vehicle details already exist
+            const existingVehicleDetails = await tx.vehicleDetails.findUnique({
+              where: { listingId: id }
+            });
+
+            if (existingVehicleDetails) {
+              // Update existing vehicle details
+              await tx.vehicleDetails.update({
+                where: { listingId: id },
+                data: vehicleDetails as Prisma.VehicleDetailsUpdateInput,
+              });
+              console.log('✅ Updated existing vehicle details');
+            } else {
+              // Create new vehicle details
+              await tx.vehicleDetails.create({
+                data: {
+                  ...vehicleDetails,
+                  listingId: id,
+                } as Prisma.VehicleDetailsCreateInput,
+              });
+              console.log('✅ Created new vehicle details');
+            }
+          }
+        }
+
+        // Handle real estate details if present
+        if (parsedDetails?.propertyType) {
+          const propertyType = parsedDetails.propertyType as PropertyType;
+          
+          // Use our clean real estate validator factory
+          const validationResult = RealEstateValidatorFactory.validate(propertyType, parsedDetails);
+          
+          if (validationResult.errors.length > 0) {
+            console.log('❌ Real estate validation errors:', validationResult.errors);
+            throw new Error(`Real estate validation failed: ${validationResult.errors.join(', ')}`);
+          }
+
+          // Use the mapped data from the validator
+          const mappedRealEstateData = validationResult.mappedData;
+          if (mappedRealEstateData) {
+            // Create flexible real estate details mapping
+            const realEstateDetails: any = {
+              propertyType: (mappedRealEstateData as any).propertyType || "OTHER",
+            };
+
+            // Map all possible fields from the validator result
+            const fieldMappings = [
+              'size', 'condition', 'constructionType', 'features', 'parking', 
+              'accessibilityFeatures', 'balcony', 'buildingAmenities', 'cooling',
+              'elevator', 'energyRating', 'exposureDirection', 'fireSafety',
+              'floor', 'flooringType', 'furnished', 'heating', 'internetIncluded',
+              'parkingType', 'petPolicy', 'renovationHistory', 'securityFeatures',
+              'storage', 'storageType', 'totalFloors', 'utilities', 'view',
+              'windowType', 'totalArea', 'yearBuilt', 'bedrooms', 'bathrooms',
+              'floorLevel', 'isBuildable', 'elevation', 'buildable', 'buildingRestrictions',
+              'environmentalFeatures', 'naturalFeatures', 'parcelNumber', 'permitsInPlace',
+              'soilTypes', 'topography', 'waterFeatures', 'accessibility', 'appliances',
+              'communityFeatures', 'energyFeatures', 'exteriorFeatures', 'hoaFeatures',
+              'kitchenFeatures', 'landscaping', 'livingArea', 'halfBathrooms', 'stories',
+              'attic', 'basement', 'flooringTypes', 'basementFeatures', 'bathroomFeatures'
+            ];
+
+            // Map all available fields from the validator result
+            fieldMappings.forEach(field => {
+              if (field in (mappedRealEstateData as any)) {
+                realEstateDetails[field] = (mappedRealEstateData as any)[field] || null;
+              }
+            });
+
+            // Check if real estate details already exist
+            const existingRealEstateDetails = await tx.realEstateDetails.findUnique({
+              where: { listingId: id }
+            });
+
+            if (existingRealEstateDetails) {
+              // Update existing real estate details
+              await tx.realEstateDetails.update({
+                where: { listingId: id },
+                data: realEstateDetails as Prisma.RealEstateDetailsUpdateInput,
+              });
+              console.log('✅ Updated existing real estate details');
+            } else {
+              // Create new real estate details
+              await tx.realEstateDetails.create({
+                data: {
+                  ...realEstateDetails,
+                  listingId: id,
+                } as Prisma.RealEstateDetailsCreateInput,
+              });
+              console.log('✅ Created new real estate details');
+            }
+          }
+        }
+      }
+
+      return updatedListing;
     });
 
     // Handle price update notifications
