@@ -485,11 +485,31 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       // Handle both flat and nested vehicle details structure
       const vehicleData = parsedDetails.vehicles || parsedDetails;
       
+      console.log('🔍 [createListing] Vehicle data check:', {
+        hasVehicleData: Object.keys(vehicleData).length > 0,
+        vehicleType: vehicleData.vehicleType,
+        subCategory,
+        mainCategory,
+        vehicleDataKeys: Object.keys(vehicleData)
+      });
+      
+      // Check if we have vehicle-related data or if this is a vehicle listing
+      const hasVehicleData = vehicleData.vehicleType || 
+                           vehicleData.make || 
+                           vehicleData.model || 
+                           vehicleData.year ||
+                           mainCategory === 'vehicles';
+      
       // If we have any vehicle data, process it
-      if (Object.keys(vehicleData).length > 0) {
+      if (hasVehicleData && Object.keys(vehicleData).length > 0) {
         // If vehicleType is not set but we have subCategory, use that
         if (!vehicleData.vehicleType && subCategory) {
           vehicleData.vehicleType = subCategory;
+        }
+        
+        // If still no vehicleType but mainCategory is vehicles, default to CARS
+        if (!vehicleData.vehicleType && mainCategory === 'vehicles') {
+          vehicleData.vehicleType = 'CARS';
         }
         
         if (vehicleData.vehicleType) {
