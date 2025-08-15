@@ -19,8 +19,8 @@ model Report {
   reporterId   String
   resolvedById String?
   resolvedAt   DateTime?
-  reporter     User         @relation("ReportedBy", fields: [reporterId], references: [id])
-  resolvedBy   User?        @relation("ResolvedReports", fields: [resolvedById], references: [id])
+  reporter     User         @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy   User?        @relation("ResolvedReports", fields: [resolvedById], references: [id], onDelete: SetNull)
 
   @@index([type, targetId])
   @@index([status])
@@ -91,7 +91,7 @@ model View {
   userAgent String
   createdAt DateTime @default(now())
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([listingId, userId, userIp], name: "listing_user_ip")
   @@index([createdAt])
@@ -122,7 +122,7 @@ model Listing {
   favorites         Favorite[]
   features          Feature[]
   images            Image[]
-  user              User               @relation("UserListings", fields: [userId], references: [id])
+  user              User               @relation("UserListings", fields: [userId], references: [id], onDelete: Cascade)
   Message           Message[]
   notifications     Notification[]     @relation("ListingNotifications")
   realEstateDetails RealEstateDetails?
@@ -138,7 +138,7 @@ model Image {
   url       String
   order     Int     @default(0)
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id])
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId])
 }
@@ -148,8 +148,8 @@ model Favorite {
   userId    String
   listingId String
   createdAt DateTime @default(now())
-  listing   Listing  @relation(fields: [listingId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, listingId])
   @@index([userId])
@@ -161,7 +161,7 @@ model Conversation {
   listingId     String?
   lastMessage   String?
   lastMessageAt DateTime  @default(now())
-  listing       Listing?  @relation("ListingConversations", fields: [listingId], references: [id])
+  listing       Listing?  @relation("ListingConversations", fields: [listingId], references: [id], onDelete: Cascade)
   messages      Message[]
   participants  User[]    @relation("UserConversations")
 
@@ -178,11 +178,11 @@ model Message {
   read                  Boolean       @default(false)
   listingId             String?
   relatedNotificationId String?       @unique
-  conversation          Conversation  @relation(fields: [conversationId], references: [id])
-  listing               Listing?      @relation(fields: [listingId], references: [id])
-  recipient             User          @relation("ReceivedMessages", fields: [recipientId], references: [id])
-  notification          Notification? @relation("MessageNotification", fields: [relatedNotificationId], references: [id])
-  sender                User          @relation("SentMessages", fields: [senderId], references: [id])
+  conversation          Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  listing               Listing?      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  recipient             User          @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  notification          Notification? @relation("MessageNotification", fields: [relatedNotificationId], references: [id], onDelete: Cascade)
+  sender                User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([recipientId])
@@ -202,9 +202,9 @@ model Notification {
   relatedUserId    String?
   relatedMessageId String?
   message          Message?         @relation("MessageNotification")
-  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id])
-  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id])
-  user             User             @relation(fields: [userId], references: [id])
+  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id], onDelete: Cascade)
+  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([relatedListingId])
@@ -216,7 +216,7 @@ model Attribute {
   name      String
   value     String
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id])
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId])
 }
@@ -226,7 +226,7 @@ model Feature {
   name      String
   value     Boolean @default(false)
   listingId String
-  listing   Listing @relation(fields: [listingId], references: [id])
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId])
 }
@@ -473,7 +473,7 @@ model VehicleDetails {
   transmission                     String?
   registrationExpiry               String?
   engineNumber                     String?
-  listing                          Listing           @relation(fields: [listingId], references: [id])
+  listing                          Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
 }
 
 model Contact {
@@ -558,7 +558,7 @@ model RealEstateDetails {
   smartHomeFeatures     String?
   storageFeatures       String?
   windowFeatures        String?
-  listing               Listing  @relation(fields: [listingId], references: [id])
+  listing               Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId])
 }

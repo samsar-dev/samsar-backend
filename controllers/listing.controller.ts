@@ -519,7 +519,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       });
 
       // Create notification
-      await prisma.notification.create({
+      await tx.notification.create({
         data: {
           userId: listing.userId,
           type: NotificationType.LISTING_CREATED,
