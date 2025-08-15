@@ -78,7 +78,7 @@ interface ListingResponse {
     interiorColor?: string;
     engine?: string;
     warranty?: string;
-    serviceHistory?: string;
+    serviceHistory?: string[];
     previousOwners?: number;
     registrationStatus?: string;
   } | null;
@@ -260,7 +260,11 @@ const formatListingResponse = (
           interiorColor: listing.vehicleDetails.interiorColor || undefined,
           engine: listing.vehicleDetails.engine || undefined,
           warranty: listing.vehicleDetails.warranty || undefined,
-          serviceHistory: listing.vehicleDetails.serviceHistory || undefined,
+          serviceHistory: Array.isArray(listing.vehicleDetails.serviceHistory) 
+            ? listing.vehicleDetails.serviceHistory 
+            : listing.vehicleDetails.serviceHistory 
+              ? [listing.vehicleDetails.serviceHistory] 
+              : undefined,
           previousOwners: listing.vehicleDetails.previousOwners || undefined,
           registrationStatus:
             listing.vehicleDetails.registrationStatus || undefined,
@@ -786,7 +790,7 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
       today.setHours(0, 0, 0, 0);
       
       // Check if user has already viewed this listing today
-      const existingView = await prisma.View.findFirst({
+      const existingView = await prisma.view.findFirst({
         where: {
           listingId: id,
           OR: [
@@ -809,7 +813,7 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
             WHERE id = ${id}
           `,
           // Record the view
-          prisma.View.create({
+          prisma.view.create({
             data: {
               listingId: id,
               userId: req.user?.id,
