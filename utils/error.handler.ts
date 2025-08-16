@@ -1,4 +1,5 @@
 import { FastifyReply } from "fastify";
+import { createSuccessResponse } from "middleware/listing.validation.middleware.js";
 
 // Standard error codes for consistent API responses
 export enum ErrorCode {
@@ -275,7 +276,7 @@ export const ResponseHelpers = {
     ErrorHandler.sendSuccess(reply, data, 200),
     
   created: <T>(reply: FastifyReply, data: T) => 
-    ErrorHandler.sendSuccess(reply, data, 201),
+    ErrorHandler.sendSuccess(reply, createSuccessResponse(data, 201)),
     
   noContent: (reply: FastifyReply) => 
     reply.code(204).send(),
