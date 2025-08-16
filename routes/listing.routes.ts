@@ -23,6 +23,7 @@ import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType, ListingCategory } from "../types/enums.js";
 import { filterListingDetails } from "../utils/listing.utils.js";
 import { ErrorHandler, ResponseHelpers } from "../utils/error.handler.js";
+import { addListingImages } from "../controllers/listing.controller.js";
 
 interface ListingQuery {
   mainCategory?: string;
@@ -131,21 +132,6 @@ const createSafeDbData = (data: any): any => {
 const formatListingResponse = (listing: any): ListingWithRelations | null => {
   if (!listing) return null;
 
-  const details: ListingDetails = {
-    vehicles: listing.vehicleDetails
-      ? (filterListingDetails(
-          listing.vehicleDetails,
-          listing.subCategory
-        ) as VehicleDetails)
-      : undefined,
-    realEstate: listing.realEstateDetails
-      ? (filterListingDetails(
-          listing.realEstateDetails,
-          listing.subCategory
-        ) as RealEstateDetails)
-      : undefined,
-  };
-
   return {
     id: listing.id,
     title: listing.title,
@@ -161,7 +147,7 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
     updatedAt: listing.updatedAt,
     userId: listing.userId,
     views: listing.views,
-    details: details,
+    details: listing.details,
     listingAction: listing.listingAction,
     status: listing.status,
     seller: listing.user
@@ -231,7 +217,8 @@ export default async function (fastify: FastifyInstance) {
         ...(authReq.body || {}),
         listingId: (req.params as any).id,
       };
-      // return addListingImages(authReq, reply);
+
+      return addListingImages(authReq, reply);
     }
   );
 
@@ -279,14 +266,14 @@ export default async function (fastify: FastifyInstance) {
       }
 
       // Real estate built year filter (nested)
-      if (builtYear) {
-        where.realEstateDetails = {
-          is: {
-            ...(where.realEstateDetails?.is || {}),
-            yearBuilt: parseInt(builtYear),
-          },
-        };
-      }
+      // if (builtYear) {
+      //   where.realEstateDetails = {
+      //     is: {
+      //       ...(where.realEstateDetails?.is || {}),
+      //       yearBuilt: parseInt(builtYear),
+      //     },
+      //   };
+      // }
 
       // First get all listings that match the basic filters
       const allListings = await prisma.listing.findMany({
@@ -304,8 +291,6 @@ export default async function (fastify: FastifyInstance) {
             },
           },
           favorites: true,
-          realEstateDetails: true,
-          vehicleDetails: true,
         },
       });
 
@@ -342,8 +327,9 @@ export default async function (fastify: FastifyInstance) {
             listing !== null
         );
 
-      return ResponseHelpers.ok(reply, {
-        items: formattedListings || [],
+      return reply.code(200).send({
+        success: true,
+        data: formattedListings || [],
         total: filteredListings.length || 0,
         page: Number(page),
         limit: Number(limit),
@@ -370,12 +356,13 @@ export default async function (fastify: FastifyInstance) {
         if (!user) {
           return ResponseHelpers.unauthorized(reply, "User not found");
         }
-
+        
         // Use validated and normalized data
         const validatedData = req.validatedData;
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
+
 
         const {
           title,
@@ -389,19 +376,6 @@ export default async function (fastify: FastifyInstance) {
           listingAction,
           details,
         } = validatedData;
-
-        // Debug logging
-        console.log("📝 Creating listing with data:", {
-          title,
-          mainCategory,
-          subCategory,
-          details: details ? {
-            hasVehicles: !!details.vehicles,
-            hasRealEstate: !!details.realEstate,
-            vehicleType: details.vehicles?.vehicleType,
-            propertyType: details.realEstate?.propertyType,
-          } : null
-        });
 
         // Get processed image URLs
         const imageUrls = req.processedImages?.map((img) => img.url) || [];
@@ -419,6 +393,7 @@ export default async function (fastify: FastifyInstance) {
           subCategory,
           userId: user.id,
           listingAction,
+          details,
         });
 
         // Prepare images data
@@ -429,111 +404,16 @@ export default async function (fastify: FastifyInstance) {
           })),
         } : undefined;
 
-        // Prepare vehicle details data - only include non-empty values
-        const vehicleDetailsData = details?.vehicles ? {
-          create: createSafeDbData({
-            vehicleType: details.vehicles.vehicleType || subCategory,
-            make: details.vehicles.make,
-            model: details.vehicles.model,
-            year: details.vehicles.year,
-            mileage: parseNumeric(details.vehicles.mileage),
-            fuelType: details.vehicles.fuelType,
-            transmissionType: details.vehicles.transmissionType,
-            color: details.vehicles.color,
-            condition: details.vehicles.condition,
-            features: parseArray(details.vehicles.features),
-            interiorColor: details.vehicles.interiorColor,
-            engine: details.vehicles.engine,
-            warranty: details.vehicles.warranty,
-            serviceHistory: parseArray(details.vehicles.serviceHistory),
-            previousOwners: parseNumeric(details.vehicles.previousOwners),
-            registrationStatus: details.vehicles.registrationStatus,
-            horsepower: parseNumeric(details.vehicles.horsepower),
-            torque: parseNumeric(details.vehicles.torque),
-            engineSize: details.vehicles.engineSize,
-            doors: parseNumeric(details.vehicles.doors),
-            seats: parseNumeric(details.vehicles.seats),
-            seatingCapacity: parseNumeric(details.vehicles.seatingCapacity),
-            
-            // Advanced features - dynamically include all additional fields
-            ...Object.fromEntries(
-              Object.entries(details.vehicles)
-                .filter(([key]) => ![
-                  'vehicleType', 'make', 'model', 'year', 'mileage', 'fuelType', 
-                  'transmissionType', 'color', 'condition', 'features', 'interiorColor',
-                  'engine', 'warranty', 'serviceHistory', 'previousOwners', 'registrationStatus',
-                  'horsepower', 'torque', 'engineSize', 'doors', 'seats', 'seatingCapacity'
-                ].includes(key))
-                .filter(([, value]) => value !== undefined && value !== null && value !== '' && 
-                  (Array.isArray(value) ? value.length > 0 : true))
-            ),
-          }),
-        } : undefined;
+        // console.log("-------------------------------------------")
+        // console.log(listingData)
+        // console.log("=========================================")
+        // return;
 
-        // Prepare real estate details data - only include non-empty values
-        const realEstateDetailsData = details?.realEstate ? {
-          create: createSafeDbData({
-            propertyType: details.realEstate.propertyType || subCategory,
-            size: details.realEstate.size,
-            yearBuilt: parseNumeric(details.realEstate.yearBuilt),
-            bedrooms: parseNumeric(details.realEstate.bedrooms || details.realEstate.houseDetails?.bedrooms),
-            bathrooms: parseNumeric(details.realEstate.bathrooms || details.realEstate.houseDetails?.bathrooms),
-            totalArea: parseNumeric(details.realEstate.totalArea || details.realEstate.houseDetails?.totalArea),
-            condition: details.realEstate.condition,
-            parkingSpaces: parseNumeric(details.realEstate.parkingSpaces),
-            constructionType: details.realEstate.constructionType,
-            features: parseArray(details.realEstate.features),
-            parking: details.realEstate.parking,
-            floor: parseNumeric(details.realEstate.floor),
-            totalFloors: parseNumeric(details.realEstate.totalFloors),
-            heating: details.realEstate.heating,
-            cooling: details.realEstate.cooling,
-            buildingAmenities: parseArray(details.realEstate.buildingAmenities),
-            energyRating: details.realEstate.energyRating,
-            view: details.realEstate.view,
-            securityFeatures: parseArray(details.realEstate.securityFeatures),
-            fireSafety: parseArray(details.realEstate.fireSafety),
-            flooringType: details.realEstate.flooringType,
-            windowType: details.realEstate.windowType,
-            accessibilityFeatures: parseArray(details.realEstate.accessibilityFeatures),
-            renovationHistory: details.realEstate.renovationHistory,
-            parkingType: details.realEstate.parkingType,
-            utilities: parseArray(details.realEstate.utilities),
-            exposureDirection: parseArray(details.realEstate.exposureDirection),
-            storageType: parseArray(details.realEstate.storageType),
-            petPolicy: details.realEstate.petPolicy,
-            
-            // Boolean fields - only include if explicitly set
-            ...(typeof details.realEstate.elevator === 'boolean' && { elevator: details.realEstate.elevator }),
-            ...(typeof details.realEstate.balcony === 'boolean' && { balcony: details.realEstate.balcony }),
-            ...(typeof details.realEstate.storage === 'boolean' && { storage: details.realEstate.storage }),
-            ...(typeof details.realEstate.furnished === 'boolean' && { furnished: details.realEstate.furnished }),
-            ...(typeof details.realEstate.internetIncluded === 'boolean' && { internetIncluded: details.realEstate.internetIncluded }),
-            
-            // Additional optional fields - dynamically include all other fields
-            ...Object.fromEntries(
-              Object.entries(details.realEstate)
-                .filter(([key]) => ![
-                  'propertyType', 'size', 'yearBuilt', 'bedrooms', 'bathrooms', 'totalArea',
-                  'condition', 'parkingSpaces', 'constructionType', 'features', 'parking',
-                  'floor', 'totalFloors', 'heating', 'cooling', 'buildingAmenities', 'energyRating',
-                  'view', 'securityFeatures', 'fireSafety', 'flooringType', 'windowType',
-                  'accessibilityFeatures', 'renovationHistory', 'parkingType', 'utilities',
-                  'exposureDirection', 'storageType', 'petPolicy', 'elevator', 'balcony',
-                  'storage', 'furnished', 'internetIncluded', 'houseDetails'
-                ].includes(key))
-                .filter(([, value]) => value !== undefined && value !== null && value !== '' &&
-                  (Array.isArray(value) ? value.length > 0 : true))
-            ),
-          }),
-        } : undefined;
-
+        // return listingData;
         const listing = await prisma.listing.create({
           data: {
             ...listingData,
             ...(imagesData && { images: imagesData }),
-            ...(vehicleDetailsData && { vehicleDetails: vehicleDetailsData }),
-            ...(realEstateDetailsData && { realEstateDetails: realEstateDetailsData }),
           },
           include: {
             images: true,
@@ -544,9 +424,7 @@ export default async function (fastify: FastifyInstance) {
                 profilePicture: true,
               },
             },
-            favorites: true,
-            vehicleDetails: true,
-            realEstateDetails: true,
+            favorites: true
           },
         });
 
@@ -555,7 +433,13 @@ export default async function (fastify: FastifyInstance) {
         const formattedResponse = formatListingResponse(listing);
         console.log("📄 Formatted response ready:", !!formattedResponse);
         
-        return ResponseHelpers.created(reply, formattedResponse);
+        // return reply.code(201).send(formattedResponse);
+        return  reply.code(201).send({
+            success: true,
+            data: formattedResponse,
+            status: 201,
+            timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         console.error("Error creating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
@@ -582,8 +466,6 @@ export default async function (fastify: FastifyInstance) {
               },
             },
             favorites: true,
-            realEstateDetails: true,
-            vehicleDetails: true,
           },
         });
 
@@ -592,7 +474,12 @@ export default async function (fastify: FastifyInstance) {
         }
 
         const formattedListing = formatListingResponse(listing);
-        return ResponseHelpers.ok(reply, formattedListing);
+        return reply.code(200).send({
+          success: true,
+          data: formattedListing,
+          status: 200,
+          timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         console.error("Error fetching listing:", error);
         return ErrorHandler.sendError(reply, error as Error, req.url);
@@ -653,8 +540,9 @@ export default async function (fastify: FastifyInstance) {
           prisma.listing.count({ where }),
         ]);
 
-        return ResponseHelpers.ok(reply, {
-          items: listings.map((listing) => formatListingResponse(listing)),
+        return reply.code(200).send({
+          success: true,
+          data: listings.map((listing) => formatListingResponse(listing)),
           total,
           page: Number(page),
           limit: Number(limit),
