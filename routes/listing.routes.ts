@@ -342,8 +342,9 @@ export default async function (fastify: FastifyInstance) {
             listing !== null
         );
 
-      return ResponseHelpers.ok(reply, {
-        items: formattedListings || [],
+      return reply.code(200).send({
+        success: true,
+        data: formattedListings || [],
         total: filteredListings.length || 0,
         page: Number(page),
         limit: Number(limit),
@@ -379,6 +380,10 @@ export default async function (fastify: FastifyInstance) {
 
         if (validatedData.details?.vehicles?.statusCode == 400) {
           return ResponseHelpers.badRequest(reply, validatedData.details?.vehicles)
+        }
+
+        if (validatedData.details?.realEstate?.statusCode == 400) {
+          return ResponseHelpers.badRequest(reply, validatedData.details?.realEstate)
         }
 
         const {
@@ -494,11 +499,47 @@ export default async function (fastify: FastifyInstance) {
             storageType: parseArray(details.realEstate.storageType),
             petPolicy: details.realEstate.petPolicy,
             
+            // Add missing fields from schema
+            attic: details.realEstate.attic,
+            basement: details.realEstate.basement,
+            buildable: details.realEstate.buildable,
+            buildingRestrictions: details.realEstate.buildingRestrictions,
+            elevation: parseNumeric(details.realEstate.elevation),
+            environmentalFeatures: details.realEstate.environmentalFeatures,
+            flooringTypes: parseArray(details.realEstate.flooringTypes),
+            halfBathrooms: parseNumeric(details.realEstate.halfBathrooms),
+            naturalFeatures: details.realEstate.naturalFeatures,
+            parcelNumber: details.realEstate.parcelNumber,
+            permitsInPlace: details.realEstate.permitsInPlace,
+            soilTypes: parseArray(details.realEstate.soilTypes),
+            stories: parseNumeric(details.realEstate.stories),
+            topography: parseArray(details.realEstate.topography),
+            waterFeatures: details.realEstate.waterFeatures,
+            floorLevel: parseNumeric(details.realEstate.floorLevel),
+            accessibility: details.realEstate.accessibility,
+            appliances: details.realEstate.appliances,
+            basementFeatures: details.realEstate.basementFeatures,
+            bathroomFeatures: details.realEstate.bathroomFeatures,
+            communityFeatures: details.realEstate.communityFeatures,
+            energyFeatures: details.realEstate.energyFeatures,
+            exteriorFeatures: details.realEstate.exteriorFeatures,
+            hoaFeatures: details.realEstate.hoaFeatures,
+            kitchenFeatures: details.realEstate.kitchenFeatures,
+            landscaping: details.realEstate.landscaping,
+            livingArea: parseNumeric(details.realEstate.livingArea),
+            outdoorFeatures: details.realEstate.outdoorFeatures,
+            petFeatures: details.realEstate.petFeatures,
+            roofAge: parseNumeric(details.realEstate.roofAge),
+            smartHomeFeatures: details.realEstate.smartHomeFeatures,
+            storageFeatures: details.realEstate.storageFeatures,
+            windowFeatures: details.realEstate.windowFeatures,
+            
             // Boolean fields - only include if explicitly set
             ...(typeof details.realEstate.elevator === 'boolean' && { elevator: details.realEstate.elevator }),
             ...(typeof details.realEstate.balcony === 'boolean' && { balcony: details.realEstate.balcony }),
             ...(typeof details.realEstate.storage === 'boolean' && { storage: details.realEstate.storage }),
-            ...(typeof details.realEstate.furnished === 'boolean' && { furnished: details.realEstate.furnished }),
+            ...(typeof details.realEstate.isBuildable === 'boolean' && { isBuildable: details.realEstate.isBuildable }),
+            ...(typeof details.realEstate.furnished === 'string' && { furnished: details.realEstate.furnished }),
             ...(typeof details.realEstate.internetIncluded === 'boolean' && { internetIncluded: details.realEstate.internetIncluded }),
             
             // Additional optional fields - dynamically include all other fields
@@ -509,9 +550,16 @@ export default async function (fastify: FastifyInstance) {
                   'condition', 'parkingSpaces', 'constructionType', 'features', 'parking',
                   'floor', 'totalFloors', 'heating', 'cooling', 'buildingAmenities', 'energyRating',
                   'view', 'securityFeatures', 'fireSafety', 'flooringType', 'windowType',
-                  'accessibilityFeatures', 'renovationHistory', 'parkingType', 'utilities',
+                  'accessibilityFeatures', 'renovationHistory', 'parkingType', 'utilities', 'livingArea', 'kitchenFeatures', 'bathroomFeatures', 'outdoorFeatures',
+                  'smartHomeFeatures', 'communityFeatures',
                   'exposureDirection', 'storageType', 'petPolicy', 'elevator', 'balcony',
-                  'storage', 'furnished', 'internetIncluded', 'houseDetails'
+                  'storage', 'furnished', 'internetIncluded', 'houseDetails',
+                  'attic', 'basement', 'buildable', 'buildingRestrictions', 'elevation',
+                  'environmentalFeatures', 'flooringTypes', 'halfBathrooms', 'naturalFeatures',
+                  'parcelNumber', 'permitsInPlace', 'soilTypes', 'stories', 'topography',
+                  'waterFeatures', 'floorLevel', 'isBuildable', 'accessibility', 'appliances',
+                  'basementFeatures', 'energyFeatures', 'exteriorFeatures', 'hoaFeatures',
+                  'landscaping', 'petFeatures', 'roofAge', 'storageFeatures', 'windowFeatures'
                 ].includes(key))
                 .filter(([, value]) => value !== undefined && value !== null && value !== '' &&
                   (Array.isArray(value) ? value.length > 0 : true))
@@ -546,7 +594,13 @@ export default async function (fastify: FastifyInstance) {
         const formattedResponse = formatListingResponse(listing);
         console.log("📄 Formatted response ready:", !!formattedResponse);
         
-        return ResponseHelpers.created(reply, formattedResponse);
+        // return reply.code(201).send(formattedResponse);
+        return  reply.code(201).send({
+            success: true,
+            data: formattedResponse,
+            status: 201,
+            timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         console.error("Error creating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
@@ -583,7 +637,12 @@ export default async function (fastify: FastifyInstance) {
         }
 
         const formattedListing = formatListingResponse(listing);
-        return ResponseHelpers.ok(reply, formattedListing);
+        return reply.code(200).send({
+          success: true,
+          data: formattedListing,
+          status: 200,
+          timestamp: new Date().toISOString(),
+        });
       } catch (error) {
         console.error("Error fetching listing:", error);
         return ErrorHandler.sendError(reply, error as Error, req.url);
@@ -644,8 +703,9 @@ export default async function (fastify: FastifyInstance) {
           prisma.listing.count({ where }),
         ]);
 
-        return ResponseHelpers.ok(reply, {
-          items: listings.map((listing) => formatListingResponse(listing)),
+        return reply.code(200).send({
+          success: true,
+          data: listings.map((listing) => formatListingResponse(listing)),
           total,
           page: Number(page),
           limit: Number(limit),
