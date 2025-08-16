@@ -243,7 +243,6 @@ model Contact {
   read      Boolean  @default(false)
 }
 
-
 enum ReportStatus {
   PENDING
   INVESTIGATING
