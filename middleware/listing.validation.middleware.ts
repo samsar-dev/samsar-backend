@@ -62,37 +62,10 @@ export async function validateListingCreate(
     } catch (error) {
       return ResponseHelpers.badRequest(reply, "Invalid details format. Must be valid JSON.");
     }
-
+    
     // Normalize the data
-    const baseData = ListingDataNormalizer.normalizeBaseData(body);
-    
-    let normalizedDetails;
-    
-    if (parsedDetails && baseData.mainCategory) {
-      if (baseData.mainCategory === "VEHICLES") {
-        // For vehicles, details object contains vehicle fields directly
-        normalizedDetails = ListingDataNormalizer.normalizeVehicleDetails(parsedDetails, baseData.subCategory as any);
-
-        if(normalizedDetails?.isValid === false) {
-          return ResponseHelpers.badRequest(reply, "Validation failed", normalizedDetails.errors);
-        }
-
-      } else if (baseData.mainCategory === "REAL_ESTATE") {
-        // For real estate, details object contains real estate fields directly
-        normalizedDetails = ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails, baseData.subCategory as any);
-
-
-        if(normalizedDetails?.isValid === false) {
-          return ResponseHelpers.badRequest(reply, "Validation failed", normalizedDetails.errors);
-        }
-      }
-    }
-
     // Attach validated data to request for use in route handler
-    req.validatedData = {
-      ...baseData,
-      details: normalizedDetails,
-    };
+    req.validatedData = ListingDataNormalizer.normalizeBaseData(body);
     
   } catch (error) {
     console.error("Validation middleware error:", error);
@@ -149,24 +122,6 @@ export async function validateListingUpdate(
     if (body.latitude !== undefined) normalizedData.latitude = Number(body.latitude);
     if (body.longitude !== undefined) normalizedData.longitude = Number(body.longitude);
     if (body.listingAction !== undefined) normalizedData.listingAction = body.listingAction;
-    
-    if (parsedDetails && normalizedData.mainCategory) {
-      if (normalizedData.mainCategory === "VEHICLES") {
-        // For vehicles, details object contains vehicle fields directly
-        const vehicleDetails = ListingDataNormalizer.normalizeVehicleDetails(parsedDetails, normalizedData.subCategory as any);
-        normalizedData.details = {
-          vehicles: vehicleDetails,
-          realEstate: undefined,
-        };
-      } else if (normalizedData.mainCategory === "REAL_ESTATE") {
-        // For real estate, details object contains real estate fields directly
-        const realEstateDetails = ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails, normalizedData.subCategory as any);
-        normalizedData.details = {
-          vehicles: undefined,
-          realEstate: realEstateDetails,
-        };
-      }
-    }
 
     if (parsedExistingImages) {
       normalizedData.existingImages = parsedExistingImages;
