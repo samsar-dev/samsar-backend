@@ -15,10 +15,7 @@ export interface ListingCreateRequest extends FastifyRequest {
     latitude?: number | string;
     longitude?: number | string;
     listingAction?: string;
-    details?: string | {
-      vehicles?: any;
-      realEstate?: any;
-    };
+    details?: string | any;
   };
   validatedData?: any;
   processedImages?: Array<{ url: string; order: number }>;
@@ -36,10 +33,7 @@ export interface ListingUpdateRequest extends FastifyRequest {
     latitude?: number | string;
     longitude?: number | string;
     listingAction?: string;
-    details?: string | {
-      vehicles?: any;
-      realEstate?: any;
-    };
+    details?: string | any;
     existingImages?: string[] | string;
   };
   validatedData?: any;
@@ -71,23 +65,34 @@ export async function validateListingCreate(
 
     // Normalize the data
     const baseData = ListingDataNormalizer.normalizeBaseData(body);
-    const normalizedData = {
-      ...baseData,
-      details: parsedDetails ? {
-        vehicles: parsedDetails.vehicles ? ListingDataNormalizer.normalizeVehicleDetails(parsedDetails.vehicles, baseData.subCategory as any) : undefined,
-        realEstate: parsedDetails.realEstate ? ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails.realEstate, baseData.subCategory as any) : undefined,
-      } : undefined,
-    };
-
-    // Validate the normalized data
-    const validation = ListingValidator.validateListingData(normalizedData);
     
-    if (!validation.isValid) {
-      return ResponseHelpers.badRequest(reply, "Validation failed", validation.errors);
+    let normalizedDetails;
+    
+    if (parsedDetails && baseData.mainCategory) {
+      if (baseData.mainCategory === "VEHICLES") {
+        // For vehicles, details object contains vehicle fields directly
+        normalizedDetails = ListingDataNormalizer.normalizeVehicleDetails(parsedDetails, baseData.subCategory as any);
+
+        if(normalizedDetails?.isValid === false) {
+          return ResponseHelpers.badRequest(reply, "Validation failed", normalizedDetails.errors);
+        }
+
+      } else if (baseData.mainCategory === "REAL_ESTATE") {
+        // For real estate, details object contains real estate fields directly
+        normalizedDetails = ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails, baseData.subCategory as any);
+
+
+        if(normalizedDetails?.isValid === false) {
+          return ResponseHelpers.badRequest(reply, "Validation failed", normalizedDetails.errors);
+        }
+      }
     }
 
     // Attach validated data to request for use in route handler
-    req.validatedData = normalizedData;
+    req.validatedData = {
+      ...baseData,
+      details: normalizedDetails,
+    };
     
   } catch (error) {
     console.error("Validation middleware error:", error);
@@ -145,13 +150,22 @@ export async function validateListingUpdate(
     if (body.longitude !== undefined) normalizedData.longitude = Number(body.longitude);
     if (body.listingAction !== undefined) normalizedData.listingAction = body.listingAction;
     
-    if (parsedDetails) {
-      normalizedData.details = {
-        vehicles: parsedDetails.vehicles ? ListingDataNormalizer.normalizeVehicleDetails(parsedDetails.vehicles, normalizedData.subCategory as any) : undefined,
-        realEstate: parsedDetails.realEstate ? ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails.realEstate, normalizedData.subCategory as any) : undefined,
-      };
-
-      return normalizedData;
+    if (parsedDetails && normalizedData.mainCategory) {
+      if (normalizedData.mainCategory === "VEHICLES") {
+        // For vehicles, details object contains vehicle fields directly
+        const vehicleDetails = ListingDataNormalizer.normalizeVehicleDetails(parsedDetails, normalizedData.subCategory as any);
+        normalizedData.details = {
+          vehicles: vehicleDetails,
+          realEstate: undefined,
+        };
+      } else if (normalizedData.mainCategory === "REAL_ESTATE") {
+        // For real estate, details object contains real estate fields directly
+        const realEstateDetails = ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails, normalizedData.subCategory as any);
+        normalizedData.details = {
+          vehicles: undefined,
+          realEstate: realEstateDetails,
+        };
+      }
     }
 
     if (parsedExistingImages) {
@@ -198,7 +212,7 @@ export async function validateListingUpdate(
     // Validate details if provided
     if (normalizedData.details) {
       if (normalizedData.mainCategory && normalizedData.subCategory) {
-        const validation = ListingValidator.validateListingData({
+        const validation = ListingValidator.validateBaseListing({
           mainCategory: normalizedData.mainCategory,
           subCategory: normalizedData.subCategory,
           details: normalizedData.details,

@@ -1,0 +1,116 @@
+{
+    "title": "Luxury Apartment in Gulshan",
+    "description": "3-bedroom luxury apartment located in Gulshan 2, fully furnished, modern design, ready to move in.",
+    "price": 250000,
+    "mainCategory": "REAL_ESTATE",
+    "subCategory": "APARTMENT",
+    "location": "Gulshan 2, Dhaka, Bangladesh",
+    "latitude": 23.7965,
+    "longitude": 90.4142,
+    "listingAction": "SALE",
+    "details": {
+            "propertyType": "APARTMENT",
+            "size": "1200 sqft",
+            "condition": "New",
+            "listingId": "LIST-123456",
+            "constructionType": "Concrete",
+            "features": [
+                "Balcony",
+                "Garden",
+                "Gym"
+            ],
+            "parking": "Available",
+            "accessibilityFeatures": [
+                "Wheelchair Ramp"
+            ],
+            "balcony": true,
+            "buildingAmenities": [
+                "Swimming Pool",
+                "Community Hall"
+            ],
+            "cooling": "Central AC",
+            "elevator": true,
+            "energyRating": "A+",
+            "exposureDirection": [
+                "South",
+                "East"
+            ],
+            "fireSafety": [
+                "Smoke Detectors",
+                "Fire Alarm"
+            ],
+            "floor": 5,
+            "flooringType": "Wood",
+            "furnished": "yes",
+            "heating": "Gas",
+            "internetIncluded": true,
+            "parkingType": "Underground",
+            "petPolicy": "Pets Allowed",
+            "renovationHistory": "Renovated in 2020",
+            "securityFeatures": [
+                "CCTV",
+                "Security Guard"
+            ],
+            "storage": true,
+            "storageType": [
+                "Closet",
+                "Basement"
+            ],
+            "totalFloors": 12,
+            "utilities": [
+                "Water",
+                "Electricity",
+                "Gas"
+            ],
+            "view": "City View",
+            "windowType": "Double Glazed",
+            "attic": "Available",
+            "basement": "Finished",
+            "buildable": "Yes",
+            "buildingRestrictions": "Residential Only",
+            "elevation": 15,
+            "environmentalFeatures": "Eco Friendly Materials",
+            "flooringTypes": [
+                "Wood",
+                "Tile"
+            ],
+            "halfBathrooms": 1,
+            "naturalFeatures": "Nearby Lake",
+            "parcelNumber": "PN-987654",
+            "permitsInPlace": "Yes",
+            "soilTypes": [
+                "Clay",
+                "Sandy"
+            ],
+            "stories": 2,
+            "topography": [
+                "Flat",
+                "Hilly"
+            ],
+            "waterFeatures": "Well",
+            "floorLevel": 2,
+            "isBuildable": true,
+            "totalArea": 2500.5,
+            "yearBuilt": 2019,
+            "bedrooms": 3,
+            "bathrooms": 2.5,
+            "accessibility": "Wheelchair Accessible",
+            "appliances": "Dishwasher, Oven, Refrigerator",
+            "basementFeatures": "Home Theater",
+            "bathroomFeatures": "Jacuzzi, Heated Floors",
+            "communityFeatures": "Clubhouse, Park",
+            "energyFeatures": "Solar Panels",
+            "exteriorFeatures": "Balcony, Patio",
+            "hoaFeatures": "Gym, Security",
+            "kitchenFeatures": "Modern Kitchen, Island",
+            "landscaping": "Well Maintained Garden",
+            "livingArea": 1800.75,
+            "outdoorFeatures": "BBQ, Playground",
+            "parkingSpaces": 2,
+            "petFeatures": "Pet Wash Station",
+            "roofAge": 3,
+            "smartHomeFeatures": "Smart Lights, Thermostat",
+            "storageFeatures": "Walk-in Closet",
+            "windowFeatures": "Energy Efficient Windows"
+    }
+}

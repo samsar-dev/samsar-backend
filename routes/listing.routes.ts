@@ -371,20 +371,13 @@ export default async function (fastify: FastifyInstance) {
         if (!user) {
           return ResponseHelpers.unauthorized(reply, "User not found");
         }
-
+        
         // Use validated and normalized data
         const validatedData = req.validatedData;
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
 
-        if (validatedData.details?.vehicles?.statusCode == 400) {
-          return ResponseHelpers.badRequest(reply, validatedData.details?.vehicles)
-        }
-
-        if (validatedData.details?.realEstate?.statusCode == 400) {
-          return ResponseHelpers.badRequest(reply, validatedData.details?.realEstate)
-        }
 
         const {
           title,
@@ -426,39 +419,48 @@ export default async function (fastify: FastifyInstance) {
         } : undefined;;
 
         // Prepare vehicle details data - only include non-empty values
-        const vehicleDetailsData = details?.vehicles ? {
+        const vehicleDetailsData = mainCategory === ListingCategory.VEHICLES ? {
           create: createSafeDbData({
-            vehicleType: details.vehicles.vehicleType,
-            make: details.vehicles.make,
-            model: details.vehicles.model,
-            year: details.vehicles.year,
-            mileage: parseNumeric(details.vehicles.mileage),
-            fuelType: details.vehicles.fuelType,
-            transmissionType: details.vehicles.transmissionType,
-            color: details.vehicles.color,
-            condition: details.vehicles.condition,
-            features: parseArray(details.vehicles.features),
-            interiorColor: details.vehicles.interiorColor,
-            engine: details.vehicles.engine,
-            warranty: details.vehicles.warranty,
-            serviceHistory: parseArray(details.vehicles.serviceHistory),
-            previousOwners: parseNumeric(details.vehicles.previousOwners),
-            registrationStatus: details.vehicles.registrationStatus,
-            horsepower: parseNumeric(details.vehicles.horsepower),
-            torque: parseNumeric(details.vehicles.torque),
-            engineSize: details.vehicles.engineSize,
-            doors: parseNumeric(details.vehicles.doors),
-            seats: parseNumeric(details.vehicles.seats),
-            seatingCapacity: parseNumeric(details.vehicles.seatingCapacity),
+            vehicleType: details.vehicleType,
+            make: details.make,
+            model: details.model,
+            year: details.year,
+            mileage: parseNumeric(details.mileage),
+            fuelType: details.fuelType,
+            transmissionType: details.transmissionType,
+            color: details.color,
+            condition: details.condition,
+            features: parseArray(details.features),
+            interiorColor: details.interiorColor,
+            engine: details.engine,
+            warranty: details.warranty,
+            serviceHistory: parseArray(details.serviceHistory),
+            previousOwners: parseNumeric(details.previousOwners),
+            registrationStatus: details.registrationStatus,
+            horsepower: parseNumeric(details.horsepower),
+            torque: parseNumeric(details.torque),
+            engineSize: details.engineSize,
+            doors: parseNumeric(details.doors),
+            seats: parseNumeric(details.seats),
+            seatingCapacity: parseNumeric(details.seatingCapacity),
+            airbags: parseNumeric(details.airbags),
+            navigationSystem: details.navigationSystem,
+            parkingAidCamera: details.parkingAidCamera,
+            bluetooth: details.bluetooth,
+            appleCarPlay: details.appleCarPlay,
+            androidAuto: details.androidAuto,
+            accidentFree: details.accidentFree,
             
             // Advanced features - dynamically include all additional fields
             ...Object.fromEntries(
-              Object.entries(details.vehicles)
+              Object.entries(details)
                 .filter(([key]) => ![
                   'vehicleType', 'make', 'model', 'year', 'mileage', 'fuelType', 
                   'transmissionType', 'color', 'condition', 'features', 'interiorColor',
                   'engine', 'warranty', 'serviceHistory', 'previousOwners', 'registrationStatus',
-                  'horsepower', 'torque', 'engineSize', 'doors', 'seats', 'seatingCapacity'
+                  'horsepower', 'torque', 'engineSize', 'doors', 'seats', 'seatingCapacity',
+                  'airbags', 'navigationSystem', 'parkingAidCamera', 'bluetooth', 'appleCarPlay',
+                  'androidAuto', 'accidentFree'
                 ].includes(key))
                 .filter(([, value]) => value !== undefined && value !== null && value !== '' && 
                   (Array.isArray(value) ? value.length > 0 : true))
@@ -467,84 +469,84 @@ export default async function (fastify: FastifyInstance) {
         } : undefined;
 
         // Prepare real estate details data - only include non-empty values
-        const realEstateDetailsData = details?.realEstate ? {
+        const realEstateDetailsData = mainCategory === ListingCategory.REAL_ESTATE ? {
           create: createSafeDbData({
-            propertyType: details.realEstate.propertyType || subCategory,
-            size: details.realEstate.size,
-            yearBuilt: parseNumeric(details.realEstate.yearBuilt),
-            bedrooms: parseNumeric(details.realEstate.bedrooms || details.realEstate.houseDetails?.bedrooms),
-            bathrooms: parseNumeric(details.realEstate.bathrooms || details.realEstate.houseDetails?.bathrooms),
-            totalArea: parseNumeric(details.realEstate.totalArea || details.realEstate.houseDetails?.totalArea),
-            condition: details.realEstate.condition,
-            parkingSpaces: parseNumeric(details.realEstate.parkingSpaces),
-            constructionType: details.realEstate.constructionType,
-            features: parseArray(details.realEstate.features),
-            parking: details.realEstate.parking,
-            floor: parseNumeric(details.realEstate.floor),
-            totalFloors: parseNumeric(details.realEstate.totalFloors),
-            heating: details.realEstate.heating,
-            cooling: details.realEstate.cooling,
-            buildingAmenities: parseArray(details.realEstate.buildingAmenities),
-            energyRating: details.realEstate.energyRating,
-            view: details.realEstate.view,
-            securityFeatures: parseArray(details.realEstate.securityFeatures),
-            fireSafety: parseArray(details.realEstate.fireSafety),
-            flooringType: details.realEstate.flooringType,
-            windowType: details.realEstate.windowType,
-            accessibilityFeatures: parseArray(details.realEstate.accessibilityFeatures),
-            renovationHistory: details.realEstate.renovationHistory,
-            parkingType: details.realEstate.parkingType,
-            utilities: parseArray(details.realEstate.utilities),
-            exposureDirection: parseArray(details.realEstate.exposureDirection),
-            storageType: parseArray(details.realEstate.storageType),
-            petPolicy: details.realEstate.petPolicy,
+            propertyType: details.propertyType || subCategory,
+            size: details.size,
+            yearBuilt: parseNumeric(details.yearBuilt),
+            bedrooms: parseNumeric(details.bedrooms || details.houseDetails?.bedrooms),
+            bathrooms: parseNumeric(details.bathrooms || details.houseDetails?.bathrooms),
+            totalArea: parseNumeric(details.totalArea || details.houseDetails?.totalArea),
+            condition: details.condition,
+            parkingSpaces: parseNumeric(details.parkingSpaces),
+            constructionType: details.constructionType,
+            features: parseArray(details.features),
+            parking: details.parking,
+            floor: parseNumeric(details.floor),
+            totalFloors: parseNumeric(details.totalFloors),
+            heating: details.heating,
+            cooling: details.cooling,
+            buildingAmenities: parseArray(details.buildingAmenities),
+            energyRating: details.energyRating,
+            view: details.view,
+            securityFeatures: parseArray(details.securityFeatures),
+            fireSafety: parseArray(details.fireSafety),
+            flooringType: details.flooringType,
+            windowType: details.windowType,
+            accessibilityFeatures: parseArray(details.accessibilityFeatures),
+            renovationHistory: details.renovationHistory,
+            parkingType: details.parkingType,
+            utilities: parseArray(details.utilities),
+            exposureDirection: parseArray(details.exposureDirection),
+            storageType: parseArray(details.storageType),
+            petPolicy: details.petPolicy,
             
             // Add missing fields from schema
-            attic: details.realEstate.attic,
-            basement: details.realEstate.basement,
-            buildable: details.realEstate.buildable,
-            buildingRestrictions: details.realEstate.buildingRestrictions,
-            elevation: parseNumeric(details.realEstate.elevation),
-            environmentalFeatures: details.realEstate.environmentalFeatures,
-            flooringTypes: parseArray(details.realEstate.flooringTypes),
-            halfBathrooms: parseNumeric(details.realEstate.halfBathrooms),
-            naturalFeatures: details.realEstate.naturalFeatures,
-            parcelNumber: details.realEstate.parcelNumber,
-            permitsInPlace: details.realEstate.permitsInPlace,
-            soilTypes: parseArray(details.realEstate.soilTypes),
-            stories: parseNumeric(details.realEstate.stories),
-            topography: parseArray(details.realEstate.topography),
-            waterFeatures: details.realEstate.waterFeatures,
-            floorLevel: parseNumeric(details.realEstate.floorLevel),
-            accessibility: details.realEstate.accessibility,
-            appliances: details.realEstate.appliances,
-            basementFeatures: details.realEstate.basementFeatures,
-            bathroomFeatures: details.realEstate.bathroomFeatures,
-            communityFeatures: details.realEstate.communityFeatures,
-            energyFeatures: details.realEstate.energyFeatures,
-            exteriorFeatures: details.realEstate.exteriorFeatures,
-            hoaFeatures: details.realEstate.hoaFeatures,
-            kitchenFeatures: details.realEstate.kitchenFeatures,
-            landscaping: details.realEstate.landscaping,
-            livingArea: parseNumeric(details.realEstate.livingArea),
-            outdoorFeatures: details.realEstate.outdoorFeatures,
-            petFeatures: details.realEstate.petFeatures,
-            roofAge: parseNumeric(details.realEstate.roofAge),
-            smartHomeFeatures: details.realEstate.smartHomeFeatures,
-            storageFeatures: details.realEstate.storageFeatures,
-            windowFeatures: details.realEstate.windowFeatures,
+            attic: details.attic,
+            basement: details.basement,
+            buildable: details.buildable,
+            buildingRestrictions: details.buildingRestrictions,
+            elevation: parseNumeric(details.elevation),
+            environmentalFeatures: details.environmentalFeatures,
+            flooringTypes: parseArray(details.flooringTypes),
+            halfBathrooms: parseNumeric(details.halfBathrooms),
+            naturalFeatures: details.naturalFeatures,
+            parcelNumber: details.parcelNumber,
+            permitsInPlace: details.permitsInPlace,
+            soilTypes: parseArray(details.soilTypes),
+            stories: parseNumeric(details.stories),
+            topography: parseArray(details.topography),
+            waterFeatures: details.waterFeatures,
+            floorLevel: parseNumeric(details.floorLevel),
+            accessibility: details.accessibility,
+            appliances: details.appliances,
+            basementFeatures: details.basementFeatures,
+            bathroomFeatures: details.bathroomFeatures,
+            communityFeatures: details.communityFeatures,
+            energyFeatures: details.energyFeatures,
+            exteriorFeatures: details.exteriorFeatures,
+            hoaFeatures: details.hoaFeatures,
+            kitchenFeatures: details.kitchenFeatures,
+            landscaping: details.landscaping,
+            livingArea: parseNumeric(details.livingArea),
+            outdoorFeatures: details.outdoorFeatures,
+            petFeatures: details.petFeatures,
+            roofAge: parseNumeric(details.roofAge),
+            smartHomeFeatures: details.smartHomeFeatures,
+            storageFeatures: details.storageFeatures,
+            windowFeatures: details.windowFeatures,
             
             // Boolean fields - only include if explicitly set
-            ...(typeof details.realEstate.elevator === 'boolean' && { elevator: details.realEstate.elevator }),
-            ...(typeof details.realEstate.balcony === 'boolean' && { balcony: details.realEstate.balcony }),
-            ...(typeof details.realEstate.storage === 'boolean' && { storage: details.realEstate.storage }),
-            ...(typeof details.realEstate.isBuildable === 'boolean' && { isBuildable: details.realEstate.isBuildable }),
-            ...(typeof details.realEstate.furnished === 'string' && { furnished: details.realEstate.furnished }),
-            ...(typeof details.realEstate.internetIncluded === 'boolean' && { internetIncluded: details.realEstate.internetIncluded }),
+            ...(typeof details.elevator === 'boolean' && { elevator: details.elevator }),
+            ...(typeof details.balcony === 'boolean' && { balcony: details.balcony }),
+            ...(typeof details.storage === 'boolean' && { storage: details.storage }),
+            ...(typeof details.isBuildable === 'boolean' && { isBuildable: details.isBuildable }),
+            ...(typeof details.furnished === 'string' && { furnished: details.furnished }),
+            ...(typeof details.internetIncluded === 'boolean' && { internetIncluded: details.internetIncluded }),
             
             // Additional optional fields - dynamically include all other fields
             ...Object.fromEntries(
-              Object.entries(details.realEstate)
+              Object.entries(details)
                 .filter(([key]) => ![
                   'propertyType', 'size', 'yearBuilt', 'bedrooms', 'bathrooms', 'totalArea',
                   'condition', 'parkingSpaces', 'constructionType', 'features', 'parking',
@@ -567,6 +569,7 @@ export default async function (fastify: FastifyInstance) {
           }),
         } : undefined;
 
+        // return listingData;
         const listing = await prisma.listing.create({
           data: {
             ...listingData,
