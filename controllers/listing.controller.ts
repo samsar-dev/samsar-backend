@@ -18,7 +18,7 @@ import { UserPayload } from "../types/auth.js";
 // Extend Fastify request with custom properties
 declare module "fastify" {
   interface FastifyRequest {
-    user?: UserPayload;
+    user: UserPayload;
     processedImages?: Array<{
       url: string;
       order: number;
@@ -52,6 +52,7 @@ interface ListingResponse {
   createdAt: Date;
   updatedAt: Date;
   userId: string;
+  details: any;
   user: {
     id: string;
     username: string;
@@ -63,35 +64,6 @@ interface ListingResponse {
     order: number;
     listingId: string;
   }>;
-  vehicleDetails?: {
-    id: string;
-    vehicleType: VehicleType;
-    make: string;
-    model: string;
-    year: number;
-    mileage?: number;
-    fuelType?: FuelType;
-    transmissionType?: TransmissionType;
-    color?: string;
-    condition?: Condition;
-    listingId: string;
-    interiorColor?: string;
-    engine?: string;
-    warranty?: string;
-    serviceHistory?: string[];
-    previousOwners?: number;
-    registrationStatus?: string;
-  } | null;
-  realEstateDetails?: {
-    id: string;
-    propertyType: string;
-    size?: string;
-    yearBuilt?: string;
-    bedrooms?: string;
-    bathrooms?: string;
-    condition?: string;
-    listingId: string;
-  } | null;
   favorites: Array<{
     id: string;
     createdAt: Date;
@@ -125,28 +97,6 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
       };
     };
     images: true;
-    vehicleDetails: {
-      select: {
-        id: true;
-        vehicleType: true;
-        make: true;
-        model: true;
-        year: true;
-        mileage: true;
-        fuelType: true;
-        transmissionType: true;
-        color: true;
-        condition: true;
-        listingId: true;
-        interiorColor: true;
-        engine: true;
-        warranty: true;
-        serviceHistory: true;
-        previousOwners: true;
-        registrationStatus: true;
-      };
-    };
-    realEstateDetails: true;
     favorites: true;
     attributes: true;
     features: true;
@@ -154,28 +104,6 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
 }> & {
   views?: number;
 };
-
-type VehicleDetailsWithRelations = Prisma.VehicleDetailsGetPayload<{
-  select: {
-    id: true;
-    vehicleType: true;
-    make: true;
-    model: true;
-    year: true;
-    mileage: true;
-    fuelType: true;
-    transmissionType: true;
-    color: true;
-    condition: true;
-    listingId: true;
-    interiorColor: true;
-    engine: true;
-    warranty: true;
-    serviceHistory: true;
-    previousOwners: true;
-    registrationStatus: true;
-  };
-}>;
 
 // Helper type for request parameters
 type ListingParams = {
@@ -193,20 +121,7 @@ type ListingCreateBody = {
   latitude: number;
   longitude: number;
   condition?: string;
-  details?: {
-    vehicles?: Partial<{
-      vehicleType: VehicleType;
-      make: string;
-      model: string;
-      year: number;
-      mileage?: number;
-      fuelType?: FuelType;
-      transmissionType?: TransmissionType;
-      color?: string;
-      condition?: Condition;
-    }>;
-    realEstate?: Record<string, unknown>;
-  };
+  details?: any;
   listingAction?: ListingAction;
   attributes?: Array<{ name: string; value: string }>;
   features?: Array<{ name: string; value: boolean }>;
@@ -232,6 +147,7 @@ const formatListingResponse = (
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
     userId: listing.userId,
+    details: listing.details,
     user: {
       id: listing.user.id,
       username: listing.user.username,
@@ -243,51 +159,6 @@ const formatListingResponse = (
       order: img.order,
       listingId: img.listingId,
     })),
-    vehicleDetails: listing.vehicleDetails
-      ? {
-          id: listing.vehicleDetails.id,
-          vehicleType: listing.vehicleDetails.vehicleType,
-          make: listing.vehicleDetails.make,
-          model: listing.vehicleDetails.model,
-          year: listing.vehicleDetails.year,
-          mileage: listing.vehicleDetails.mileage || undefined,
-          fuelType: listing.vehicleDetails.fuelType || undefined,
-          transmissionType:
-            listing.vehicleDetails.transmissionType || undefined,
-          color: listing.vehicleDetails.color || undefined,
-          condition: listing.vehicleDetails.condition || undefined,
-          listingId: listing.vehicleDetails.listingId,
-          interiorColor: listing.vehicleDetails.interiorColor || undefined,
-          engine: listing.vehicleDetails.engine || undefined,
-          warranty: listing.vehicleDetails.warranty || undefined,
-          serviceHistory: Array.isArray(listing.vehicleDetails.serviceHistory) 
-            ? listing.vehicleDetails.serviceHistory 
-            : listing.vehicleDetails.serviceHistory 
-              ? [listing.vehicleDetails.serviceHistory] 
-              : undefined,
-          previousOwners: listing.vehicleDetails.previousOwners || undefined,
-          registrationStatus:
-            listing.vehicleDetails.registrationStatus || undefined,
-        }
-      : null,
-    realEstateDetails: listing.realEstateDetails
-      ? {
-          id: listing.realEstateDetails.id,
-          propertyType: listing.realEstateDetails.propertyType,
-          size: listing.realEstateDetails.size || undefined,
-          yearBuilt: listing.realEstateDetails.yearBuilt
-            ? String(listing.realEstateDetails.yearBuilt)
-            : undefined,
-          bedrooms: listing.realEstateDetails.bedrooms
-            ? String(listing.realEstateDetails.bedrooms)
-            : undefined,
-          bathrooms: listing.realEstateDetails.bathrooms
-            ? String(listing.realEstateDetails.bathrooms)
-            : undefined,
-          condition: listing.realEstateDetails.condition || undefined,
-          listingId: listing.realEstateDetails.listingId,
-        }
-      : null,
     favorites: listing.favorites.map((fav) => ({
       id: fav.id,
       createdAt: fav.createdAt,
@@ -427,55 +298,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
               order: img.order,
             })) || [],
         },
-        vehicleDetails: parsedDetails?.vehicles
-          ? {
-              create: {
-                vehicleType: parsedDetails.vehicles.vehicleType,
-                make: parsedDetails.vehicles.make || undefined,
-                model: parsedDetails.vehicles.model || undefined,
-                year: parsedDetails.vehicles.year
-                  ? parseInt(parsedDetails.vehicles.year, 10)
-                  : undefined,
-                mileage: parsedDetails.vehicles.mileage
-                  ? parseInt(parsedDetails.vehicles.mileage, 10)
-                  : null,
-                fuelType: parsedDetails.vehicles.fuelType || null,
-                transmissionType:
-                  parsedDetails.vehicles.transmissionType || null,
-                color: parsedDetails.vehicles.color || null,
-                condition: parsedDetails.vehicles.condition || null,
-              } as Prisma.VehicleDetailsCreateWithoutListingInput,
-            }
-          : undefined,
-        realEstateDetails: parsedDetails?.realEstate
-          ? {
-              create: {
-                propertyType:
-                  parsedDetails.realEstate.propertyType || undefined,
-                totalArea: parsedDetails.realEstate.totalArea
-                  ? parseFloat(parsedDetails.realEstate.totalArea)
-                  : undefined,
-                bedrooms: parsedDetails.realEstate.bedrooms
-                  ? parseInt(parsedDetails.realEstate.bedrooms, 10)
-                  : undefined,
-                bathrooms: parsedDetails.realEstate.bathrooms
-                  ? parseFloat(parsedDetails.realEstate.bathrooms)
-                  : undefined,
-                yearBuilt: parsedDetails.realEstate.yearBuilt
-                  ? parseInt(parsedDetails.realEstate.yearBuilt, 10)
-                  : undefined,
-                floorLevel: parsedDetails.realEstate.floorLevel
-                  ? parseInt(parsedDetails.realEstate.floorLevel, 10)
-                  : undefined,
-                isBuildable:
-                  typeof parsedDetails.realEstate.isBuildable === "boolean"
-                    ? parsedDetails.realEstate.isBuildable
-                    : undefined,
-                usageType: parsedDetails.realEstate.usageType || undefined,
-                condition: parsedDetails.realEstate.condition || undefined,
-              } as Prisma.RealEstateDetailsCreateWithoutListingInput,
-            }
-          : undefined,
       };
 
       // Create listing
@@ -490,28 +312,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
             },
           },
           images: true,
-          vehicleDetails: {
-            select: {
-              id: true,
-              vehicleType: true,
-              make: true,
-              model: true,
-              year: true,
-              mileage: true,
-              fuelType: true,
-              transmissionType: true,
-              color: true,
-              condition: true,
-              listingId: true,
-              interiorColor: true,
-              engine: true,
-              warranty: true,
-              serviceHistory: true,
-              previousOwners: true,
-              registrationStatus: true,
-            },
-          },
-          realEstateDetails: true,
           favorites: true,
           attributes: true,
           features: true,
@@ -609,13 +409,7 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
       query.maxPrice || String(Number.MAX_SAFE_INTEGER),
     );
 
-    // Year filter
-    const year =
-      (req.query as any).year !== undefined &&
-      (req.query as any).year !== null &&
-      (req.query as any).year !== ""
-        ? Number((req.query as any).year)
-        : undefined;
+
 
     const where: Prisma.ListingWhereInput = {
       OR: search
@@ -630,14 +424,6 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
         lte: maxPrice,
       },
       status: ListingStatus.ACTIVE,
-      // Vehicle year filter (only for vehicle listings)
-      ...(year
-        ? {
-            vehicleDetails: {
-              year: year,
-            },
-          }
-        : {}),
     };
 
     const [listings, total] = await Promise.all([
@@ -658,28 +444,6 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
           favorites: true,
           attributes: true,
           features: true,
-          vehicleDetails: {
-            select: {
-              id: true,
-              vehicleType: true,
-              make: true,
-              model: true,
-              year: true,
-              mileage: true,
-              fuelType: true,
-              transmissionType: true,
-              color: true,
-              condition: true,
-              listingId: true,
-              interiorColor: true,
-              engine: true,
-              warranty: true,
-              serviceHistory: true,
-              previousOwners: true,
-              registrationStatus: true,
-            },
-          },
-          realEstateDetails: true,
         },
       }),
       prisma.listing.count({ where }),
@@ -752,28 +516,6 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
         favorites: true,
         attributes: true,
         features: true,
-        vehicleDetails: {
-          select: {
-            id: true,
-            vehicleType: true,
-            make: true,
-            model: true,
-            year: true,
-            mileage: true,
-            fuelType: true,
-            transmissionType: true,
-            color: true,
-            condition: true,
-            listingId: true,
-            interiorColor: true,
-            engine: true,
-            warranty: true,
-            serviceHistory: true,
-            previousOwners: true,
-            registrationStatus: true,
-          },
-        },
-        realEstateDetails: true,
       },
     });
 
@@ -840,28 +582,6 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
         favorites: true,
         attributes: true,
         features: true,
-        vehicleDetails: {
-          select: {
-            id: true,
-            vehicleType: true,
-            make: true,
-            model: true,
-            year: true,
-            mileage: true,
-            fuelType: true,
-            transmissionType: true,
-            color: true,
-            condition: true,
-            listingId: true,
-            interiorColor: true,
-            engine: true,
-            warranty: true,
-            serviceHistory: true,
-            previousOwners: true,
-            registrationStatus: true,
-          },
-        },
-        realEstateDetails: true,
       },
     }) as ListingWithRelations;
 
@@ -912,6 +632,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       condition,
       existingImages,
       attributes,
+      details,
       features,
     } = req.body as {
       title: string;
@@ -925,6 +646,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       condition?: string;
       existingImages?: string[] | string;
       attributes?: Array<{ name: string; value: string }>;
+      details?: any;
       features?: Array<{ name: string; value: boolean }>;
     };
 
@@ -1265,28 +987,6 @@ export const toggleSaveListing = async (
         favorites: true,
         attributes: true,
         features: true,
-        vehicleDetails: {
-          select: {
-            id: true,
-            vehicleType: true,
-            make: true,
-            model: true,
-            year: true,
-            mileage: true,
-            fuelType: true,
-            transmissionType: true,
-            color: true,
-            condition: true,
-            listingId: true,
-            interiorColor: true,
-            engine: true,
-            warranty: true,
-            serviceHistory: true,
-            previousOwners: true,
-            registrationStatus: true,
-          },
-        },
-        realEstateDetails: true,
       },
     });
 
@@ -1302,3 +1002,37 @@ export const toggleSaveListing = async (
     });
   }
 };
+
+export const addListingImages = async (req: FastifyRequest, res: FastifyReply): Promise<any> => {
+  try {
+    const { id } = req.params as ListingParams;
+    const listing = await prisma.listing.findUnique({
+      where: { id },
+      include: { images: true },
+    });
+
+    if (!listing) {
+      return res.code(404).send({
+        success: false,
+        message: "Listing not found",
+      });
+    }
+
+    const image = await prisma.image.create({
+      data: {
+        url: req.processedImages?.[0].url || "",
+        order: req.processedImages?.[0].order || 0,
+        listingId: id,
+      },
+    });
+
+    return image;
+  }
+  catch (error) {
+    console.error("Error adding listing images:", error);
+    res.code(500).send({
+      success: false,
+      message: "Error adding listing images",
+    });
+  }
+}

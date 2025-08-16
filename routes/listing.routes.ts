@@ -23,6 +23,7 @@ import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType, ListingCategory } from "../types/enums.js";
 import { filterListingDetails } from "../utils/listing.utils.js";
 import { ErrorHandler, ResponseHelpers } from "../utils/error.handler.js";
+import { addListingImages } from "../controllers/listing.controller.js";
 
 interface ListingQuery {
   mainCategory?: string;
@@ -216,7 +217,8 @@ export default async function (fastify: FastifyInstance) {
         ...(authReq.body || {}),
         listingId: (req.params as any).id,
       };
-      // return addListingImages(authReq, reply);
+
+      return addListingImages(authReq, reply);
     }
   );
 
