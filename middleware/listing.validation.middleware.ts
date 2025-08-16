@@ -15,10 +15,7 @@ export interface ListingCreateRequest extends FastifyRequest {
     latitude?: number | string;
     longitude?: number | string;
     listingAction?: string;
-    details?: string | {
-      vehicles?: any;
-      realEstate?: any;
-    };
+    details?: string | any;
   };
   validatedData?: any;
   processedImages?: Array<{ url: string; order: number }>;
@@ -36,10 +33,7 @@ export interface ListingUpdateRequest extends FastifyRequest {
     latitude?: number | string;
     longitude?: number | string;
     listingAction?: string;
-    details?: string | {
-      vehicles?: any;
-      realEstate?: any;
-    };
+    details?: string | any;
     existingImages?: string[] | string;
   };
   validatedData?: any;
@@ -68,32 +62,11 @@ export async function validateListingCreate(
     } catch (error) {
       return ResponseHelpers.badRequest(reply, "Invalid details format. Must be valid JSON.");
     }
-
-    // Normalize the data
-    const baseData = ListingDataNormalizer.normalizeBaseData(body);
-    const normalizedData = {
-      ...baseData,
-      details: parsedDetails ? {
-        vehicles: parsedDetails.vehicles ? ListingDataNormalizer.normalizeVehicleDetails(parsedDetails.vehicles, baseData.subCategory as any) : undefined,
-        realEstate: parsedDetails.realEstate ? ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails.realEstate, baseData.subCategory as any) : undefined,
-      } : undefined,
-    };
-
-    // Validate the normalized data
-    const validation = ListingValidator.validateListingData(normalizedData);
     
-    if (!validation.isValid) {
-      return ResponseHelpers.badRequest(reply, "Validation failed", validation.errors);
-    }
-
+    // Normalize the data
     // Attach validated data to request for use in route handler
-    req.validatedData = normalizedData;
-
-    return reply.status(200).send({
-      success: true,
-      message: "Listing created successfully",
-      data: normalizedData,
-    });
+    req.validatedData = ListingDataNormalizer.normalizeBaseData(body);
+    
   } catch (error) {
     console.error("Validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);
@@ -149,13 +122,6 @@ export async function validateListingUpdate(
     if (body.latitude !== undefined) normalizedData.latitude = Number(body.latitude);
     if (body.longitude !== undefined) normalizedData.longitude = Number(body.longitude);
     if (body.listingAction !== undefined) normalizedData.listingAction = body.listingAction;
-    
-    if (parsedDetails) {
-      normalizedData.details = {
-        vehicles: parsedDetails.vehicles ? ListingDataNormalizer.normalizeVehicleDetails(parsedDetails.vehicles, normalizedData.subCategory as any) : undefined,
-        realEstate: parsedDetails.realEstate ? ListingDataNormalizer.normalizeRealEstateDetails(parsedDetails.realEstate, normalizedData.subCategory as any) : undefined,
-      };
-    }
 
     if (parsedExistingImages) {
       normalizedData.existingImages = parsedExistingImages;
@@ -201,7 +167,7 @@ export async function validateListingUpdate(
     // Validate details if provided
     if (normalizedData.details) {
       if (normalizedData.mainCategory && normalizedData.subCategory) {
-        const validation = ListingValidator.validateListingData({
+        const validation = ListingValidator.validateBaseListing({
           mainCategory: normalizedData.mainCategory,
           subCategory: normalizedData.subCategory,
           details: normalizedData.details,
@@ -221,7 +187,7 @@ export async function validateListingUpdate(
 
     // Attach validated data to request for use in route handler
     req.validatedData = normalizedData;
-    
+
   } catch (error) {
     console.error("Update validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);

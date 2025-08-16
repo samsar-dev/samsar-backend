@@ -60,6 +60,15 @@ export interface ListingDetails {
   realEstate?: RealEstateDetails;
 }
 
+// Input details - for direct field input based on category
+export interface VehicleDetailsInput extends VehicleDetails {
+  // Direct vehicle fields without nesting
+}
+
+export interface RealEstateDetailsInput extends RealEstateDetails {
+  // Direct real estate fields without nesting
+}
+
 export interface VehicleDetails {
   vehicleType: VehicleType;
   make: string;
