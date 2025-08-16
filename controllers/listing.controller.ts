@@ -319,7 +319,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       });
 
       // Create notification
-      await prisma.notification.create({
+      await tx.notification.create({
         data: {
           userId: listing.userId,
           type: NotificationType.LISTING_CREATED,
@@ -335,7 +335,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
     const formattedListing = formatListingResponse(result);
 
     // Send response
-    res.code(201).send({
+        res.code(201).send({
+      message: "Listing created successfully - V2 DEPLOYED!", // Deployment verification
       success: true,
       data: formattedListing,
       status: 201,
