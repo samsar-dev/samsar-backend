@@ -1,0 +1,48 @@
+{
+    "title": "Toyota Corolla 2018",
+    "description": "Well maintained Toyota Corolla, single owner, accident free, full service history available.",
+    "price": 14500,
+    "category": "Specific Vehicles",
+    "mainCategory": "VEHICLES",
+    "subCategory": "CARS",
+    "location": "Dhaka, Bangladesh",
+    "condition": "Used",
+    "listingAction": "SALE",
+    "sellerType": "Owner",
+    "latitude": 23.8103,
+    "longitude": 90.4125,
+    "details": {
+        "vehicleType": "CAR",
+        "make": "Toyota",
+        "model": "Corolla",
+        "year": 2018,
+        "mileage": 45000,
+        "fuelType": "Petrol",
+        "transmissionType": "Automatic",
+        "color": "White",
+        "condition": "NEW",
+        "features": [
+            "ABS",
+            "Air Conditioning",
+            "Bluetooth",
+            "Backup Camera"
+        ],
+        "doors": 4,
+        "seats": 5,
+        "horsepower": 132,
+        "torque": 128,
+        "engineSize": "1.8L",
+        "airbags": 6,
+        "navigationSystem": "Built-in GPS",
+        "parkingAidCamera": true,
+        "bluetooth": true,
+        "appleCarPlay": true,
+        "androidAuto": true,
+        "warranty": "No Warranty",
+        "previousOwners": 1,
+        "accidentFree": true,
+        "serviceHistory": [
+            "Serviced at Toyota Service Center - June 2024"
+        ]
+    }
+}

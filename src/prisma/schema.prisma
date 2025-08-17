@@ -1,0 +1,344 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Report {
+  id           String       @id @default(cuid())
+  type         ReportType
+  targetId     String
+  reason       ReportReason
+  status       ReportStatus @default(PENDING)
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  reporterId   String
+  resolvedById String?
+  resolvedAt   DateTime?
+  reporter     User         @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy   User?        @relation("ResolvedReports", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([type, targetId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model User {
+  id                       String         @id @default(cuid())
+  email                    String         @unique
+  name                     String?
+  username                 String         @unique
+  password                 String
+  profilePicture           String?
+  bio                      String?
+  location                 String?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  role                     UserRole       @default(FREE_USER)
+  preferences              Json?
+  city                     String?
+  dateOfBirth              String?
+  street                   String?
+  refreshToken             String?
+  refreshTokenExpiresAt    DateTime?
+  phone                    String?
+  emailVerified            Boolean        @default(false)
+  lastVerifiedAt           DateTime?
+  verificationToken        String?        @unique
+  verificationCode         String?
+  verificationTokenExpires DateTime?
+  accountStatus            String         @default("ACTIVE")
+  allowMessaging           Boolean        @default(true)
+  listingNotifications     Boolean        @default(true)
+  messageNotifications     Boolean        @default(true)
+  showEmail                Boolean        @default(true)
+  showOnlineStatus         Boolean        @default(true)
+  showPhoneNumber          Boolean        @default(true)
+  maxListings              Int            @default(1)
+  listingRestriction       String         @default("NONE")
+  subscriptionId           String?
+  subscriptionStatus       String?        @default("INACTIVE")
+  subscriptionEndsAt       DateTime?
+  latitude                 Float?
+  longitude                Float?
+  last_active_at           DateTime?
+  newsletterSubscribed     Boolean?       @default(true)
+  loginNotifications       Boolean        @default(false)
+  privateProfile           Boolean        @default(false)
+  favorites                Favorite[]
+  listings                 Listing[]      @relation("UserListings")
+  receivedMessages         Message[]      @relation("ReceivedMessages")
+  sentMessages             Message[]      @relation("SentMessages")
+  relatedNotifications     Notification[] @relation("RelatedNotifications")
+  notifications            Notification[]
+  reportedIssues           Report[]       @relation("ReportedBy")
+  resolvedReports          Report[]       @relation("ResolvedReports")
+  viewHistory              View[]
+  conversations            Conversation[] @relation("UserConversations")
+
+  @@index([refreshToken])
+}
+
+model View {
+  id        String   @id @default(cuid())
+  listingId String
+  userId    String?
+  userIp    String
+  userAgent String
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([listingId, userId, userIp], name: "listing_user_ip")
+  @@index([createdAt])
+}
+
+model Listing {
+  id                String             @id @default(cuid())
+  title             String
+  description       String?
+  price             Float
+  category          String
+  mainCategory      String
+  subCategory       String
+  location          String
+  condition         String?
+  listingAction     String?
+  sellerType        String?
+  status            String             @default("ACTIVE")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userId            String
+  latitude          Float
+  longitude         Float
+  views             Int                @default(0)
+  viewUsersId       String[]
+  attributes        Attribute[]
+  conversations     Conversation[]     @relation("ListingConversations")
+  favorites         Favorite[]
+  features          Feature[]
+  images            Image[]
+  user              User               @relation("UserListings", fields: [userId], references: [id], onDelete: Cascade)
+  Message           Message[]
+  notifications     Notification[]     @relation("ListingNotifications")
+  // realEstateDetails RealEstateDetails?
+  // vehicleDetails    VehicleDetails?
+  details           Json                @default("{}")
+  viewHistory       View[]
+
+  @@index([userId])
+  @@index([mainCategory])
+}
+
+model Image {
+  id        String  @id @default(cuid())
+  url       String
+  order     Int     @default(0)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+}
+
+model Conversation {
+  id            String    @id @default(cuid())
+  listingId     String?
+  lastMessage   String?
+  lastMessageAt DateTime  @default(now())
+  listing       Listing?  @relation("ListingConversations", fields: [listingId], references: [id], onDelete: Cascade)
+  messages      Message[]
+  participants  User[]    @relation("UserConversations")
+
+  @@index([listingId])
+}
+
+model Message {
+  id                    String        @id @default(cuid())
+  content               String
+  senderId              String
+  recipientId           String
+  conversationId        String
+  createdAt             DateTime      @default(now())
+  read                  Boolean       @default(false)
+  listingId             String?
+  relatedNotificationId String?       @unique
+  conversation          Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  listing               Listing?      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  recipient             User          @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  notification          Notification? @relation("MessageNotification", fields: [relatedNotificationId], references: [id], onDelete: Cascade)
+  sender                User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([conversationId])
+  @@index([listingId])
+}
+
+model Notification {
+  id               String           @id @default(cuid())
+  type             NotificationType
+  content          String
+  read             Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  userId           String
+  relatedId        String?
+  relatedListingId String?
+  relatedUserId    String?
+  relatedMessageId String?
+  message          Message?         @relation("MessageNotification")
+  relatedListing   Listing?         @relation("ListingNotifications", fields: [relatedListingId], references: [id], onDelete: Cascade)
+  relatedUser      User?            @relation("RelatedNotifications", fields: [relatedUserId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([relatedListingId])
+  @@index([relatedUserId])
+}
+
+model Attribute {
+  id        String  @id @default(cuid())
+  name      String
+  value     String
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model Feature {
+  id        String  @id @default(cuid())
+  name      String
+  value     Boolean @default(false)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+}
+
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportType {
+  USER
+  LISTING
+  MESSAGE
+  COMMENT
+  OTHER
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  MISLEADING
+  OFFENSIVE
+  HARASSMENT
+  OTHER
+}
+
+enum UserRole {
+  FREE_USER
+  PREMIUM_USER
+  BUSINESS_USER
+  ADMIN
+  MODERATOR
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  RENTED
+  EXPIRED
+  ARCHIVED
+}
+
+enum ListingAction {
+  SALE
+  RENT
+  SEARCHING
+}
+
+enum NotificationType {
+  NEW_MESSAGE
+  LISTING_INTEREST
+  PRICE_UPDATE
+  LISTING_SOLD
+  SYSTEM_NOTICE
+  LISTING_CREATED
+  NEW_LISTING_MATCH
+  ACCOUNT_WARNING
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum VehicleType {
+  CARS
+  MOTORCYCLES
+  VANS
+  TRUCKS
+  BUSES
+  TRACTORS
+  PASSENGER_VEHICLES
+  COMMERCIAL_TRANSPORT
+  CONSTRUCTION_VEHICLES
+  STORE
+}
+
+enum FuelType {
+  GASOLINE
+  DIESEL
+  ELECTRIC
+  HYBRID
+  PLUGIN_HYBRID
+  LPG
+  CNG
+  OTHER
+  BIODIESEL
+}
+
+enum TransmissionType {
+  AUTOMATIC
+  MANUAL
+  AUTOMATIC_MANUAL
+}
+
+enum Condition {
+  NEW
+  LIKE_NEW
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  SALVAGE
+}
