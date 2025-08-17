@@ -66,7 +66,7 @@ export const authenticate = async (
       // Verify token
       console.log(`🔍 Verifying token with secret: ${config.jwtSecret ? 'present' : 'missing'}`);
       const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
-      console.log(`✅ Token decoded successfully - User ID: ${decoded.id}`);
+      console.log(`✅ Token decoded successfully - User ID: ${decoded.sub || decoded.id}`);
 
       // Check token expiration
       const now = Math.floor(Date.now() / 1000);

@@ -13,17 +13,11 @@ import {
   ReportStatus,
   ReportType,
 } from "../controllers/report.controller.js";
-import { UserRole } from "../types/auth.js";
+import { UserRole, UserPayload } from "../types/auth.js";
 
 // Extend FastifyRequest type to include user
 interface AuthenticatedRequest extends FastifyRequest {
-  user: {
-    id: string;
-    email: string;
-    username: string;
-    role: UserRole;
-    exp: number; // JWT expiration timestamp
-  };
+  user: UserPayload;
 }
 
 interface GetReportsQuery {

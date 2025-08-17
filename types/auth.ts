@@ -17,11 +17,17 @@ export type UserRole =
 
 // Core user payload decoded from JWT
 export interface UserPayload {
-  id: string;
+  sub: string; // subject (user ID)
   email: string;
   username: string;
   role: UserRole;
+  type: string; // token type (access/refresh)
+  iat: number; // issued at
   exp: number; // expires at
+  aud: string; // audience
+  iss: string; // issuer
+  // Legacy support
+  id?: string;
 }
 
 // Used for routes with JSON body (non-file routes)

@@ -169,11 +169,16 @@ export const authenticate = async (
 
     // Set UserPayload for controllers that use req.user
     request.user = {
-      id: user.id,
+      sub: user.id,
+      id: user.id, // legacy support
       email: user.email,
       username: user.username,
       role: user.role,
+      type: 'access',
+      iat: decoded.iat || Math.floor(Date.now() / 1000),
       exp: decoded.exp,
+      aud: 'samsar-app',
+      iss: 'samsar-api',
     };
   } catch (error) {
     console.error("Authentication error:", error);

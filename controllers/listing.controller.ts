@@ -952,7 +952,7 @@ export const toggleSaveListing = async (
       await prisma.favorite.create({
         data: {
           listingId: id,
-          userId: req.user.id,
+          userId: req.user.sub || req.user.id!,
         },
       });
 
