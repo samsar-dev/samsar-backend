@@ -65,8 +65,10 @@ export const authenticate = async (
     try {
       // Verify token
       console.log(`🔍 Verifying token with secret: ${config.jwtSecret ? 'present' : 'missing'}`);
+      console.log(`🔍 Token to verify: ${token}`);
       const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
-      console.log(`✅ Token decoded successfully - User ID: ${decoded.sub || decoded.id}`);
+      console.log(`✅ Token decoded successfully:`, decoded);
+      console.log(`✅ User ID from token: ${decoded.sub || decoded.id}`);
 
       // Check token expiration
       const now = Math.floor(Date.now() / 1000);
@@ -77,8 +79,9 @@ export const authenticate = async (
 
       // Attach user to request
       (request as any).user = decoded;
-      console.log(`✅ User attached to request`);
+      console.log(`✅ User attached to request:`, (request as any).user);
     } catch (jwtError) {
+      console.log(`❌ JWT Verification Error:`, jwtError);
       // Handle specific JWT errors
       if (jwtError instanceof jwt.TokenExpiredError) {
         reply.code(401).send({
