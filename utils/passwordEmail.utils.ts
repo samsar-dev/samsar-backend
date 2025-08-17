@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { config } from "../config/config.js";
 
 /**
@@ -12,42 +12,18 @@ export const sendPasswordChangeEmail = async (
   code: string,
 ): Promise<boolean> => {
   try {
-    // Get the first URL from the comma-separated list or use localhost
-    const frontendUrl = (
-      process.env.FRONTEND_URL || "http://localhost:5173"
-    ).split(",")[0];
-
-    // Check if we're in development mode and should bypass email sending
-    const isDevelopment =
-      process.env.NODE_ENV === "development" ||
-      process.env.NODE_ENV === undefined;
-
-    console.log("Using frontend URL:", frontendUrl);
     console.log("Password change verification code:", code);
 
-    // DEVELOPMENT MODE BYPASS
-    // In development, log the verification details but don't try to send an email
-    if (isDevelopment) {
-      console.log("DEVELOPMENT MODE: Email sending bypassed");
-      console.log("----------------------------------------");
-      console.log("PASSWORD CHANGE VERIFICATION DETAILS:");
-      console.log("Email:", email);
-      console.log("Verification Code:", code);
-      console.log("----------------------------------------");
-      // Return true to indicate success without actually sending an email
-      return true;
-    }
-
-    // PRODUCTION EMAIL SENDING
-    // Initialize Resend API client
-    if (!config.email.resendApiKey) {
-      console.error("Resend API key is missing");
-      return false;
-    }
-
-    const resend = new Resend(config.email.resendApiKey);
-
-    console.log("Attempting to send password change email to:", email);
+    // Create nodemailer transporter using Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      secure: true,
+      host: "smtp.gmail.com",
+      port: 465,
+      auth: {
+        user: "daryannabo16@gmail.com",
+        pass: "pgqzjkpisuyzrnzd",
+      },
+    });
 
     // Create HTML email content with verification code
     const htmlContent = `
@@ -65,51 +41,24 @@ export const sendPasswordChangeEmail = async (
       </div>
     `;
 
-    // Debug log the config
-    console.log("Password email config:", {
-      hasResendApiKey: !!config.email.resendApiKey,
-      fromEmail: config.email.from,
-      envEmailFrom: process.env.EMAIL_FROM,
-      nodeEnv: process.env.NODE_ENV,
-    });
-
-    // Send email using Resend
-    console.log(
-      "Sending password change email with Resend using API key:",
-      config.email.resendApiKey
-        ? "***" + config.email.resendApiKey.slice(-4)
-        : "not set",
-    );
-
-    // Use configured from email or default to a valid domain
-    const fromEmail = config.email.from || "noreply@samsar.app";
-
     // Validate email format
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       console.error("Invalid email address format:", email);
       return false;
     }
 
-    console.log(`Sending password change email from ${fromEmail} to ${email}`);
+    console.log(`Sending password change email to ${email} using nodemailer`);
 
-    const { data, error } = await resend.emails.send({
-      from: fromEmail,
+    // Send email using nodemailer
+    await transporter.sendMail({
+      from: "daryannabo16@gmail.com",
       to: email,
       subject: "Password Change Verification",
       html: htmlContent,
       text: `Your password change verification code is: ${code}\n\nEnter this code on the password change page to verify your identity.\n\nThis code will expire in 24 hours.`,
     });
 
-    if (error) {
-      console.error("Error sending password change email with Resend:", error);
-      return false;
-    }
-
-    console.log("Password change email sent successfully:", {
-      id: data?.id,
-      to: email,
-    });
-
+    console.log("Password change email sent successfully to:", email);
     return true;
   } catch (error) {
     console.error("Error sending password change email:", error);
