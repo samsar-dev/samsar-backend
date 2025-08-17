@@ -45,29 +45,39 @@ export const authenticate = async (
   reply: FastifyReply,
 ): Promise<void> => {
   try {
+    console.log(`🔐 Auth middleware - ${request.method} ${request.url}`);
+    
     // Check if route is public
     if (isPublicRoute(request.url, request.method)) {
+      console.log(`✅ Public route, skipping auth`);
       return;
     }
 
     // Get token
     const token = extractToken(request);
+    console.log(`🔑 Token extracted: ${token ? `${token.substring(0, 20)}...` : 'null'}`);
+    
     if (!token) {
+      console.log(`❌ No token provided`);
       throw new Error("No authentication token provided");
     }
 
     try {
       // Verify token
+      console.log(`🔍 Verifying token with secret: ${config.jwtSecret ? 'present' : 'missing'}`);
       const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
+      console.log(`✅ Token decoded successfully - User ID: ${decoded.id}`);
 
       // Check token expiration
       const now = Math.floor(Date.now() / 1000);
       if (decoded.exp && now >= decoded.exp) {
+        console.log(`❌ Token expired - now: ${now}, exp: ${decoded.exp}`);
         throw new Error("Token has expired");
       }
 
       // Attach user to request
       (request as any).user = decoded;
+      console.log(`✅ User attached to request`);
     } catch (jwtError) {
       // Handle specific JWT errors
       if (jwtError instanceof jwt.TokenExpiredError) {
