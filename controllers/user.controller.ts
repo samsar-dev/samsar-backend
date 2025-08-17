@@ -2,14 +2,14 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import prisma from "../src/lib/prismaClient.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
-import { uploadToR2 } from "../config/cloudflareR2.js";
+ 
 import { Prisma, User } from "@prisma/client";
 import {
   AuthRequest,
   UserPreferences,
   InputJsonValue,
 } from "../types/index.js";
-import { MultipartFile } from "@fastify/multipart";
+ 
 
 interface UpdateData {
   email?: string;

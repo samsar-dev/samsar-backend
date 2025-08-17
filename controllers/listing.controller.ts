@@ -3,17 +3,13 @@ import {
   ListingAction,
   Prisma,
   NotificationType,
-  VehicleType,
-  FuelType,
-  TransmissionType,
-  Condition,
 } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
-import { UserPayload } from "../types/auth.js";
+ 
 
 // Extend Fastify request with custom properties
 declare module "fastify" {

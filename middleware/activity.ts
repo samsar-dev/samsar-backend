@@ -1,12 +1,11 @@
 import type {
   FastifyRequest,
   FastifyReply,
-  HookHandlerDoneFunction,
+ 
 } from "fastify";
 import { PrismaClient } from "@prisma/client";
 
-// This import ensures the Fastify type extensions are loaded
-import type { UserPayload } from "../types/auth.js";
+ 
 
 // Fastify types are extended in types/fastify.d.ts
 // This ensures consistent typing across the application
