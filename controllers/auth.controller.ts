@@ -1220,15 +1220,15 @@ export const sendPasswordChangeVerification = async (
   reply: FastifyReply,
 ) => {
   try {
-    // Get email from request body
-    const { email } = request.body as { email: string };
+    // Get email and current password from request body
+    const { email, currentPassword } = request.body as { email: string; currentPassword: string };
 
-    if (!email) {
+    if (!email || !currentPassword) {
       return reply.status(400).send({
         success: false,
         error: {
           code: "VALIDATION_ERROR",
-          message: "Email is required",
+          message: "Email and current password are required",
         },
       });
     }
@@ -1244,6 +1244,18 @@ export const sendPasswordChangeVerification = async (
         error: {
           code: "USER_NOT_FOUND",
           message: "No account found with this email",
+        },
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: "INVALID_PASSWORD",
+          message: "Current password is incorrect",
         },
       });
     }
