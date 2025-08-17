@@ -1319,8 +1319,10 @@ export const changePasswordWithVerification = async (
       });
     } else {
       // Password change flow - find user by ID and verification code
-      const authenticatedUser = request.user as { id: string; email: string };
-      if (!authenticatedUser?.id) {
+      const authenticatedUser = request.user as { sub?: string; id?: string; email: string };
+      const userId = authenticatedUser?.sub || authenticatedUser?.id;
+      
+      if (!userId) {
         return reply.status(401).send({
           success: false,
           error: {
@@ -1332,7 +1334,7 @@ export const changePasswordWithVerification = async (
 
       userToUpdate = await prisma.user.findFirst({
         where: {
-          id: authenticatedUser.id,
+          id: userId,
           verificationCode,
         },
       });
