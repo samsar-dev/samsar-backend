@@ -254,6 +254,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
   fastify.post(
     "/change-password",
     {
+      preHandler: [authenticate],
       schema: {
         body: {
           type: "object",
