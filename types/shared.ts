@@ -144,6 +144,19 @@ export interface ListingBase {
   details: ListingDetails;
   listingAction?: "sale" | "rent" | "searching";
   status: ListingStatus;
+  // Vehicle fields as individual properties
+  make?: string;
+  model?: string;
+  year?: number;
+  condition?: string;
+  fuelType?: string;
+  transmission?: string;
+  bodyType?: string;
+  engineSize?: number;
+  mileage?: number;
+  exteriorColor?: string;
+  sellerType?: string;
+  accidental?: string;
 }
 
 // Listing with relations

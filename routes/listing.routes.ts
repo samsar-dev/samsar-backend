@@ -150,6 +150,19 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
     details: listing.details,
     listingAction: listing.listingAction,
     status: listing.status,
+    // Vehicle fields as individual properties
+    make: listing.make,
+    model: listing.model,
+    year: listing.year,
+    condition: listing.condition,
+    fuelType: listing.fuelType,
+    transmission: listing.transmission,
+    bodyType: listing.bodyType,
+    engineSize: listing.engineSize,
+    mileage: listing.mileage,
+    exteriorColor: listing.exteriorColor,
+    sellerType: listing.sellerType,
+    accidental: listing.accidental,
     seller: listing.user
       ? {
           id: listing.user.id,
