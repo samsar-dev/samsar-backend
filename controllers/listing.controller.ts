@@ -317,6 +317,13 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
+      // Helper function to only include non-empty values
+      const addIfNotEmpty = (obj: any, key: string, value: any) => {
+        if (value !== null && value !== undefined && value !== "" && value !== 0) {
+          obj[key] = value;
+        }
+      };
+      
       // Create listing data with individual columns
       const listingData: Prisma.ListingCreateInput = {
         title,
@@ -333,29 +340,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
-        // Vehicle fields as individual columns
-        make: vehicleDetails.make || null,
-        model: vehicleDetails.model || null,
-        year: vehicleDetails.year ? parseInt(vehicleDetails.year) : null,
-        fuelType: vehicleDetails.fuelType || null,
-        transmission: vehicleDetails.transmission || null,
-        bodyType: vehicleDetails.bodyType || null,
-        engineSize: vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null,
-        mileage: vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null,
-        exteriorColor: vehicleDetails.exteriorColor || null,
-        interiorColor: vehicleDetails.interiorColor || null,
-        doors: vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null,
-        seatingCapacity: vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null,
-        horsepower: vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null,
-        // Real estate fields as individual columns
-        bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
-        bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
-        totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
-        yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
-        furnishing: realEstateDetails.furnishing || null,
-        floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
-        totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
-        parking: realEstateDetails.parking || null,
         details: parsedDetails, // Keep full details for backward compatibility
         user: {
           connect: {
@@ -370,6 +354,35 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
             })) || [],
         },
       };
+
+      // Only add vehicle fields if it's a vehicle listing and has valid values
+      if (mainCategory.toUpperCase() === 'VEHICLES') {
+        addIfNotEmpty(listingData, 'make', vehicleDetails.make);
+        addIfNotEmpty(listingData, 'model', vehicleDetails.model);
+        addIfNotEmpty(listingData, 'year', vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
+        addIfNotEmpty(listingData, 'fuelType', vehicleDetails.fuelType);
+        addIfNotEmpty(listingData, 'transmission', vehicleDetails.transmission);
+        addIfNotEmpty(listingData, 'bodyType', vehicleDetails.bodyType);
+        addIfNotEmpty(listingData, 'engineSize', vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
+        addIfNotEmpty(listingData, 'mileage', vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
+        addIfNotEmpty(listingData, 'exteriorColor', vehicleDetails.exteriorColor);
+        addIfNotEmpty(listingData, 'interiorColor', vehicleDetails.interiorColor);
+        addIfNotEmpty(listingData, 'doors', vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null);
+        addIfNotEmpty(listingData, 'seatingCapacity', vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null);
+        addIfNotEmpty(listingData, 'horsepower', vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
+      }
+
+      // Only add real estate fields if it's a real estate listing and has valid values
+      if (mainCategory.toUpperCase() === 'REAL_ESTATE') {
+        addIfNotEmpty(listingData, 'bedrooms', realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null);
+        addIfNotEmpty(listingData, 'bathrooms', realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null);
+        addIfNotEmpty(listingData, 'totalArea', realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null);
+        addIfNotEmpty(listingData, 'yearBuilt', realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null);
+        addIfNotEmpty(listingData, 'furnishing', realEstateDetails.furnishing);
+        addIfNotEmpty(listingData, 'floor', realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null);
+        addIfNotEmpty(listingData, 'totalFloors', realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null);
+        addIfNotEmpty(listingData, 'parking', realEstateDetails.parking);
+      }
 
       // Create listing
       const listing = await tx.listing.create({
