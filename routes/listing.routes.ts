@@ -445,6 +445,16 @@ export default async function (fastify: FastifyInstance) {
 
         // Add category-specific fields based on mainCategory
         if (mainCategory === 'vehicles') {
+          // Debug logging for vehicle fields
+          console.log("🔍 VEHICLE FIELDS DEBUG:");
+          console.log("validatedData.make:", validatedData.make);
+          console.log("validatedData.model:", validatedData.model);
+          console.log("validatedData.year:", validatedData.year);
+          console.log("validatedData.mileage:", validatedData.mileage);
+          console.log("validatedData.horsepower:", validatedData.horsepower);
+          console.log("vehicleDetails.make:", vehicleDetails?.make);
+          console.log("vehicleDetails.model:", vehicleDetails?.model);
+          
           // Vehicle-specific fields only
           addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
           addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
