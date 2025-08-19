@@ -446,57 +446,60 @@ export default async function (fastify: FastifyInstance) {
         // Add category-specific fields based on mainCategory
         if (mainCategory === 'vehicles') {
           console.log("\n🚗 PROCESSING VEHICLE FIELDS:");
-          console.log("  ValidatedData vehicle fields:", Object.keys(validatedData || {}).filter(key => ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].includes(key)));
-          
+          console.log("  ValidatedData keys:", Object.keys(validatedData || {}));
+          console.log("  ValidatedData vehicle values:", {
+            make: validatedData.make,
+            model: validatedData.model,
+            year: validatedData.year,
+            mileage: validatedData.mileage,
+            fuelType: validatedData.fuelType,
+            transmission: validatedData.transmission,
+            bodyType: validatedData.bodyType,
+            exteriorColor: validatedData.exteriorColor,
+            sellerType: validatedData.sellerType,
+            condition: validatedData.condition,
+            accidental: validatedData.accidental,
+            horsepower: validatedData.horsepower,
+            registrationExpiry: validatedData.registrationExpiry
+          });
           
           // Vehicle-specific fields only
-          const makeValue = validatedData.make || vehicleDetails.make;
-          addIfNotEmpty(listingData, 'make', makeValue);
-          
-          const modelValue = validatedData.model || vehicleDetails.model;
-          addIfNotEmpty(listingData, 'model', modelValue);
-          
-          const yearValue = validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
-          addIfNotEmpty(listingData, 'year', yearValue);
+          addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
+          addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
+          addIfNotEmpty(listingData, 'year', validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
+          addIfNotEmpty(listingData, 'bodyType', validatedData.bodyType || vehicleDetails.bodyType);
+          addIfNotEmpty(listingData, 'mileage', validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
+          addIfNotEmpty(listingData, 'exteriorColor', validatedData.exteriorColor || validatedData.color || vehicleDetails.exteriorColor || vehicleDetails.color);
+          addIfNotEmpty(listingData, 'horsepower', validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null));
+          addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
+          addIfNotEmpty(listingData, 'engineSize', validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
           
           // Handle enum fields with uppercase conversion
-          const fuelType = validatedData.fuelType || vehicleDetails.fuelType;
-          if (fuelType) {
-            addIfNotEmpty(listingData, 'fuelType', fuelType.toUpperCase());
+          if (validatedData.fuelType || vehicleDetails.fuelType) {
+            addIfNotEmpty(listingData, 'fuelType', (validatedData.fuelType || vehicleDetails.fuelType).toUpperCase());
           }
           
-          const transmission = validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
-          if (transmission) {
-            addIfNotEmpty(listingData, 'transmission', transmission.toUpperCase());
+          if (validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType) {
+            const transmissionValue = validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
+            addIfNotEmpty(listingData, 'transmission', transmissionValue.toUpperCase());
           }
           
-          const bodyTypeValue = validatedData.bodyType || vehicleDetails.bodyType;
-          addIfNotEmpty(listingData, 'bodyType', bodyTypeValue);
-          
-          const engineSizeValue = validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
-          addIfNotEmpty(listingData, 'engineSize', engineSizeValue);
-          
-          const mileageValue = validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(validatedData.mileage) : null);
-          addIfNotEmpty(listingData, 'mileage', mileageValue);
-          
-          const exteriorColorValue = validatedData.color || validatedData.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor;
-          addIfNotEmpty(listingData, 'exteriorColor', exteriorColorValue);
-          
-          const sellerType = validatedData.sellerType || vehicleDetails.sellerType;
-          if (sellerType) {
-            addIfNotEmpty(listingData, 'sellerType', sellerType.toUpperCase());
+          if (validatedData.sellerType || vehicleDetails.sellerType) {
+            addIfNotEmpty(listingData, 'sellerType', (validatedData.sellerType || vehicleDetails.sellerType).toUpperCase());
           }
           
-          // Handle condition mapping
-          const condition = validatedData.condition || vehicleDetails.condition;
-          if (condition) {
-            addIfNotEmpty(listingData, 'condition', condition.toUpperCase());
+          if (validatedData.condition || vehicleDetails.condition) {
+            addIfNotEmpty(listingData, 'condition', (validatedData.condition || vehicleDetails.condition).toUpperCase());
           }
           
           // Handle accidental status mapping
-          const accidental = validatedData.accidental || vehicleDetails.accidental;
-          if (accidental !== undefined && accidental !== null && accidental !== '') {
-            const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
+          if (validatedData.accidental !== undefined && validatedData.accidental !== null && validatedData.accidental !== '') {
+            const accidentalValue = String(validatedData.accidental).toLowerCase();
+            const isAccidentFree = accidentalValue === 'no' || accidentalValue === 'false';
+            addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
+          } else if (vehicleDetails.accidental !== undefined) {
+            const accidentalValue = String(vehicleDetails.accidental).toLowerCase();
+            const isAccidentFree = accidentalValue === 'no' || accidentalValue === 'false';
             addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
           }
         } else if (mainCategory === 'real_estate') {
@@ -512,8 +515,16 @@ export default async function (fastify: FastifyInstance) {
 
         // Log final vehicle fields for debugging
         if (mainCategory === 'vehicles') {
-          const vehicleFieldsInFinal = Object.keys(listingData).filter(key => ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType'].includes(key));
-          console.log(`  Final vehicle fields: [${vehicleFieldsInFinal.join(', ')}]`);
+          console.log("\n📊 FINAL LISTING DATA FOR DATABASE:");
+          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry', 'engineSize'];
+          vehicleFields.forEach(field => {
+            if (listingData.hasOwnProperty(field)) {
+              console.log(`  ✅ ${field}: '${listingData[field]}' (${typeof listingData[field]})`);
+            } else {
+              console.log(`  ❌ ${field}: NOT IN LISTING DATA`);
+            }
+          });
+          console.log(`  Total listing data keys: ${Object.keys(listingData).length}`);
         }
 
         // Create the listing in database
