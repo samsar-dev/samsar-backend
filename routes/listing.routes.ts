@@ -448,13 +448,27 @@ export default async function (fastify: FastifyInstance) {
         addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
         addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
         addIfNotEmpty(listingData, 'year', requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
-        addIfNotEmpty(listingData, 'fuelType', requestBody.fuelType || vehicleDetails.fuelType);
-        addIfNotEmpty(listingData, 'transmission', requestBody.transmission || requestBody.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType);
+        
+        // Handle enum fields with uppercase conversion
+        const fuelType = requestBody.fuelType || vehicleDetails.fuelType;
+        if (fuelType) {
+          addIfNotEmpty(listingData, 'fuelType', fuelType.toUpperCase());
+        }
+        
+        const transmission = requestBody.transmission || requestBody.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
+        if (transmission) {
+          addIfNotEmpty(listingData, 'transmission', transmission.toUpperCase());
+        }
+        
         addIfNotEmpty(listingData, 'bodyType', requestBody.bodyType || vehicleDetails.bodyType);
         addIfNotEmpty(listingData, 'engineSize', requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
         addIfNotEmpty(listingData, 'mileage', requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
         addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || requestBody.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
-        addIfNotEmpty(listingData, 'sellerType', requestBody.sellerType || vehicleDetails.sellerType);
+        
+        const sellerType = requestBody.sellerType || vehicleDetails.sellerType;
+        if (sellerType) {
+          addIfNotEmpty(listingData, 'sellerType', sellerType.toUpperCase());
+        }
         
         // Handle condition mapping
         const condition = requestBody.condition || vehicleDetails.condition;
@@ -466,7 +480,7 @@ export default async function (fastify: FastifyInstance) {
         const accidental = requestBody.accidental || vehicleDetails.accidental;
         if (accidental !== undefined && accidental !== null && accidental !== '') {
           const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
-          addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'no' : 'yes');
+          addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
         }
 
         console.log('🚗 FINAL VEHICLE FIELDS TO SAVE:', {
