@@ -16,6 +16,33 @@ export interface ListingCreateRequest extends FastifyRequest {
     longitude?: number | string;
     listingAction?: string;
     details?: string | any;
+    // Vehicle fields
+    make?: string;
+    model?: string;
+    year?: string | number;
+    condition?: string;
+    sellerType?: string;
+    fuelType?: string;
+    transmission?: string;
+    transmissionType?: string;
+    bodyType?: string;
+    engineSize?: string | number;
+    mileage?: string | number;
+    exteriorColor?: string;
+    color?: string;
+    accidental?: string | boolean;
+    horsepower?: string | number;
+    registrationExpiry?: string;
+    // Real estate fields
+    bedrooms?: string | number;
+    bathrooms?: string | number;
+    totalArea?: string | number;
+    yearBuilt?: string | number;
+    furnishing?: string;
+    floor?: string | number;
+    totalFloors?: string | number;
+    parking?: string;
+    [key: string]: any; // Allow additional fields
   };
   validatedData?: any;
   processedImages?: Array<{ url: string; order: number }>;
@@ -35,6 +62,33 @@ export interface ListingUpdateRequest extends FastifyRequest {
     listingAction?: string;
     details?: string | any;
     existingImages?: string[] | string;
+    // Vehicle fields
+    make?: string;
+    model?: string;
+    year?: string | number;
+    condition?: string;
+    sellerType?: string;
+    fuelType?: string;
+    transmission?: string;
+    transmissionType?: string;
+    bodyType?: string;
+    engineSize?: string | number;
+    mileage?: string | number;
+    exteriorColor?: string;
+    color?: string;
+    accidental?: string | boolean;
+    horsepower?: string | number;
+    registrationExpiry?: string;
+    // Real estate fields
+    bedrooms?: string | number;
+    bathrooms?: string | number;
+    totalArea?: string | number;
+    yearBuilt?: string | number;
+    furnishing?: string;
+    floor?: string | number;
+    totalFloors?: string | number;
+    parking?: string;
+    [key: string]: any; // Allow additional fields
   };
   validatedData?: any;
   processedImages?: Array<{ url: string; order: number }>;
@@ -64,8 +118,37 @@ export async function validateListingCreate(
     }
     
     // Normalize the data
+    const normalizedData = ListingDataNormalizer.normalizeBaseData(body);
+    
+    // Extract and pass through vehicle/real estate fields from multipart form data
+    const vehicleFields = [
+      'make', 'model', 'year', 'condition', 'sellerType', 'fuelType', 
+      'transmission', 'transmissionType', 'bodyType', 'engineSize', 
+      'mileage', 'exteriorColor', 'color', 'accidental', 'horsepower', 
+      'registrationExpiry'
+    ];
+    
+    const realEstateFields = [
+      'bedrooms', 'bathrooms', 'totalArea', 'yearBuilt', 'furnishing', 
+      'floor', 'totalFloors', 'parking'
+    ];
+    
+    // Add vehicle fields to normalized data if they exist in the request body
+    vehicleFields.forEach(field => {
+      if (body[field] !== undefined && body[field] !== null && body[field] !== '') {
+        normalizedData[field] = body[field];
+      }
+    });
+    
+    // Add real estate fields to normalized data if they exist in the request body
+    realEstateFields.forEach(field => {
+      if (body[field] !== undefined && body[field] !== null && body[field] !== '') {
+        normalizedData[field] = body[field];
+      }
+    });
+    
     // Attach validated data to request for use in route handler
-    req.validatedData = ListingDataNormalizer.normalizeBaseData(body);
+    req.validatedData = normalizedData;
     
   } catch (error) {
     console.error("Validation middleware error:", error);

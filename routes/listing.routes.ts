@@ -393,22 +393,21 @@ export default async function (fastify: FastifyInstance) {
         // Get processed image URLs
         const imageUrls = req.processedImages?.map((img) => img.url) || [];
 
-        // Extract vehicle fields from request body (Flutter sends these as separate form fields)
-        const requestBody = req.body as any;
+        // Extract vehicle fields from validated data (includes both form fields and details)
         const vehicleDetails = details?.vehicles || {};
         
         console.log('🚗 EXTRACTING VEHICLE FIELDS FROM REQUEST:');
         console.log('  Direct fields from Flutter:', {
-          make: requestBody.make,
-          model: requestBody.model,
-          year: requestBody.year,
-          fuelType: requestBody.fuelType,
-          transmission: requestBody.transmission,
-          bodyType: requestBody.bodyType,
-          engineSize: requestBody.engineSize,
-          mileage: requestBody.mileage,
-          color: requestBody.color || requestBody.exteriorColor,
-          sellerType: requestBody.sellerType,
+          make: validatedData.make,
+          model: validatedData.model,
+          year: validatedData.year,
+          fuelType: validatedData.fuelType,
+          transmission: validatedData.transmission,
+          bodyType: validatedData.bodyType,
+          engineSize: validatedData.engineSize,
+          mileage: validatedData.mileage,
+          color: validatedData.color || validatedData.exteriorColor,
+          sellerType: validatedData.sellerType,
         });
         console.log('  Nested details.vehicles:', vehicleDetails);
 
@@ -447,39 +446,39 @@ export default async function (fastify: FastifyInstance) {
         // Add category-specific fields based on mainCategory
         if (mainCategory === 'vehicles') {
           // Vehicle-specific fields only
-          addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
-          addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
-          addIfNotEmpty(listingData, 'year', requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
+          addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
+          addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
+          addIfNotEmpty(listingData, 'year', validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
           
           // Handle enum fields with uppercase conversion
-          const fuelType = requestBody.fuelType || vehicleDetails.fuelType;
+          const fuelType = validatedData.fuelType || vehicleDetails.fuelType;
           if (fuelType) {
             addIfNotEmpty(listingData, 'fuelType', fuelType.toUpperCase());
           }
           
-          const transmission = requestBody.transmission || requestBody.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
+          const transmission = validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
           if (transmission) {
             addIfNotEmpty(listingData, 'transmission', transmission.toUpperCase());
           }
           
-          addIfNotEmpty(listingData, 'bodyType', requestBody.bodyType || vehicleDetails.bodyType);
-          addIfNotEmpty(listingData, 'engineSize', requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
-          addIfNotEmpty(listingData, 'mileage', requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
-          addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || requestBody.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
+          addIfNotEmpty(listingData, 'bodyType', validatedData.bodyType || vehicleDetails.bodyType);
+          addIfNotEmpty(listingData, 'engineSize', validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
+          addIfNotEmpty(listingData, 'mileage', validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
+          addIfNotEmpty(listingData, 'exteriorColor', validatedData.color || validatedData.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
           
-          const sellerType = requestBody.sellerType || vehicleDetails.sellerType;
+          const sellerType = validatedData.sellerType || vehicleDetails.sellerType;
           if (sellerType) {
             addIfNotEmpty(listingData, 'sellerType', sellerType.toUpperCase());
           }
           
           // Handle condition mapping
-          const condition = requestBody.condition || vehicleDetails.condition;
+          const condition = validatedData.condition || vehicleDetails.condition;
           if (condition) {
             addIfNotEmpty(listingData, 'condition', condition.toUpperCase());
           }
           
           // Handle accidental status mapping
-          const accidental = requestBody.accidental || vehicleDetails.accidental;
+          const accidental = validatedData.accidental || vehicleDetails.accidental;
           if (accidental !== undefined && accidental !== null && accidental !== '') {
             const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
             addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
@@ -488,14 +487,14 @@ export default async function (fastify: FastifyInstance) {
           // Real estate-specific fields only
           const realEstateDetails = details?.realEstate || {};
           
-          addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
-          addIfNotEmpty(listingData, 'bathrooms', requestBody.bathrooms ? parseInt(requestBody.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
-          addIfNotEmpty(listingData, 'totalArea', requestBody.totalArea ? parseFloat(requestBody.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
-          addIfNotEmpty(listingData, 'yearBuilt', requestBody.yearBuilt ? parseInt(requestBody.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
-          addIfNotEmpty(listingData, 'furnishing', requestBody.furnishing || realEstateDetails.furnishing);
-          addIfNotEmpty(listingData, 'floor', requestBody.floor ? parseInt(requestBody.floor) : (realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null));
-          addIfNotEmpty(listingData, 'totalFloors', requestBody.totalFloors ? parseInt(requestBody.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
-          addIfNotEmpty(listingData, 'parking', requestBody.parking || realEstateDetails.parking);
+          addIfNotEmpty(listingData, 'bedrooms', validatedData.bedrooms ? parseInt(validatedData.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
+          addIfNotEmpty(listingData, 'bathrooms', validatedData.bathrooms ? parseInt(validatedData.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
+          addIfNotEmpty(listingData, 'totalArea', validatedData.totalArea ? parseFloat(validatedData.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
+          addIfNotEmpty(listingData, 'yearBuilt', validatedData.yearBuilt ? parseInt(validatedData.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
+          addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
+          addIfNotEmpty(listingData, 'floor', validatedData.floor ? parseInt(validatedData.floor) : (realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null));
+          addIfNotEmpty(listingData, 'totalFloors', validatedData.totalFloors ? parseInt(validatedData.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
+          addIfNotEmpty(listingData, 'parking', validatedData.parking || realEstateDetails.parking);
         }
 
         console.log('🚗 FINAL VEHICLE FIELDS TO SAVE:', {
