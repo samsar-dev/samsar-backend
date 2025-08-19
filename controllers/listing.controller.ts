@@ -313,7 +313,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     // Start transaction
     const result = await prismaClient.$transaction(async (tx) => {
-      // Extract individual fields from details
+      // Extract individual fields from request body (Flutter sends them as separate fields)
+      const requestBody = req.body as any;
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
@@ -355,21 +356,36 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         },
       };
 
-      // Only add vehicle fields if it's a vehicle listing and has valid values
+      // Handle vehicle fields - check both direct form fields and nested details
       if (mainCategory.toUpperCase() === 'VEHICLES') {
-        addIfNotEmpty(listingData, 'make', vehicleDetails.make);
-        addIfNotEmpty(listingData, 'model', vehicleDetails.model);
-        addIfNotEmpty(listingData, 'year', vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
-        addIfNotEmpty(listingData, 'fuelType', vehicleDetails.fuelType);
-        addIfNotEmpty(listingData, 'transmission', vehicleDetails.transmission);
-        addIfNotEmpty(listingData, 'bodyType', vehicleDetails.bodyType);
-        addIfNotEmpty(listingData, 'engineSize', vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
-        addIfNotEmpty(listingData, 'mileage', vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
-        addIfNotEmpty(listingData, 'exteriorColor', vehicleDetails.exteriorColor);
-        addIfNotEmpty(listingData, 'interiorColor', vehicleDetails.interiorColor);
-        addIfNotEmpty(listingData, 'doors', vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null);
-        addIfNotEmpty(listingData, 'seatingCapacity', vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null);
-        addIfNotEmpty(listingData, 'horsepower', vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
+        // Priority: direct form fields (from Flutter) > nested details
+        addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
+        addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
+        addIfNotEmpty(listingData, 'year', requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
+        addIfNotEmpty(listingData, 'fuelType', requestBody.fuelType || vehicleDetails.fuelType);
+        addIfNotEmpty(listingData, 'transmission', requestBody.transmissionType || vehicleDetails.transmission);
+        addIfNotEmpty(listingData, 'bodyType', requestBody.bodyType || vehicleDetails.bodyType);
+        addIfNotEmpty(listingData, 'engineSize', requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
+        addIfNotEmpty(listingData, 'mileage', requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
+        addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || vehicleDetails.exteriorColor);
+        addIfNotEmpty(listingData, 'interiorColor', requestBody.interiorColor || vehicleDetails.interiorColor);
+        addIfNotEmpty(listingData, 'doors', requestBody.doors ? parseInt(requestBody.doors) : (vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null));
+        addIfNotEmpty(listingData, 'seatingCapacity', requestBody.seatingCapacity ? parseInt(requestBody.seatingCapacity) : (vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null));
+        addIfNotEmpty(listingData, 'horsepower', requestBody.horsepower ? parseInt(requestBody.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null));
+        
+        // Handle sellerType field
+        addIfNotEmpty(listingData, 'sellerType', requestBody.sellerType);
+        
+        console.log("🔧 Vehicle fields extracted:");
+        console.log("Make:", requestBody.make || vehicleDetails.make);
+        console.log("Model:", requestBody.model || vehicleDetails.model);
+        console.log("Year:", requestBody.year || vehicleDetails.year);
+        console.log("Fuel Type:", requestBody.fuelType || vehicleDetails.fuelType);
+        console.log("Transmission:", requestBody.transmissionType || vehicleDetails.transmission);
+        console.log("Body Type:", requestBody.bodyType || vehicleDetails.bodyType);
+        console.log("Engine Size:", requestBody.engineSize || vehicleDetails.engineSize);
+        console.log("Color:", requestBody.color || vehicleDetails.exteriorColor);
+        console.log("Seller Type:", requestBody.sellerType);
       }
 
       // Only add real estate fields if it's a real estate listing and has valid values
@@ -856,6 +872,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     // Parse details and extract individual fields
     const parsedDetails = details ? (typeof details === "string" ? JSON.parse(details) : details) : {};
+    const requestBody = req.body as any;
     const vehicleDetails = parsedDetails?.vehicles || {};
     const realEstateDetails = parsedDetails?.realEstate || {};
 
@@ -873,20 +890,21 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
         longitude:
           typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
-        // Vehicle fields as individual columns
-        make: vehicleDetails.make || null,
-        model: vehicleDetails.model || null,
-        year: vehicleDetails.year ? parseInt(vehicleDetails.year) : null,
-        fuelType: vehicleDetails.fuelType || null,
-        transmission: vehicleDetails.transmission || null,
-        bodyType: vehicleDetails.bodyType || null,
-        engineSize: vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null,
-        mileage: vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null,
-        exteriorColor: vehicleDetails.exteriorColor || null,
-        interiorColor: vehicleDetails.interiorColor || null,
-        doors: vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null,
-        seatingCapacity: vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null,
-        horsepower: vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null,
+        // Vehicle fields as individual columns - check both direct form fields and nested details
+        make: requestBody.make || vehicleDetails.make || null,
+        model: requestBody.model || vehicleDetails.model || null,
+        year: requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null),
+        fuelType: requestBody.fuelType || vehicleDetails.fuelType || null,
+        transmission: requestBody.transmissionType || vehicleDetails.transmission || null,
+        bodyType: requestBody.bodyType || vehicleDetails.bodyType || null,
+        engineSize: requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null),
+        mileage: requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null),
+        exteriorColor: requestBody.color || vehicleDetails.exteriorColor || null,
+        interiorColor: requestBody.interiorColor || vehicleDetails.interiorColor || null,
+        doors: requestBody.doors ? parseInt(requestBody.doors) : (vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null),
+        seatingCapacity: requestBody.seatingCapacity ? parseInt(requestBody.seatingCapacity) : (vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null),
+        horsepower: requestBody.horsepower ? parseInt(requestBody.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null),
+        sellerType: requestBody.sellerType || null,
         // Real estate fields as individual columns
         bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
         bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
