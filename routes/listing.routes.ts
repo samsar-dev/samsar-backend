@@ -363,6 +363,7 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+        console.log("🎯 ROUTE HANDLER STARTED");
         const req = request as ListingCreateRequest;
         const user = req.user;
         
@@ -372,6 +373,7 @@ export default async function (fastify: FastifyInstance) {
         
         // Use validated and normalized data
         const validatedData = req.validatedData;
+        console.log("🎯 ROUTE HANDLER - validatedData exists:", !!validatedData);
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
@@ -445,9 +447,20 @@ export default async function (fastify: FastifyInstance) {
 
         // Add category-specific fields based on mainCategory
         if (mainCategory === 'vehicles') {
-          console.log("\n🚗 PROCESSING VEHICLE FIELDS...");
-          console.log("DEBUG - validatedData:", JSON.stringify(validatedData, null, 2));
-          console.log("DEBUG - vehicleDetails:", JSON.stringify(vehicleDetails, null, 2));
+          console.log("🚗 VEHICLE PROCESSING START");
+          console.log("validatedData vehicle fields:", {
+            make: validatedData.make,
+            model: validatedData.model,
+            year: validatedData.year,
+            mileage: validatedData.mileage,
+            fuelType: validatedData.fuelType,
+            transmission: validatedData.transmission,
+            bodyType: validatedData.bodyType,
+            exteriorColor: validatedData.exteriorColor,
+            horsepower: validatedData.horsepower,
+            registrationExpiry: validatedData.registrationExpiry,
+            accidental: validatedData.accidental
+          });
           
           // Vehicle-specific fields only
           console.log("Processing make:", validatedData.make, "||", vehicleDetails.make);
