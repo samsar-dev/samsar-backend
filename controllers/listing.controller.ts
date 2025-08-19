@@ -318,9 +318,9 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
-      // Helper function to only include non-empty values
+      // Helper function to only include non-empty values (allow 0 and false as valid values)
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
-        if (value !== null && value !== undefined && value !== "" && value !== 0) {
+        if (value !== null && value !== undefined && value !== "") {
           obj[key] = value;
         }
       };
@@ -397,7 +397,27 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
         }
         
-        console.log("🔧 Vehicle fields extracted for vehicles category");
+        // Additional vehicle fields from validation middleware
+        addIfNotEmpty(listingData, 'doors', requestBody.doors ? parseInt(requestBody.doors) : (vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null));
+        addIfNotEmpty(listingData, 'seatingCapacity', requestBody.seatingCapacity ? parseInt(requestBody.seatingCapacity) : (vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null));
+        addIfNotEmpty(listingData, 'horsepower', requestBody.horsepower ? parseInt(requestBody.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null));
+        addIfNotEmpty(listingData, 'interiorColor', requestBody.interiorColor || vehicleDetails.interiorColor);
+        addIfNotEmpty(listingData, 'registrationExpiry', requestBody.registrationExpiry || vehicleDetails.registrationExpiry);
+        
+        console.log("🔧 Vehicle fields extracted for vehicles category:", {
+          make: listingData.make,
+          model: listingData.model,
+          year: listingData.year,
+          fuelType: listingData.fuelType,
+          transmission: listingData.transmission,
+          bodyType: listingData.bodyType,
+          engineSize: listingData.engineSize,
+          mileage: listingData.mileage,
+          exteriorColor: listingData.exteriorColor,
+          doors: listingData.doors,
+          seatingCapacity: listingData.seatingCapacity,
+          horsepower: listingData.horsepower
+        });
       } else if (mainCategory.toLowerCase() === 'real_estate') {
         // Real estate-specific fields only
         addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
