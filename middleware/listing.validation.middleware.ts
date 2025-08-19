@@ -103,18 +103,7 @@ export async function validateListingCreate(
     const req = request as any;
     const body = req.body as any;
 
-    console.log("\n🔍 === VALIDATION MIDDLEWARE START ===");
-    console.log("📥 RAW REQUEST ANALYSIS:");
-    console.log("  Request method:", request.method);
-    console.log("  Request URL:", request.url);
-    console.log("  Content-Type:", request.headers['content-type']);
-    console.log("  Request body type:", typeof body);
-    console.log("  Request body keys:", Object.keys(body || {}));
-    
-    if (request.isMultipart && request.isMultipart()) {
-      console.log("  📎 Multipart request detected");
-      console.log("  📎 Files:", (request as any).files);
-    }
+    console.log("\n🔍 VALIDATION START - Vehicle listing");
 
     if (!body) {
       return ResponseHelpers.badRequest(reply, "Request body is required");

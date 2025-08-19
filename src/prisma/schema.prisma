@@ -132,6 +132,7 @@ model Listing {
   seatingCapacity   Int?
   horsepower        Int?
   accidental        String?
+  registrationExpiry String?
   // Real estate specific fields
   bedrooms          Int?
   bathrooms         Int?

@@ -445,34 +445,33 @@ export default async function (fastify: FastifyInstance) {
 
         // Add category-specific fields based on mainCategory
         if (mainCategory === 'vehicles') {
-          console.log("\n🚗 PROCESSING VEHICLE FIELDS:");
-          console.log("  ValidatedData keys:", Object.keys(validatedData || {}));
-          console.log("  ValidatedData vehicle values:", {
-            make: validatedData.make,
-            model: validatedData.model,
-            year: validatedData.year,
-            mileage: validatedData.mileage,
-            fuelType: validatedData.fuelType,
-            transmission: validatedData.transmission,
-            bodyType: validatedData.bodyType,
-            exteriorColor: validatedData.exteriorColor,
-            sellerType: validatedData.sellerType,
-            condition: validatedData.condition,
-            accidental: validatedData.accidental,
-            horsepower: validatedData.horsepower,
-            registrationExpiry: validatedData.registrationExpiry
-          });
+          console.log("\n🚗 PROCESSING VEHICLE FIELDS...");
+          console.log("DEBUG - validatedData:", JSON.stringify(validatedData, null, 2));
+          console.log("DEBUG - vehicleDetails:", JSON.stringify(vehicleDetails, null, 2));
           
           // Vehicle-specific fields only
+          console.log("Processing make:", validatedData.make, "||", vehicleDetails.make);
           addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
+          console.log("After make - listingData.make:", listingData.make);
+          
+          console.log("Processing model:", validatedData.model, "||", vehicleDetails.model);
           addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
-          addIfNotEmpty(listingData, 'year', validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
+          console.log("After model - listingData.model:", listingData.model);
+          
+          const yearValue = validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
+          console.log("Processing year:", validatedData.year, "->", yearValue);
+          addIfNotEmpty(listingData, 'year', yearValue);
+          console.log("After year - listingData.year:", listingData.year);
+          
           addIfNotEmpty(listingData, 'bodyType', validatedData.bodyType || vehicleDetails.bodyType);
-          addIfNotEmpty(listingData, 'mileage', validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
+          const mileageValue = validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
+          addIfNotEmpty(listingData, 'mileage', mileageValue);
           addIfNotEmpty(listingData, 'exteriorColor', validatedData.exteriorColor || validatedData.color || vehicleDetails.exteriorColor || vehicleDetails.color);
-          addIfNotEmpty(listingData, 'horsepower', validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null));
+          const horsepowerValue = validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
+          addIfNotEmpty(listingData, 'horsepower', horsepowerValue);
           addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
-          addIfNotEmpty(listingData, 'engineSize', validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
+          const engineSizeValue = validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
+          addIfNotEmpty(listingData, 'engineSize', engineSizeValue);
           
           // Handle enum fields with uppercase conversion
           if (validatedData.fuelType || vehicleDetails.fuelType) {
@@ -515,16 +514,12 @@ export default async function (fastify: FastifyInstance) {
 
         // Log final vehicle fields for debugging
         if (mainCategory === 'vehicles') {
-          console.log("\n📊 FINAL LISTING DATA FOR DATABASE:");
-          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry', 'engineSize'];
+          console.log("\n📊 FINAL LISTING DATA BEFORE DB INSERT:");
+          console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
+          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry'];
           vehicleFields.forEach(field => {
-            if (listingData.hasOwnProperty(field)) {
-              console.log(`  ✅ ${field}: '${listingData[field]}' (${typeof listingData[field]})`);
-            } else {
-              console.log(`  ❌ ${field}: NOT IN LISTING DATA`);
-            }
+            console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
           });
-          console.log(`  Total listing data keys: ${Object.keys(listingData).length}`);
         }
 
         // Create the listing in database
