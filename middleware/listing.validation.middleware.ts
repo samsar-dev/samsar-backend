@@ -98,27 +98,49 @@ export interface ListingUpdateRequest extends FastifyRequest {
 export async function validateListingCreate(
   request: FastifyRequest,
   reply: FastifyReply
-): Promise<void> {
+) {
   try {
-    const req = request as ListingCreateRequest;
-    const body = req.body;
+    const req = request as any;
+    const body = req.body as any;
+
+    console.log("\n🔍 === VALIDATION MIDDLEWARE START ===");
+    console.log("📥 RAW REQUEST ANALYSIS:");
+    console.log("  Request method:", request.method);
+    console.log("  Request URL:", request.url);
+    console.log("  Content-Type:", request.headers['content-type']);
+    console.log("  Request body type:", typeof body);
+    console.log("  Request body keys:", Object.keys(body || {}));
+    console.log("  Request body:", body);
+    
+    if (request.isMultipart && request.isMultipart()) {
+      console.log("  📎 Multipart request detected");
+      console.log("  📎 Files:", (request as any).files);
+    }
 
     if (!body) {
       return ResponseHelpers.badRequest(reply, "Request body is required");
     }
 
     // Parse details if it's a string
+    console.log("\n📋 PARSING DETAILS:");
+    console.log("  Details type:", typeof body.details);
+    console.log("  Raw details:", body.details);
+    
     let parsedDetails;
     try {
       parsedDetails = typeof body.details === 'string' 
         ? JSON.parse(body.details) 
         : body.details;
+      console.log("  ✅ Parsed details successfully:", parsedDetails);
     } catch (error) {
+      console.log("  ❌ Failed to parse details:", error);
       return ResponseHelpers.badRequest(reply, "Invalid details format. Must be valid JSON.");
     }
     
     // Normalize the data
+    console.log("\n🔄 NORMALIZING BASE DATA:");
     const normalizedData = ListingDataNormalizer.normalizeBaseData(body);
+    console.log("  Base normalized data:", normalizedData);
     
     // Extract and pass through vehicle/real estate fields from multipart form data
     const vehicleFields = [
@@ -133,12 +155,54 @@ export async function validateListingCreate(
       'floor', 'totalFloors', 'parking'
     ];
     
+    console.log("\n🚗 VEHICLE FIELDS EXTRACTION:");
+    console.log("  Available vehicle fields to check:", vehicleFields);
+    console.log("  Body keys that might match:", Object.keys(body).filter(key => vehicleFields.includes(key)));
+    
     // Add vehicle fields to normalized data if they exist in the request body
+    console.log("\n🔍 DETAILED VEHICLE FIELD ANALYSIS:");
+    let foundVehicleFields = 0;
     vehicleFields.forEach(field => {
-      if (body[field] !== undefined && body[field] !== null && body[field] !== '') {
-        normalizedData[field] = body[field];
+      const value = body[field];
+      const valueType = typeof value;
+      const isEmpty = value === undefined || value === null || value === '';
+      
+      console.log(`  📝 ${field}:`);
+      console.log(`    Value: '${value}'`);
+      console.log(`    Type: ${valueType}`);
+      console.log(`    Is empty: ${isEmpty}`);
+      
+      if (!isEmpty) {
+        normalizedData[field] = value;
+        foundVehicleFields++;
+        console.log(`    ✅ ADDED to normalized data`);
+      } else {
+        console.log(`    ❌ SKIPPED (empty/null/undefined)`);
       }
     });
+    
+    console.log(`\n📊 VEHICLE FIELDS SUMMARY:`);
+    console.log(`  Total vehicle fields checked: ${vehicleFields.length}`);
+    console.log(`  Vehicle fields found and added: ${foundVehicleFields}`);
+    console.log(`  Missing vehicle fields: ${vehicleFields.length - foundVehicleFields}`);
+    
+    console.log("\n📦 FINAL NORMALIZED DATA ANALYSIS:");
+    console.log(`  Total normalized data keys: ${Object.keys(normalizedData).length}`);
+    console.log(`  Normalized data keys: [${Object.keys(normalizedData).join(', ')}]`);
+    console.log(`  Full normalized data:`, normalizedData);
+    
+    // Check specifically for vehicle fields in normalized data
+    const vehicleFieldsInNormalized = vehicleFields.filter(field => normalizedData.hasOwnProperty(field));
+    console.log(`  Vehicle fields in normalized data: [${vehicleFieldsInNormalized.join(', ')}]`);
+    
+    if (vehicleFieldsInNormalized.length > 0) {
+      console.log(`  ✅ Vehicle field values in normalized data:`);
+      vehicleFieldsInNormalized.forEach(field => {
+        console.log(`    ${field}: '${normalizedData[field]}'`);
+      });
+    } else {
+      console.log(`  ❌ NO vehicle fields found in normalized data!`);
+    }
     
     // Add real estate fields to normalized data if they exist in the request body
     realEstateFields.forEach(field => {
@@ -150,8 +214,13 @@ export async function validateListingCreate(
     // Attach validated data to request for use in route handler
     req.validatedData = normalizedData;
     
+    console.log("\n🎯 VALIDATION MIDDLEWARE COMPLETE:");
+    console.log(`  req.validatedData attached with ${Object.keys(normalizedData).length} fields`);
+    console.log(`  Vehicle fields passed to route handler: [${vehicleFieldsInNormalized.join(', ')}]`);
+    console.log("🔍 === VALIDATION MIDDLEWARE END ===\n");
+    
   } catch (error) {
-    console.error("Validation middleware error:", error);
+    console.error("❌ Validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);
   }
 }
