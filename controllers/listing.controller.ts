@@ -45,6 +45,29 @@ interface ListingResponse {
   status: string;
   listingAction?: string;
   sellerType?: string;
+  // Vehicle fields
+  make?: string;
+  model?: string;
+  year?: number;
+  fuelType?: string;
+  transmission?: string;
+  bodyType?: string;
+  engineSize?: number;
+  mileage?: number;
+  exteriorColor?: string;
+  interiorColor?: string;
+  doors?: number;
+  seatingCapacity?: number;
+  horsepower?: number;
+  // Real estate fields
+  bedrooms?: number;
+  bathrooms?: number;
+  totalArea?: number;
+  yearBuilt?: number;
+  furnishing?: string;
+  floor?: number;
+  totalFloors?: number;
+  parking?: string;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -141,6 +164,29 @@ const formatListingResponse = (
     status: listing.status,
     listingAction: listing.listingAction || undefined,
     sellerType: listing.sellerType || undefined,
+    // Vehicle fields
+    make: listing.make || undefined,
+    model: listing.model || undefined,
+    year: listing.year || undefined,
+    fuelType: listing.fuelType || undefined,
+    transmission: listing.transmission || undefined,
+    bodyType: listing.bodyType || undefined,
+    engineSize: listing.engineSize || undefined,
+    mileage: listing.mileage || undefined,
+    exteriorColor: listing.exteriorColor || undefined,
+    interiorColor: listing.interiorColor || undefined,
+    doors: listing.doors || undefined,
+    seatingCapacity: listing.seatingCapacity || undefined,
+    horsepower: listing.horsepower || undefined,
+    // Real estate fields
+    bedrooms: listing.bedrooms || undefined,
+    bathrooms: listing.bathrooms || undefined,
+    totalArea: listing.totalArea || undefined,
+    yearBuilt: listing.yearBuilt || undefined,
+    furnishing: listing.furnishing || undefined,
+    floor: listing.floor || undefined,
+    totalFloors: listing.totalFloors || undefined,
+    parking: listing.parking || undefined,
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
     userId: listing.userId,
@@ -267,7 +313,11 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     // Start transaction
     const result = await prismaClient.$transaction(async (tx) => {
-      // Create listing data
+      // Extract individual fields from details
+      const vehicleDetails = parsedDetails?.vehicles || {};
+      const realEstateDetails = parsedDetails?.realEstate || {};
+      
+      // Create listing data with individual columns
       const listingData: Prisma.ListingCreateInput = {
         title,
         description,
@@ -283,7 +333,30 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
-        details: parsedDetails, // Store the parsed details in the database
+        // Vehicle fields as individual columns
+        make: vehicleDetails.make || null,
+        model: vehicleDetails.model || null,
+        year: vehicleDetails.year ? parseInt(vehicleDetails.year) : null,
+        fuelType: vehicleDetails.fuelType || null,
+        transmission: vehicleDetails.transmission || null,
+        bodyType: vehicleDetails.bodyType || null,
+        engineSize: vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null,
+        mileage: vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null,
+        exteriorColor: vehicleDetails.exteriorColor || null,
+        interiorColor: vehicleDetails.interiorColor || null,
+        doors: vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null,
+        seatingCapacity: vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null,
+        horsepower: vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null,
+        // Real estate fields as individual columns
+        bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
+        bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
+        totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
+        yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
+        furnishing: realEstateDetails.furnishing || null,
+        floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
+        totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
+        parking: realEstateDetails.parking || null,
+        details: parsedDetails, // Keep full details for backward compatibility
         user: {
           connect: {
             id: userId,
@@ -768,6 +841,11 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     // Check if price has changed and is a valid number
     const isPriceChanged = !isNaN(newPrice) && oldListing.price !== newPrice;
 
+    // Parse details and extract individual fields
+    const parsedDetails = details ? (typeof details === "string" ? JSON.parse(details) : details) : {};
+    const vehicleDetails = parsedDetails?.vehicles || {};
+    const realEstateDetails = parsedDetails?.realEstate || {};
+
     const listing = await prisma.listing.update({
       where: { id },
       data: {
@@ -782,7 +860,30 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
         longitude:
           typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
-        details: details ? (typeof details === "string" ? JSON.parse(details) : details) : undefined,
+        // Vehicle fields as individual columns
+        make: vehicleDetails.make || null,
+        model: vehicleDetails.model || null,
+        year: vehicleDetails.year ? parseInt(vehicleDetails.year) : null,
+        fuelType: vehicleDetails.fuelType || null,
+        transmission: vehicleDetails.transmission || null,
+        bodyType: vehicleDetails.bodyType || null,
+        engineSize: vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null,
+        mileage: vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null,
+        exteriorColor: vehicleDetails.exteriorColor || null,
+        interiorColor: vehicleDetails.interiorColor || null,
+        doors: vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null,
+        seatingCapacity: vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null,
+        horsepower: vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null,
+        // Real estate fields as individual columns
+        bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
+        bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
+        totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
+        yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
+        furnishing: realEstateDetails.furnishing || null,
+        floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
+        totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
+        parking: realEstateDetails.parking || null,
+        details: parsedDetails, // Keep full details for backward compatibility
         attributes: attributes
           ? {
               deleteMany: {},
