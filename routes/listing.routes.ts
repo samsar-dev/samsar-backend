@@ -464,8 +464,8 @@ export default async function (fastify: FastifyInstance) {
         
         // Handle accidental status mapping
         const accidental = requestBody.accidental || vehicleDetails.accidental;
-        if (accidental !== undefined) {
-          const isAccidentFree = accidental === 'no' || accidental === false || accidental === 'false';
+        if (accidental !== undefined && accidental !== null && accidental !== '') {
+          const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
           addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'no' : 'yes');
         }
 
