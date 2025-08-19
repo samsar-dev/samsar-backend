@@ -444,43 +444,58 @@ export default async function (fastify: FastifyInstance) {
           details,
         });
 
-        // Add vehicle fields (prioritize direct form fields from Flutter over nested details)
-        addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
-        addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
-        addIfNotEmpty(listingData, 'year', requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
-        
-        // Handle enum fields with uppercase conversion
-        const fuelType = requestBody.fuelType || vehicleDetails.fuelType;
-        if (fuelType) {
-          addIfNotEmpty(listingData, 'fuelType', fuelType.toUpperCase());
-        }
-        
-        const transmission = requestBody.transmission || requestBody.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
-        if (transmission) {
-          addIfNotEmpty(listingData, 'transmission', transmission.toUpperCase());
-        }
-        
-        addIfNotEmpty(listingData, 'bodyType', requestBody.bodyType || vehicleDetails.bodyType);
-        addIfNotEmpty(listingData, 'engineSize', requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
-        addIfNotEmpty(listingData, 'mileage', requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
-        addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || requestBody.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
-        
-        const sellerType = requestBody.sellerType || vehicleDetails.sellerType;
-        if (sellerType) {
-          addIfNotEmpty(listingData, 'sellerType', sellerType.toUpperCase());
-        }
-        
-        // Handle condition mapping
-        const condition = requestBody.condition || vehicleDetails.condition;
-        if (condition) {
-          addIfNotEmpty(listingData, 'condition', condition.toUpperCase());
-        }
-        
-        // Handle accidental status mapping
-        const accidental = requestBody.accidental || vehicleDetails.accidental;
-        if (accidental !== undefined && accidental !== null && accidental !== '') {
-          const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
-          addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
+        // Add category-specific fields based on mainCategory
+        if (mainCategory === 'vehicles') {
+          // Vehicle-specific fields only
+          addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
+          addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
+          addIfNotEmpty(listingData, 'year', requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
+          
+          // Handle enum fields with uppercase conversion
+          const fuelType = requestBody.fuelType || vehicleDetails.fuelType;
+          if (fuelType) {
+            addIfNotEmpty(listingData, 'fuelType', fuelType.toUpperCase());
+          }
+          
+          const transmission = requestBody.transmission || requestBody.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
+          if (transmission) {
+            addIfNotEmpty(listingData, 'transmission', transmission.toUpperCase());
+          }
+          
+          addIfNotEmpty(listingData, 'bodyType', requestBody.bodyType || vehicleDetails.bodyType);
+          addIfNotEmpty(listingData, 'engineSize', requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
+          addIfNotEmpty(listingData, 'mileage', requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
+          addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || requestBody.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
+          
+          const sellerType = requestBody.sellerType || vehicleDetails.sellerType;
+          if (sellerType) {
+            addIfNotEmpty(listingData, 'sellerType', sellerType.toUpperCase());
+          }
+          
+          // Handle condition mapping
+          const condition = requestBody.condition || vehicleDetails.condition;
+          if (condition) {
+            addIfNotEmpty(listingData, 'condition', condition.toUpperCase());
+          }
+          
+          // Handle accidental status mapping
+          const accidental = requestBody.accidental || vehicleDetails.accidental;
+          if (accidental !== undefined && accidental !== null && accidental !== '') {
+            const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
+            addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
+          }
+        } else if (mainCategory === 'real_estate') {
+          // Real estate-specific fields only
+          const realEstateDetails = details?.realEstate || {};
+          
+          addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
+          addIfNotEmpty(listingData, 'bathrooms', requestBody.bathrooms ? parseInt(requestBody.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
+          addIfNotEmpty(listingData, 'totalArea', requestBody.totalArea ? parseFloat(requestBody.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
+          addIfNotEmpty(listingData, 'yearBuilt', requestBody.yearBuilt ? parseInt(requestBody.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
+          addIfNotEmpty(listingData, 'furnishing', requestBody.furnishing || realEstateDetails.furnishing);
+          addIfNotEmpty(listingData, 'floor', requestBody.floor ? parseInt(requestBody.floor) : (realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null));
+          addIfNotEmpty(listingData, 'totalFloors', requestBody.totalFloors ? parseInt(requestBody.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
+          addIfNotEmpty(listingData, 'parking', requestBody.parking || realEstateDetails.parking);
         }
 
         console.log('🚗 FINAL VEHICLE FIELDS TO SAVE:', {
