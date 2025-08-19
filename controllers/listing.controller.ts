@@ -44,6 +44,7 @@ interface ListingResponse {
   condition?: string;
   status: string;
   listingAction?: string;
+  sellerType?: string;
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -139,6 +140,7 @@ const formatListingResponse = (
     condition: listing.condition || undefined,
     status: listing.status,
     listingAction: listing.listingAction || undefined,
+    sellerType: listing.sellerType || undefined,
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
     userId: listing.userId,
