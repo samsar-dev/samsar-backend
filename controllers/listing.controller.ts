@@ -142,7 +142,6 @@ type ListingCreateBody = {
   condition?: string;
   details?: any;
   listingAction?: ListingAction;
-  sellerType?: string;
   attributes?: Array<{ name: string; value: string }>;
   features?: Array<{ name: string; value: boolean }>;
 };
@@ -281,7 +280,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       condition,
       details,
       listingAction,
-      sellerType,
       attributes,
       features,
     } = req.body as ListingCreateBody;
@@ -321,11 +319,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       
       // Helper function to only include non-empty values
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
-        if (typeof value === "string" && value.trim() !== "") {
-          obj[key] = value;
-        } else if (typeof value === "number" && value > 0) {
-          obj[key] = value;
-        } else if (value === true || value === false) {
+        if (value !== null && value !== undefined && value !== "" && value !== 0) {
           obj[key] = value;
         }
       };
@@ -343,6 +337,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           typeof latitude === "string" ? parseFloat(latitude) : latitude,
         longitude:
           typeof longitude === "string" ? parseFloat(longitude) : longitude,
+        condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
         details: parsedDetails, // Keep full details for backward compatibility
@@ -360,36 +355,32 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         },
       };
 
-      // Add optional root-level fields if they have a value
-      addIfNotEmpty(listingData, 'condition', condition);
-      addIfNotEmpty(listingData, 'sellerType', sellerType);
-
       // Only add vehicle fields if it's a vehicle listing and has valid values
       if (mainCategory.toUpperCase() === 'VEHICLES') {
         addIfNotEmpty(listingData, 'make', vehicleDetails.make);
         addIfNotEmpty(listingData, 'model', vehicleDetails.model);
-        if (vehicleDetails.year) addIfNotEmpty(listingData, 'year', parseInt(vehicleDetails.year));
+        addIfNotEmpty(listingData, 'year', vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
         addIfNotEmpty(listingData, 'fuelType', vehicleDetails.fuelType);
         addIfNotEmpty(listingData, 'transmission', vehicleDetails.transmission);
         addIfNotEmpty(listingData, 'bodyType', vehicleDetails.bodyType);
-        if (vehicleDetails.engineSize) addIfNotEmpty(listingData, 'engineSize', parseFloat(vehicleDetails.engineSize));
-        if (vehicleDetails.mileage) addIfNotEmpty(listingData, 'mileage', parseInt(vehicleDetails.mileage));
+        addIfNotEmpty(listingData, 'engineSize', vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
+        addIfNotEmpty(listingData, 'mileage', vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
         addIfNotEmpty(listingData, 'exteriorColor', vehicleDetails.exteriorColor);
         addIfNotEmpty(listingData, 'interiorColor', vehicleDetails.interiorColor);
-        if (vehicleDetails.doors) addIfNotEmpty(listingData, 'doors', parseInt(vehicleDetails.doors));
-        if (vehicleDetails.seatingCapacity) addIfNotEmpty(listingData, 'seatingCapacity', parseInt(vehicleDetails.seatingCapacity));
-        if (vehicleDetails.horsepower) addIfNotEmpty(listingData, 'horsepower', parseInt(vehicleDetails.horsepower));
+        addIfNotEmpty(listingData, 'doors', vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null);
+        addIfNotEmpty(listingData, 'seatingCapacity', vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null);
+        addIfNotEmpty(listingData, 'horsepower', vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
       }
 
       // Only add real estate fields if it's a real estate listing and has valid values
       if (mainCategory.toUpperCase() === 'REAL_ESTATE') {
-        if (realEstateDetails.bedrooms) addIfNotEmpty(listingData, 'bedrooms', parseInt(realEstateDetails.bedrooms));
-        if (realEstateDetails.bathrooms) addIfNotEmpty(listingData, 'bathrooms', parseInt(realEstateDetails.bathrooms));
-        if (realEstateDetails.totalArea) addIfNotEmpty(listingData, 'totalArea', parseFloat(realEstateDetails.totalArea));
-        if (realEstateDetails.yearBuilt) addIfNotEmpty(listingData, 'yearBuilt', parseInt(realEstateDetails.yearBuilt));
+        addIfNotEmpty(listingData, 'bedrooms', realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null);
+        addIfNotEmpty(listingData, 'bathrooms', realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null);
+        addIfNotEmpty(listingData, 'totalArea', realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null);
+        addIfNotEmpty(listingData, 'yearBuilt', realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null);
         addIfNotEmpty(listingData, 'furnishing', realEstateDetails.furnishing);
-        if (realEstateDetails.floor) addIfNotEmpty(listingData, 'floor', parseInt(realEstateDetails.floor));
-        if (realEstateDetails.totalFloors) addIfNotEmpty(listingData, 'totalFloors', parseInt(realEstateDetails.totalFloors));
+        addIfNotEmpty(listingData, 'floor', realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null);
+        addIfNotEmpty(listingData, 'totalFloors', realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null);
         addIfNotEmpty(listingData, 'parking', realEstateDetails.parking);
       }
 
@@ -728,7 +719,6 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       attributes,
       details,
       features,
-      sellerType,
     } = req.body as {
       title: string;
       description: string;
@@ -739,7 +729,6 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       latitude: number | string;
       longitude: number | string;
       condition?: string;
-      sellerType?: string;
       existingImages?: string[] | string;
       attributes?: Array<{ name: string; value: string }>;
       details?: any;
@@ -870,65 +859,44 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     const vehicleDetails = parsedDetails?.vehicles || {};
     const realEstateDetails = parsedDetails?.realEstate || {};
 
-    // Helper function to only include non-empty values
-    const addIfNotEmpty = (obj: any, key: string, value: any) => {
-      if (typeof value === "string" && value.trim() !== "") {
-        obj[key] = value;
-      } else if (typeof value === "number" && !isNaN(value)) {
-        obj[key] = value;
-      } else if (typeof value === "boolean") {
-        obj[key] = value;
-      }
-    };
-
-    const updateData: Prisma.ListingUpdateInput = {
-      title,
-      description,
-      price: newPrice,
-      mainCategory,
-      subCategory,
-      location,
-      latitude: typeof latitude === "string" ? parseFloat(latitude) : latitude,
-      longitude: typeof longitude === "string" ? parseFloat(longitude) : longitude,
-      details: parsedDetails, // Keep full details for backward compatibility
-    };
-
-    addIfNotEmpty(updateData, 'condition', condition);
-    addIfNotEmpty(updateData, 'sellerType', sellerType);
-
-    // Only add vehicle fields if it's a vehicle listing and has valid values
-    if (mainCategory.toUpperCase() === 'VEHICLES') {
-      addIfNotEmpty(updateData, 'make', vehicleDetails.make);
-      addIfNotEmpty(updateData, 'model', vehicleDetails.model);
-      if (vehicleDetails.year) addIfNotEmpty(updateData, 'year', parseInt(vehicleDetails.year));
-      addIfNotEmpty(updateData, 'fuelType', vehicleDetails.fuelType);
-      addIfNotEmpty(updateData, 'transmission', vehicleDetails.transmission);
-      addIfNotEmpty(updateData, 'bodyType', vehicleDetails.bodyType);
-      if (vehicleDetails.engineSize) addIfNotEmpty(updateData, 'engineSize', parseFloat(vehicleDetails.engineSize));
-      if (vehicleDetails.mileage) addIfNotEmpty(updateData, 'mileage', parseInt(vehicleDetails.mileage));
-      addIfNotEmpty(updateData, 'exteriorColor', vehicleDetails.exteriorColor);
-      addIfNotEmpty(updateData, 'interiorColor', vehicleDetails.interiorColor);
-      if (vehicleDetails.doors) addIfNotEmpty(updateData, 'doors', parseInt(vehicleDetails.doors));
-      if (vehicleDetails.seatingCapacity) addIfNotEmpty(updateData, 'seatingCapacity', parseInt(vehicleDetails.seatingCapacity));
-      if (vehicleDetails.horsepower) addIfNotEmpty(updateData, 'horsepower', parseInt(vehicleDetails.horsepower));
-    }
-
-    // Only add real estate fields if it's a real estate listing and has valid values
-    if (mainCategory.toUpperCase() === 'REAL_ESTATE') {
-      if (realEstateDetails.bedrooms) addIfNotEmpty(updateData, 'bedrooms', parseInt(realEstateDetails.bedrooms));
-      if (realEstateDetails.bathrooms) addIfNotEmpty(updateData, 'bathrooms', parseInt(realEstateDetails.bathrooms));
-      if (realEstateDetails.totalArea) addIfNotEmpty(updateData, 'totalArea', parseFloat(realEstateDetails.totalArea));
-      if (realEstateDetails.yearBuilt) addIfNotEmpty(updateData, 'yearBuilt', parseInt(realEstateDetails.yearBuilt));
-      addIfNotEmpty(updateData, 'furnishing', realEstateDetails.furnishing);
-      if (realEstateDetails.floor) addIfNotEmpty(updateData, 'floor', parseInt(realEstateDetails.floor));
-      if (realEstateDetails.totalFloors) addIfNotEmpty(updateData, 'totalFloors', parseInt(realEstateDetails.totalFloors));
-      addIfNotEmpty(updateData, 'parking', realEstateDetails.parking);
-    }
-
     const listing = await prisma.listing.update({
       where: { id },
       data: {
-        ...updateData,
+        title,
+        description,
+        price: newPrice,
+        mainCategory,
+        subCategory,
+        location,
+        latitude:
+          typeof latitude === "string" ? parseFloat(latitude) : latitude,
+        longitude:
+          typeof longitude === "string" ? parseFloat(longitude) : longitude,
+        condition,
+        // Vehicle fields as individual columns
+        make: vehicleDetails.make || null,
+        model: vehicleDetails.model || null,
+        year: vehicleDetails.year ? parseInt(vehicleDetails.year) : null,
+        fuelType: vehicleDetails.fuelType || null,
+        transmission: vehicleDetails.transmission || null,
+        bodyType: vehicleDetails.bodyType || null,
+        engineSize: vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null,
+        mileage: vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null,
+        exteriorColor: vehicleDetails.exteriorColor || null,
+        interiorColor: vehicleDetails.interiorColor || null,
+        doors: vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null,
+        seatingCapacity: vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null,
+        horsepower: vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null,
+        // Real estate fields as individual columns
+        bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
+        bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
+        totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
+        yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
+        furnishing: realEstateDetails.furnishing || null,
+        floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
+        totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
+        parking: realEstateDetails.parking || null,
+        details: parsedDetails, // Keep full details for backward compatibility
         attributes: attributes
           ? {
               deleteMany: {},
