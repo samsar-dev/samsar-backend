@@ -402,11 +402,14 @@ export default async function (fastify: FastifyInstance) {
         // Helper function to add non-empty values
         const addIfNotEmpty = (obj: any, key: string, value: any) => {
           if (value !== undefined && value !== null && value !== '') {
-            if (typeof value === 'string' && value.trim() !== '') {
-              obj[key] = value.trim();
+            if (typeof value === 'string') {
+              const trimmed = value.trim();
+              if (trimmed !== '') {
+                obj[key] = trimmed;
+              }
             } else if (typeof value === 'number' && !isNaN(value)) {
               obj[key] = value;
-            } else if (typeof value !== 'string') {
+            } else if (value !== null && value !== undefined) {
               obj[key] = value;
             }
           }
