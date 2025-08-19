@@ -356,48 +356,60 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         },
       };
 
-      // Handle vehicle fields - check both direct form fields and nested details
-      if (mainCategory.toUpperCase() === 'VEHICLES') {
-        // Priority: direct form fields (from Flutter) > nested details
+      // Handle category-specific fields based on mainCategory
+      if (mainCategory.toLowerCase() === 'vehicles') {
+        // Vehicle-specific fields only
         addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
         addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
         addIfNotEmpty(listingData, 'year', requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
-        addIfNotEmpty(listingData, 'fuelType', requestBody.fuelType || vehicleDetails.fuelType);
-        addIfNotEmpty(listingData, 'transmission', requestBody.transmissionType || vehicleDetails.transmission);
+        
+        // Handle enum fields with uppercase conversion
+        const fuelType = requestBody.fuelType || vehicleDetails.fuelType;
+        if (fuelType) {
+          addIfNotEmpty(listingData, 'fuelType', fuelType.toUpperCase());
+        }
+        
+        const transmission = requestBody.transmission || requestBody.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
+        if (transmission) {
+          addIfNotEmpty(listingData, 'transmission', transmission.toUpperCase());
+        }
+        
         addIfNotEmpty(listingData, 'bodyType', requestBody.bodyType || vehicleDetails.bodyType);
         addIfNotEmpty(listingData, 'engineSize', requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
         addIfNotEmpty(listingData, 'mileage', requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
-        addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || vehicleDetails.exteriorColor);
-        addIfNotEmpty(listingData, 'interiorColor', requestBody.interiorColor || vehicleDetails.interiorColor);
-        addIfNotEmpty(listingData, 'doors', requestBody.doors ? parseInt(requestBody.doors) : (vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null));
-        addIfNotEmpty(listingData, 'seatingCapacity', requestBody.seatingCapacity ? parseInt(requestBody.seatingCapacity) : (vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null));
-        addIfNotEmpty(listingData, 'horsepower', requestBody.horsepower ? parseInt(requestBody.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null));
+        addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || requestBody.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
         
-        // Handle sellerType field
-        addIfNotEmpty(listingData, 'sellerType', requestBody.sellerType);
+        const sellerType = requestBody.sellerType || vehicleDetails.sellerType;
+        if (sellerType) {
+          addIfNotEmpty(listingData, 'sellerType', sellerType.toUpperCase());
+        }
         
-        console.log("🔧 Vehicle fields extracted:");
-        console.log("Make:", requestBody.make || vehicleDetails.make);
-        console.log("Model:", requestBody.model || vehicleDetails.model);
-        console.log("Year:", requestBody.year || vehicleDetails.year);
-        console.log("Fuel Type:", requestBody.fuelType || vehicleDetails.fuelType);
-        console.log("Transmission:", requestBody.transmissionType || vehicleDetails.transmission);
-        console.log("Body Type:", requestBody.bodyType || vehicleDetails.bodyType);
-        console.log("Engine Size:", requestBody.engineSize || vehicleDetails.engineSize);
-        console.log("Color:", requestBody.color || vehicleDetails.exteriorColor);
-        console.log("Seller Type:", requestBody.sellerType);
-      }
-
-      // Only add real estate fields if it's a real estate listing and has valid values
-      if (mainCategory.toUpperCase() === 'REAL_ESTATE') {
-        addIfNotEmpty(listingData, 'bedrooms', realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null);
-        addIfNotEmpty(listingData, 'bathrooms', realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null);
-        addIfNotEmpty(listingData, 'totalArea', realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null);
-        addIfNotEmpty(listingData, 'yearBuilt', realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null);
-        addIfNotEmpty(listingData, 'furnishing', realEstateDetails.furnishing);
-        addIfNotEmpty(listingData, 'floor', realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null);
-        addIfNotEmpty(listingData, 'totalFloors', realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null);
-        addIfNotEmpty(listingData, 'parking', realEstateDetails.parking);
+        // Handle condition mapping
+        const condition = requestBody.condition || vehicleDetails.condition;
+        if (condition) {
+          addIfNotEmpty(listingData, 'condition', condition.toUpperCase());
+        }
+        
+        // Handle accidental status mapping
+        const accidental = requestBody.accidental || vehicleDetails.accidental;
+        if (accidental !== undefined && accidental !== null && accidental !== '') {
+          const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
+          addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
+        }
+        
+        console.log("🔧 Vehicle fields extracted for vehicles category");
+      } else if (mainCategory.toLowerCase() === 'real_estate') {
+        // Real estate-specific fields only
+        addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
+        addIfNotEmpty(listingData, 'bathrooms', requestBody.bathrooms ? parseInt(requestBody.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
+        addIfNotEmpty(listingData, 'totalArea', requestBody.totalArea ? parseFloat(requestBody.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
+        addIfNotEmpty(listingData, 'yearBuilt', requestBody.yearBuilt ? parseInt(requestBody.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
+        addIfNotEmpty(listingData, 'furnishing', requestBody.furnishing || realEstateDetails.furnishing);
+        addIfNotEmpty(listingData, 'floor', requestBody.floor ? parseInt(requestBody.floor) : (realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null));
+        addIfNotEmpty(listingData, 'totalFloors', requestBody.totalFloors ? parseInt(requestBody.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
+        addIfNotEmpty(listingData, 'parking', requestBody.parking || realEstateDetails.parking);
+        
+        console.log("🔧 Real estate fields extracted for real_estate category");
       }
 
       // Create listing
@@ -890,30 +902,32 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
         longitude:
           typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
-        // Vehicle fields as individual columns - check both direct form fields and nested details
-        make: requestBody.make || vehicleDetails.make || null,
-        model: requestBody.model || vehicleDetails.model || null,
-        year: requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null),
-        fuelType: requestBody.fuelType || vehicleDetails.fuelType || null,
-        transmission: requestBody.transmissionType || vehicleDetails.transmission || null,
-        bodyType: requestBody.bodyType || vehicleDetails.bodyType || null,
-        engineSize: requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null),
-        mileage: requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null),
-        exteriorColor: requestBody.color || vehicleDetails.exteriorColor || null,
-        interiorColor: requestBody.interiorColor || vehicleDetails.interiorColor || null,
-        doors: requestBody.doors ? parseInt(requestBody.doors) : (vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null),
-        seatingCapacity: requestBody.seatingCapacity ? parseInt(requestBody.seatingCapacity) : (vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null),
-        horsepower: requestBody.horsepower ? parseInt(requestBody.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null),
-        sellerType: requestBody.sellerType || null,
-        // Real estate fields as individual columns
-        bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
-        bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
-        totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
-        yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
-        furnishing: realEstateDetails.furnishing || null,
-        floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
-        totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
-        parking: realEstateDetails.parking || null,
+        // Category-specific fields based on mainCategory
+        ...(mainCategory.toLowerCase() === 'vehicles' ? {
+          // Vehicle fields only for vehicle listings
+          make: requestBody.make || vehicleDetails.make || null,
+          model: requestBody.model || vehicleDetails.model || null,
+          year: requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null),
+          fuelType: requestBody.fuelType || vehicleDetails.fuelType || null,
+          transmission: requestBody.transmissionType || vehicleDetails.transmission || null,
+          bodyType: requestBody.bodyType || vehicleDetails.bodyType || null,
+          engineSize: requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null),
+          mileage: requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null),
+          exteriorColor: requestBody.color || vehicleDetails.exteriorColor || null,
+          sellerType: requestBody.sellerType || null,
+          accidental: requestBody.accidental || vehicleDetails.accidental || null,
+        } : {}),
+        ...(mainCategory.toLowerCase() === 'real_estate' ? {
+          // Real estate fields only for real estate listings
+          bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
+          bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
+          totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
+          yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
+          furnishing: realEstateDetails.furnishing || null,
+          floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
+          totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
+          parking: realEstateDetails.parking || null,
+        } : {}),
         details: parsedDetails, // Keep full details for backward compatibility
         attributes: attributes
           ? {
