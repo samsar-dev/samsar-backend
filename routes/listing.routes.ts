@@ -380,6 +380,38 @@ export default async function (fastify: FastifyInstance) {
         // Get processed image URLs
         const imageUrls = req.processedImages?.map((img) => img.url) || [];
 
+        // Extract vehicle fields from request body (Flutter sends these as separate form fields)
+        const requestBody = req.body as any;
+        const vehicleDetails = details?.vehicles || {};
+        
+        console.log('🚗 EXTRACTING VEHICLE FIELDS FROM REQUEST:');
+        console.log('  Direct fields from Flutter:', {
+          make: requestBody.make,
+          model: requestBody.model,
+          year: requestBody.year,
+          fuelType: requestBody.fuelType,
+          transmission: requestBody.transmission,
+          bodyType: requestBody.bodyType,
+          engineSize: requestBody.engineSize,
+          mileage: requestBody.mileage,
+          color: requestBody.color || requestBody.exteriorColor,
+          sellerType: requestBody.sellerType,
+        });
+        console.log('  Nested details.vehicles:', vehicleDetails);
+
+        // Helper function to add non-empty values
+        const addIfNotEmpty = (obj: any, key: string, value: any) => {
+          if (value !== undefined && value !== null && value !== '') {
+            if (typeof value === 'string' && value.trim() !== '') {
+              obj[key] = value.trim();
+            } else if (typeof value === 'number' && !isNaN(value)) {
+              obj[key] = value;
+            } else if (typeof value !== 'string') {
+              obj[key] = value;
+            }
+          }
+        };
+
         // Prepare data for database insertion - only include defined values
         const listingData = createSafeDbData({
           title,
@@ -394,6 +426,46 @@ export default async function (fastify: FastifyInstance) {
           userId: user.id,
           listingAction,
           details,
+        });
+
+        // Add vehicle fields (prioritize direct form fields from Flutter over nested details)
+        addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
+        addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
+        addIfNotEmpty(listingData, 'year', requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
+        addIfNotEmpty(listingData, 'fuelType', requestBody.fuelType || vehicleDetails.fuelType);
+        addIfNotEmpty(listingData, 'transmission', requestBody.transmission || requestBody.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType);
+        addIfNotEmpty(listingData, 'bodyType', requestBody.bodyType || vehicleDetails.bodyType);
+        addIfNotEmpty(listingData, 'engineSize', requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
+        addIfNotEmpty(listingData, 'mileage', requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
+        addIfNotEmpty(listingData, 'exteriorColor', requestBody.color || requestBody.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
+        addIfNotEmpty(listingData, 'sellerType', requestBody.sellerType || vehicleDetails.sellerType);
+        
+        // Handle condition mapping
+        const condition = requestBody.condition || vehicleDetails.condition;
+        if (condition) {
+          addIfNotEmpty(listingData, 'condition', condition.toUpperCase());
+        }
+        
+        // Handle accidental status mapping
+        const accidental = requestBody.accidental || vehicleDetails.accidental;
+        if (accidental !== undefined) {
+          const isAccidentFree = accidental === 'no' || accidental === false || accidental === 'false';
+          addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'no' : 'yes');
+        }
+
+        console.log('🚗 FINAL VEHICLE FIELDS TO SAVE:', {
+          make: listingData.make,
+          model: listingData.model,
+          year: listingData.year,
+          fuelType: listingData.fuelType,
+          transmission: listingData.transmission,
+          bodyType: listingData.bodyType,
+          engineSize: listingData.engineSize,
+          mileage: listingData.mileage,
+          exteriorColor: listingData.exteriorColor,
+          sellerType: listingData.sellerType,
+          condition: listingData.condition,
+          accidental: listingData.accidental,
         });
 
         // Prepare images data
