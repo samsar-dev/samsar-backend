@@ -428,8 +428,8 @@ export default async function (fastify: FastifyInstance) {
           }
         };
 
-        // Prepare data for database insertion - only include defined values
-        const listingData = createSafeDbData({
+        // Prepare data for database insertion - only include basic fields
+        const listingData: any = {
           title,
           description,
           price,
@@ -442,7 +442,7 @@ export default async function (fastify: FastifyInstance) {
           userId: user.id,
           listingAction,
           details,
-        });
+        };
 
         // Add category-specific fields based on mainCategory
         if (mainCategory === 'vehicles') {
