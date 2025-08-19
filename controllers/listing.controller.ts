@@ -281,6 +281,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
+        details: parsedDetails, // Store the parsed details in the database
         user: {
           connect: {
             id: userId,
@@ -779,6 +780,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
         longitude:
           typeof longitude === "string" ? parseFloat(longitude) : longitude,
         condition,
+        details: details ? (typeof details === "string" ? JSON.parse(details) : details) : undefined,
         attributes: attributes
           ? {
               deleteMany: {},
