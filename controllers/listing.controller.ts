@@ -320,8 +320,12 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       
       // Helper function to only include non-empty values (allow 0 and false as valid values)
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
+        console.log(`  🔧 addIfNotEmpty(${key}):`, { value, type: typeof value, willAdd: value !== null && value !== undefined && value !== "" });
         if (value !== null && value !== undefined && value !== "") {
           obj[key] = value;
+          console.log(`    ✅ Added ${key}:`, value);
+        } else {
+          console.log(`    ❌ Skipped ${key}:`, value);
         }
       };
       
@@ -338,7 +342,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           typeof latitude === "string" ? parseFloat(latitude) : latitude,
         longitude:
           typeof longitude === "string" ? parseFloat(longitude) : longitude,
-        condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
         details: parsedDetails, // Keep full details for backward compatibility
@@ -357,7 +360,16 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       };
 
       // Handle category-specific fields based on mainCategory
+      console.log("🔍 Category check:", { mainCategory, lowercase: mainCategory.toLowerCase() });
+      
       if (mainCategory.toLowerCase() === 'vehicles') {
+        console.log("🚗 PROCESSING VEHICLE FIELDS:");
+        console.log("  requestBody.make:", requestBody.make);
+        console.log("  requestBody.model:", requestBody.model);
+        console.log("  requestBody.year:", requestBody.year);
+        console.log("  requestBody.fuelType:", requestBody.fuelType);
+        console.log("  requestBody.transmission:", requestBody.transmission);
+        
         // Vehicle-specific fields only
         addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
         addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
