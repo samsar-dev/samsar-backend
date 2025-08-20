@@ -22,6 +22,6 @@
     "typeRoots": ["./node_modules/@types"],
     "moduleDetection": "force"
   },
-  "include": ["src/**/*", "server.ts", "types/*.d.ts"],
+  "include": ["src/**/*", "server.ts", "types/*.d.ts", "schemas/villaSchema.ts", "schemas/storeSchema.ts", "validators/store.ts", "validators/villa.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

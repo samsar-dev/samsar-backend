@@ -364,11 +364,22 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       
       if (mainCategory.toLowerCase() === 'vehicles') {
         console.log("🚗 PROCESSING VEHICLE FIELDS:");
-        console.log("  requestBody.make:", requestBody.make);
-        console.log("  requestBody.model:", requestBody.model);
-        console.log("  requestBody.year:", requestBody.year);
-        console.log("  requestBody.fuelType:", requestBody.fuelType);
-        console.log("  requestBody.transmission:", requestBody.transmission);
+        console.log("  🔍 RAW REQUEST BODY VEHICLE FIELDS:");
+        console.log("    requestBody.make:", requestBody.make);
+        console.log("    requestBody.model:", requestBody.model);
+        console.log("    requestBody.year:", requestBody.year);
+        console.log("    requestBody.fuelType:", requestBody.fuelType);
+        console.log("    requestBody.transmission:", requestBody.transmission);
+        console.log("    requestBody.bodyType:", requestBody.bodyType);
+        console.log("    requestBody.exteriorColor:", requestBody.exteriorColor);
+        console.log("    requestBody.interiorColor:", requestBody.interiorColor);
+        console.log("    requestBody.engineSize:", requestBody.engineSize);
+        console.log("    requestBody.mileage:", requestBody.mileage);
+        console.log("    requestBody.doors:", requestBody.doors);
+        console.log("    requestBody.seatingCapacity:", requestBody.seatingCapacity);
+        console.log("    requestBody.horsepower:", requestBody.horsepower);
+        console.log("  🔍 NESTED VEHICLE DETAILS:");
+        console.log("    vehicleDetails:", JSON.stringify(vehicleDetails, null, 2));
         
         // Vehicle-specific fields only
         addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
@@ -416,7 +427,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         addIfNotEmpty(listingData, 'interiorColor', requestBody.interiorColor || vehicleDetails.interiorColor);
         addIfNotEmpty(listingData, 'registrationExpiry', requestBody.registrationExpiry || vehicleDetails.registrationExpiry);
         
-        console.log("🔧 Vehicle fields extracted for vehicles category:", {
+        console.log("\n🔧 FINAL VEHICLE FIELDS EXTRACTED:");
+        console.log("  Fields that will be saved to database:", {
           make: listingData.make,
           model: listingData.model,
           year: listingData.year,
@@ -444,22 +456,59 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         console.log("🔧 Real estate fields extracted for real_estate category");
       }
 
-      // Create listing
-      const listing = await tx.listing.create({
+      // Log final listing data before database insertion
+      console.log("\n📝 FINAL LISTING DATA TO BE SAVED:");
+      console.log("  Vehicle fields in listingData:", {
+        make: listingData.make,
+        model: listingData.model,
+        year: listingData.year,
+        fuelType: listingData.fuelType,
+        transmission: listingData.transmission,
+        bodyType: listingData.bodyType,
+        exteriorColor: listingData.exteriorColor,
+        interiorColor: listingData.interiorColor,
+        engineSize: listingData.engineSize,
+        mileage: listingData.mileage,
+        doors: listingData.doors,
+        seatingCapacity: listingData.seatingCapacity,
+        horsepower: listingData.horsepower,
+      });
+
+      // Create the listing
+      const listing = await prismaClient.listing.create({
         data: listingData,
         include: {
+          images: true,
           user: {
             select: {
               id: true,
               username: true,
+              name: true,
               profilePicture: true,
             },
           },
-          images: true,
           favorites: true,
           attributes: true,
           features: true,
         },
+      });
+
+      // Log what was actually saved to verify database persistence
+      console.log("\n✅ LISTING CREATED SUCCESSFULLY:");
+      console.log("  Saved vehicle fields:", {
+        make: listing.make,
+        model: listing.model,
+        year: listing.year,
+        fuelType: listing.fuelType,
+        transmission: listing.transmission,
+        bodyType: listing.bodyType,
+        exteriorColor: listing.exteriorColor,
+        interiorColor: listing.interiorColor,
+        engineSize: listing.engineSize,
+        mileage: listing.mileage,
+        doors: listing.doors,
+        seatingCapacity: listing.seatingCapacity,
+        horsepower: listing.horsepower,
       });
 
       // Create notification
