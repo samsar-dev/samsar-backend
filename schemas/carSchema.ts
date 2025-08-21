@@ -2,6 +2,7 @@
 export const carEssentialFields = [
   "color",
   "exteriorColor", // Flutter field
+  "interiorColor",
   "condition",
   "transmissionType",
   "mileage",

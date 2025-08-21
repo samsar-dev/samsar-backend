@@ -7,6 +7,7 @@ import {
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
+import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
  
 
@@ -54,6 +55,7 @@ interface ListingResponse {
   engineSize?: number;
   mileage?: number;
   exteriorColor?: string;
+  interiorColor?: string;
   doors?: number;
   seatingCapacity?: number;
   horsepower?: number;
@@ -172,6 +174,7 @@ const formatListingResponse = (
     engineSize: listing.engineSize || undefined,
     mileage: listing.mileage || undefined,
     exteriorColor: listing.exteriorColor || undefined,
+    interiorColor: listing.interiorColor || undefined,
     doors: listing.doors || undefined,
     seatingCapacity: listing.seatingCapacity || undefined,
     horsepower: listing.horsepower || undefined,
@@ -315,14 +318,10 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
-      // Helper function to only include non-empty values (allow 0 and false as valid values)
+      // Helper function to only include non-empty values
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
-        console.log(`  🔧 addIfNotEmpty(${key}):`, { value, type: typeof value, willAdd: value !== null && value !== undefined && value !== "" });
-        if (value !== null && value !== undefined && value !== "") {
+        if (value !== null && value !== undefined && value !== "" && value !== 0) {
           obj[key] = value;
-          console.log(`    ✅ Added ${key}:`, value);
-        } else {
-          console.log(`    ❌ Skipped ${key}:`, value);
         }
       };
       
@@ -339,6 +338,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           typeof latitude === "string" ? parseFloat(latitude) : latitude,
         longitude:
           typeof longitude === "string" ? parseFloat(longitude) : longitude,
+        condition,
         status: ListingStatus.ACTIVE,
         listingAction: listingAction || ListingAction.SALE,
         details: parsedDetails, // Keep full details for backward compatibility
@@ -357,26 +357,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       };
 
       // Handle category-specific fields based on mainCategory
-      console.log("🔍 Category check:", { mainCategory, lowercase: mainCategory.toLowerCase() });
-      
       if (mainCategory.toLowerCase() === 'vehicles') {
-        console.log("🚗 PROCESSING VEHICLE FIELDS:");
-        console.log("  🔍 RAW REQUEST BODY VEHICLE FIELDS:");
-        console.log("    requestBody.make:", requestBody.make);
-        console.log("    requestBody.model:", requestBody.model);
-        console.log("    requestBody.year:", requestBody.year);
-        console.log("    requestBody.fuelType:", requestBody.fuelType);
-        console.log("    requestBody.transmission:", requestBody.transmission);
-        console.log("    requestBody.bodyType:", requestBody.bodyType);
-        console.log("    requestBody.exteriorColor:", requestBody.exteriorColor);
-        console.log("    requestBody.engineSize:", requestBody.engineSize);
-        console.log("    requestBody.mileage:", requestBody.mileage);
-        console.log("    requestBody.doors:", requestBody.doors);
-        console.log("    requestBody.seatingCapacity:", requestBody.seatingCapacity);
-        console.log("    requestBody.horsepower:", requestBody.horsepower);
-        console.log("  🔍 NESTED VEHICLE DETAILS:");
-        console.log("    vehicleDetails:", JSON.stringify(vehicleDetails, null, 2));
-        
         // Vehicle-specific fields only
         addIfNotEmpty(listingData, 'make', requestBody.make || vehicleDetails.make);
         addIfNotEmpty(listingData, 'model', requestBody.model || vehicleDetails.model);
@@ -416,27 +397,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
         }
         
-        // Additional vehicle fields from validation middleware
-        addIfNotEmpty(listingData, 'doors', requestBody.doors ? parseInt(requestBody.doors) : (vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null));
-        addIfNotEmpty(listingData, 'seatingCapacity', requestBody.seatingCapacity ? parseInt(requestBody.seatingCapacity) : (vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null));
-        addIfNotEmpty(listingData, 'horsepower', requestBody.horsepower ? parseInt(requestBody.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null));
-        addIfNotEmpty(listingData, 'registrationExpiry', requestBody.registrationExpiry || vehicleDetails.registrationExpiry);
-        
-        console.log("\n🔧 FINAL VEHICLE FIELDS EXTRACTED:");
-        console.log("  Fields that will be saved to database:", {
-          make: listingData.make,
-          model: listingData.model,
-          year: listingData.year,
-          fuelType: listingData.fuelType,
-          transmission: listingData.transmission,
-          bodyType: listingData.bodyType,
-          engineSize: listingData.engineSize,
-          mileage: listingData.mileage,
-          exteriorColor: listingData.exteriorColor,
-          doors: listingData.doors,
-          seatingCapacity: listingData.seatingCapacity,
-          horsepower: listingData.horsepower
-        });
+        console.log("🔧 Vehicle fields extracted for vehicles category");
       } else if (mainCategory.toLowerCase() === 'real_estate') {
         // Real estate-specific fields only
         addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
@@ -451,57 +412,22 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         console.log("🔧 Real estate fields extracted for real_estate category");
       }
 
-      // Log final listing data before database insertion
-      console.log("\n📝 FINAL LISTING DATA TO BE SAVED:");
-      console.log("  Vehicle fields in listingData:", {
-        make: listingData.make,
-        model: listingData.model,
-        year: listingData.year,
-        fuelType: listingData.fuelType,
-        transmission: listingData.transmission,
-        bodyType: listingData.bodyType,
-        exteriorColor: listingData.exteriorColor,
-        engineSize: listingData.engineSize,
-        mileage: listingData.mileage,
-        doors: listingData.doors,
-        seatingCapacity: listingData.seatingCapacity,
-        horsepower: listingData.horsepower,
-      });
-
-      // Create the listing
-      const listing = await prismaClient.listing.create({
+      // Create listing
+      const listing = await tx.listing.create({
         data: listingData,
         include: {
-          images: true,
           user: {
             select: {
               id: true,
               username: true,
-              name: true,
               profilePicture: true,
             },
           },
+          images: true,
           favorites: true,
           attributes: true,
           features: true,
         },
-      });
-
-      // Log what was actually saved to verify database persistence
-      console.log("\n✅ LISTING CREATED SUCCESSFULLY:");
-      console.log("  Saved vehicle fields:", {
-        make: listing.make,
-        model: listing.model,
-        year: listing.year,
-        fuelType: listing.fuelType,
-        transmission: listing.transmission,
-        bodyType: listing.bodyType,
-        exteriorColor: listing.exteriorColor,
-        engineSize: listing.engineSize,
-        mileage: listing.mileage,
-        doors: listing.doors,
-        seatingCapacity: listing.seatingCapacity,
-        horsepower: listing.horsepower,
       });
 
       // Create notification

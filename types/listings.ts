@@ -277,6 +277,7 @@ export interface BaseVehicleDetails {
   images: string[];
   insuranceType?: string;
   color: string;
+  interiorColor: string;
   condition: Condition;
   transmissionType: string;
   transmission?: string;

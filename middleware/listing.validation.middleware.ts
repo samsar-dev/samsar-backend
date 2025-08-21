@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { ListingValidator, ListingDataNormalizer } from "../validators/consolidated.validators.js";
+import { ListingValidator, ListingDataNormalizer } from "../validators/listing.validation.js";
 import { ListingCategory } from "../types/enums.js";
 import { ErrorHandler, ValidationError, ResponseHelpers } from "../utils/error.handler.js";
 
@@ -98,12 +98,10 @@ export interface ListingUpdateRequest extends FastifyRequest {
 export async function validateListingCreate(
   request: FastifyRequest,
   reply: FastifyReply
-) {
+): Promise<void> {
   try {
-    const req = request as any;
-    const body = req.body as any;
-
-    console.log("\n🔍 VALIDATION START - Vehicle listing");
+    const req = request as ListingCreateRequest;
+    const body = req.body;
 
     if (!body) {
       return ResponseHelpers.badRequest(reply, "Request body is required");
@@ -116,7 +114,6 @@ export async function validateListingCreate(
         ? JSON.parse(body.details) 
         : body.details;
     } catch (error) {
-      console.log("❌ Failed to parse details:", error);
       return ResponseHelpers.badRequest(reply, "Invalid details format. Must be valid JSON.");
     }
     
@@ -137,24 +134,11 @@ export async function validateListingCreate(
     ];
     
     // Add vehicle fields to normalized data if they exist in the request body
-    console.log("\n🚗 EXTRACTING VEHICLE FIELDS:");
-    let foundVehicleFields = 0;
     vehicleFields.forEach(field => {
-      const value = body[field];
-      const isEmpty = value === undefined || value === null || value === '';
-      
-      if (!isEmpty) {
-        normalizedData[field] = value;
-        foundVehicleFields++;
-        console.log(`  ✅ ${field}: '${value}'`);
+      if (body[field] !== undefined && body[field] !== null && body[field] !== '') {
+        normalizedData[field] = body[field];
       }
     });
-    
-    console.log(`  Found ${foundVehicleFields} vehicle fields`);
-    
-    if (foundVehicleFields === 0) {
-      console.log(`  ❌ NO vehicle fields extracted! Available body keys:`, Object.keys(body));
-    }
     
     // Add real estate fields to normalized data if they exist in the request body
     realEstateFields.forEach(field => {
@@ -166,10 +150,8 @@ export async function validateListingCreate(
     // Attach validated data to request for use in route handler
     req.validatedData = normalizedData;
     
-    console.log(`\n✅ Validation complete: ${Object.keys(normalizedData).length} fields attached to request\n`);
-    
   } catch (error) {
-    console.error("❌ Validation middleware error:", error);
+    console.error("Validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);
   }
 }

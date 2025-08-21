@@ -327,21 +327,42 @@ export const getUserListings = async (
   reply: FastifyReply,
 ) => {
   try {
+    const userId = (request.user as any).id;
+    console.log("🔍 Fetching listings for user:", userId);
+
     const listings = await prisma.listing.findMany({
-      where: { userId: (request.user as any).id },
+      where: { userId },
       include: {
         images: true,
         favorites: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
+    console.log("✅ Found listings:", listings.length);
+
     reply.status(200).send({
       success: true,
-      data: { listings },
+      data: { 
+        listings,
+        total: listings.length,
+        page: 1,
+        limit: listings.length,
+        hasMore: false,
+      },
       status: 200,
     });
   } catch (error) {
-    console.error("Listings fetch error:", error);
+    console.error("❌ Listings fetch error:", error);
     reply.status(500).send({
       success: false,
       error: "Error fetching user listings",

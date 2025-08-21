@@ -226,6 +226,7 @@ CREATE TABLE "public"."VehicleDetails" (
     "color" TEXT,
     "condition" "public"."Condition",
     "features" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "interiorColor" TEXT,
     "engine" TEXT,
     "warranty" TEXT,
     "previousOwners" INTEGER,
