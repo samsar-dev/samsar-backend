@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { ListingValidator, ListingDataNormalizer } from "../validators/consolidated.validators.js";
+import { ListingValidator, ListingDataNormalizer } from "../validators/listing.validation.js";
 import { ListingCategory } from "../types/enums.js";
 import { ErrorHandler, ValidationError, ResponseHelpers } from "../utils/error.handler.js";
 
