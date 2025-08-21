@@ -9,7 +9,6 @@ export interface PassengersDetails {
   fuelType?: FuelType;
   transmissionType?: TransmissionType;
   color?: string;
-  interiorColor?: string;
   condition?: Condition;
   engine?: string;
   engineSize?: string;
@@ -138,7 +137,6 @@ export const mapPassengersData = (data: any): Partial<PassengersDetails> => {
     fuelType: data.fuelType as FuelType,
     transmissionType: data.transmissionType as TransmissionType,
     color: data.color?.trim(),
-    interiorColor: data.interiorColor?.trim(),
     condition: data.condition as Condition,
     engine: data.engine?.trim(),
     engineSize: data.engineSize?.trim(),

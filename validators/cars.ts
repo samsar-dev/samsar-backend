@@ -10,7 +10,6 @@ export interface CarDetails {
   transmissionType?: TransmissionType;
   color?: string;
   exteriorColor?: string; // Flutter field mapping
-  interiorColor?: string;
   condition?: Condition;
   engine?: string;
   engineSize?: string;
@@ -186,7 +185,6 @@ export const mapCarData = (data: any): Partial<CarDetails> => {
     // Handle color field mapping
     color: vehicleData.color?.trim() || vehicleData.exteriorColor?.trim(),
     exteriorColor: vehicleData.exteriorColor?.trim() || vehicleData.color?.trim(),
-    interiorColor: vehicleData.interiorColor?.trim(),
     
     condition: vehicleData.condition as Condition,
     engine: vehicleData.engine?.trim(),

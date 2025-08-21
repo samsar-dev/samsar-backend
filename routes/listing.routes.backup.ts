@@ -943,8 +943,6 @@ export default async function (fastify: FastifyInstance) {
                     color: parsedDetails?.vehicles?.color || "#000000",
                     condition: parsedDetails?.vehicles?.condition,
                     features: parsedDetails?.vehicles?.features || [],
-                    interiorColor:
-                      parsedDetails?.vehicles?.interiorColor || "#000000",
                     engine: parsedDetails?.vehicles?.engine || "",
                     warranty: parsedDetails?.vehicles?.warranty || "",
                     serviceHistory:

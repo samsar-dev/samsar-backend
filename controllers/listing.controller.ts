@@ -7,7 +7,6 @@ import {
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
-import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
  
 
@@ -55,7 +54,6 @@ interface ListingResponse {
   engineSize?: number;
   mileage?: number;
   exteriorColor?: string;
-  interiorColor?: string;
   doors?: number;
   seatingCapacity?: number;
   horsepower?: number;
@@ -174,7 +172,6 @@ const formatListingResponse = (
     engineSize: listing.engineSize || undefined,
     mileage: listing.mileage || undefined,
     exteriorColor: listing.exteriorColor || undefined,
-    interiorColor: listing.interiorColor || undefined,
     doors: listing.doors || undefined,
     seatingCapacity: listing.seatingCapacity || undefined,
     horsepower: listing.horsepower || undefined,
@@ -372,7 +369,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         console.log("    requestBody.transmission:", requestBody.transmission);
         console.log("    requestBody.bodyType:", requestBody.bodyType);
         console.log("    requestBody.exteriorColor:", requestBody.exteriorColor);
-        console.log("    requestBody.interiorColor:", requestBody.interiorColor);
         console.log("    requestBody.engineSize:", requestBody.engineSize);
         console.log("    requestBody.mileage:", requestBody.mileage);
         console.log("    requestBody.doors:", requestBody.doors);
@@ -424,7 +420,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         addIfNotEmpty(listingData, 'doors', requestBody.doors ? parseInt(requestBody.doors) : (vehicleDetails.doors ? parseInt(vehicleDetails.doors) : null));
         addIfNotEmpty(listingData, 'seatingCapacity', requestBody.seatingCapacity ? parseInt(requestBody.seatingCapacity) : (vehicleDetails.seatingCapacity ? parseInt(vehicleDetails.seatingCapacity) : null));
         addIfNotEmpty(listingData, 'horsepower', requestBody.horsepower ? parseInt(requestBody.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null));
-        addIfNotEmpty(listingData, 'interiorColor', requestBody.interiorColor || vehicleDetails.interiorColor);
         addIfNotEmpty(listingData, 'registrationExpiry', requestBody.registrationExpiry || vehicleDetails.registrationExpiry);
         
         console.log("\n🔧 FINAL VEHICLE FIELDS EXTRACTED:");
@@ -466,7 +461,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         transmission: listingData.transmission,
         bodyType: listingData.bodyType,
         exteriorColor: listingData.exteriorColor,
-        interiorColor: listingData.interiorColor,
         engineSize: listingData.engineSize,
         mileage: listingData.mileage,
         doors: listingData.doors,
@@ -503,7 +497,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         transmission: listing.transmission,
         bodyType: listing.bodyType,
         exteriorColor: listing.exteriorColor,
-        interiorColor: listing.interiorColor,
         engineSize: listing.engineSize,
         mileage: listing.mileage,
         doors: listing.doors,
