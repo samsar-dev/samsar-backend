@@ -83,8 +83,7 @@ export class ListingValidator {
 // Helper function to sanitize and normalize data
 export class ListingDataNormalizer {
   static normalizeBaseData(data: any): Partial<ListingValidationSchema> {
-    // Extract base fields
-    const baseData = {
+    return {
       title: data.title?.trim(),
       description: data.description?.trim(),
       price: data.price ? Number(data.price) : undefined,
@@ -96,36 +95,6 @@ export class ListingDataNormalizer {
       listingAction: data.listingAction || ListingAction.SALE,
       details: data.details || {},
     };
-
-    // Preserve all vehicle fields from multipart form data
-    const vehicleFields = [
-      'make', 'model', 'year', 'condition', 'sellerType', 'fuelType', 
-      'transmission', 'transmissionType', 'bodyType', 'engineSize', 
-      'mileage', 'exteriorColor', 'color', 'accidental', 'horsepower', 
-      'registrationExpiry', 'doors', 'seatingCapacity', 'interiorColor'
-    ];
-
-    // Preserve all real estate fields from multipart form data
-    const realEstateFields = [
-      'bedrooms', 'bathrooms', 'totalArea', 'yearBuilt', 'furnishing', 
-      'floor', 'totalFloors', 'parking'
-    ];
-
-    // Add vehicle fields if they exist
-    vehicleFields.forEach(field => {
-      if (data[field] !== undefined && data[field] !== null && data[field] !== '') {
-        (baseData as any)[field] = data[field];
-      }
-    });
-
-    // Add real estate fields if they exist
-    realEstateFields.forEach(field => {
-      if (data[field] !== undefined && data[field] !== null && data[field] !== '') {
-        (baseData as any)[field] = data[field];
-      }
-    });
-
-    return baseData;
   }
 
   // static normalizeVehicleDetails(data: any, subCategory?: VehicleType): Partial<any> {
