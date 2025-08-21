@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config.js";
 import { SignOptions, Secret } from "jsonwebtoken";
+import prisma from "../src/lib/prismaClient.js";
 
 type JWTExpiresIn = "24h" | "7d" | number;
 
@@ -169,6 +170,121 @@ export const verifyToken = (token: string): any => {
     };
     return decoded;
   } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Session invalidation utilities for security and user management
+ */
+
+/**
+ * Invalidates all sessions for a specific user
+ * This should be called when:
+ * - User is deleted
+ * - User account is suspended
+ * - Security breach is detected
+ * - User requests to logout from all devices
+ */
+export const invalidateAllUserSessions = async (userId: string): Promise<void> => {
+  try {
+    console.log(`🔒 Invalidating all sessions for user: ${userId}`);
+    
+    // Clear all refresh tokens for the user
+    await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "refreshToken" = null, 
+          "refreshTokenExpiresAt" = null
+      WHERE id = ${userId}
+    `;
+    
+    console.log(`✅ Successfully invalidated all sessions for user: ${userId}`);
+  } catch (error) {
+    console.error(`❌ Failed to invalidate sessions for user ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Invalidates sessions for multiple users (bulk operation)
+ * Useful for admin operations or security incidents
+ */
+export const invalidateMultipleUserSessions = async (userIds: string[]): Promise<void> => {
+  try {
+    console.log(`🔒 Invalidating sessions for ${userIds.length} users`);
+    
+    // Clear refresh tokens for multiple users
+    await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "refreshToken" = null, 
+          "refreshTokenExpiresAt" = null
+      WHERE id = ANY(${userIds})
+    `;
+    
+    console.log(`✅ Successfully invalidated sessions for ${userIds.length} users`);
+  } catch (error) {
+    console.error(`❌ Failed to invalidate sessions for users:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Checks if a user's session should be invalidated based on security policies
+ */
+export const shouldInvalidateUserSession = async (userId: string): Promise<boolean> => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        emailVerified: true,
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: true,
+      },
+    });
+
+    if (!user) {
+      console.log(`❌ User ${userId} not found - session should be invalidated`);
+      return true;
+    }
+
+    if (user.accountStatus !== "ACTIVE") {
+      console.log(`❌ User ${userId} account not active - session should be invalidated`);
+      return true;
+    }
+
+    if (!user.emailVerified) {
+      console.log(`❌ User ${userId} email not verified - session should be invalidated`);
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error(`❌ Error checking session validity for user ${userId}:`, error);
+    // On error, err on the side of caution and invalidate
+    return true;
+  }
+};
+
+/**
+ * Cleanup expired refresh tokens (maintenance function)
+ */
+export const cleanupExpiredTokens = async (): Promise<number> => {
+  try {
+    console.log('🧹 Cleaning up expired refresh tokens...');
+    
+    const result = await prisma.$executeRaw`
+      UPDATE "User" 
+      SET "refreshToken" = null, 
+          "refreshTokenExpiresAt" = null
+      WHERE "refreshTokenExpiresAt" < NOW()
+        AND "refreshToken" IS NOT NULL
+    `;
+    
+    console.log(`✅ Cleaned up expired tokens for ${result} users`);
+    return result as number;
+  } catch (error) {
+    console.error('❌ Failed to cleanup expired tokens:', error);
     throw error;
   }
 };

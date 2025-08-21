@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { config } from "../config/config";
 import { UserPayload } from "../types/auth";
 import { SESSION_COOKIE_NAME, REFRESH_COOKIE_NAME } from "./session.middleware";
+import prisma from "../src/lib/prismaClient.js";
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -77,8 +78,51 @@ export const authenticate = async (
         throw new Error("Token has expired");
       }
 
-      // Attach user to request
-      (request as any).user = decoded;
+      // CRITICAL: Verify user still exists in database
+      const userId = decoded.sub || decoded.id;
+      if (!userId) {
+        console.log(`❌ No user ID in token`);
+        throw new Error("Invalid token payload");
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          // @ts-ignore - accountStatus exists in the Prisma schema
+          accountStatus: true,
+          emailVerified: true,
+        },
+      });
+
+      if (!existingUser) {
+        console.log(`❌ User ${userId} not found in database - token invalid`);
+        throw new Error("User no longer exists");
+      }
+
+      // Check if account is active
+      if (existingUser.accountStatus !== "ACTIVE") {
+        console.log(`❌ User ${userId} account not active: ${existingUser.accountStatus}`);
+        throw new Error("Account is not active");
+      }
+
+      // Check if email is verified
+      if (!existingUser.emailVerified) {
+        console.log(`❌ User ${userId} email not verified`);
+        throw new Error("Email not verified");
+      }
+
+      // Attach user to request with fresh data from database
+      (request as any).user = {
+        ...decoded,
+        id: existingUser.id,
+        email: existingUser.email,
+        username: existingUser.username,
+        role: existingUser.role,
+      };
       console.log(`✅ User attached to request:`, (request as any).user);
     } catch (jwtError) {
       console.log(`❌ JWT Verification Error:`, jwtError);

@@ -119,9 +119,9 @@ export const authenticate = async (
       });
     }
 
-    // Get user from database
+    // Get user from database and verify account status
     const user = await prisma.user.findUnique({
-      where: { email: decoded.email },
+      where: { id: decoded.sub || decoded.id },
       select: {
         id: true,
         email: true,
@@ -137,15 +137,43 @@ export const authenticate = async (
         preferences: true,
         createdAt: true,
         updatedAt: true,
+        emailVerified: true,
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: true,
       },
     });
 
     if (!user) {
+      console.log(`❌ User ${decoded.sub || decoded.id} not found in database - invalidating session`);
       return reply.code(401).send({
         success: false,
         error: {
-          code: "UNAUTHORIZED",
-          message: "User not found",
+          code: "USER_NOT_FOUND",
+          message: "User account no longer exists",
+        },
+      });
+    }
+
+    // Check if account is active
+    if (user.accountStatus !== "ACTIVE") {
+      console.log(`❌ User ${user.id} account not active: ${user.accountStatus}`);
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "ACCOUNT_INACTIVE",
+          message: "Account is not active",
+        },
+      });
+    }
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      console.log(`❌ User ${user.id} email not verified`);
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "EMAIL_NOT_VERIFIED",
+          message: "Email verification required",
         },
       });
     }

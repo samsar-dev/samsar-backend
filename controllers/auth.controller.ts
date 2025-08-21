@@ -854,11 +854,12 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
     });
 
     if (!existingUser) {
+      console.log(`❌ User ${userId} not found in database during getMe - session invalid`);
       return reply.code(401).send({
         success: false,
         error: {
-          code: "UNAUTHORIZED",
-          message: "User not found",
+          code: "USER_NOT_FOUND",
+          message: "User account no longer exists",
         },
       });
     }
@@ -907,11 +908,12 @@ export const verifyToken = async (
       });
 
       if (!user) {
+        console.log(`❌ User ${decoded.sub} not found in database during token verification`);
         return reply.code(401).send({
           success: false,
           error: {
-            code: "INVALID_TOKEN",
-            message: "User not found",
+            code: "USER_NOT_FOUND",
+            message: "User account no longer exists",
           },
         });
       }
@@ -969,7 +971,19 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       },
     });
 
-    if (!user || user.refreshToken !== refreshToken) {
+    if (!user) {
+      console.log(`❌ User ${decoded.sub} not found in database during refresh`);
+      return reply.code(401).send({
+        success: false,
+        error: {
+          code: "USER_NOT_FOUND",
+          message: "User account no longer exists",
+        },
+      });
+    }
+
+    if (user.refreshToken !== refreshToken) {
+      console.log(`❌ Refresh token mismatch for user ${user.id}`);
       return reply.code(401).send({
         success: false,
         error: {
