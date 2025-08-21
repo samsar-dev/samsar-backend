@@ -570,6 +570,57 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
+  // Get saved listings
+  fastify.get(
+    "/save",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const userId = validateUser(req);
+          const savedListings = await prisma.favorite.findMany({
+            where: {
+              userId,
+            },
+            include: {
+              listing: {
+                include: {
+                  images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      username: true,
+                      profilePicture: true,
+                    },
+                  },
+                  favorites: true,
+                },
+              },
+            },
+          });
+
+          const formattedListings = savedListings.map((favorite) =>
+            formatListingResponse(favorite.listing)
+          );
+
+          return reply.send({
+            success: true,
+            data: { items: formattedListings },
+            status: 200,
+          });
+        } catch (error) {
+          return reply.code(500).send({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+            status: 500,
+          });
+        }
+      }
+    )
+  );
+
   // Get listing by ID (public route)
   fastify.get<{ Params: { id: string } }>(
     "/public/:id",
