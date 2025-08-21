@@ -446,7 +446,7 @@ export default async function (fastify: FastifyInstance) {
         };
 
         // Add category-specific fields based on mainCategory
-        if (mainCategory === 'vehicles') {
+        if (mainCategory.toLowerCase() === 'vehicles') {
           console.log("🚗 VEHICLE PROCESSING START");
           console.log("validatedData vehicle fields:", {
             make: validatedData.make,
