@@ -536,33 +536,64 @@ export default async function (fastify: FastifyInstance) {
         }
 
         // Create the listing in database
-        const createdListing = await prisma.listing.create({
-          data: listingData,
-          include: {
-            images: true,
-            user: {
-              select: {
-                id: true,
-                username: true,
-                profilePicture: true,
+        console.log("\n🗄️ ATTEMPTING DATABASE INSERT:");
+        console.log("listingData keys:", Object.keys(listingData));
+        console.log("listingData vehicle fields:", {
+          make: listingData.make,
+          model: listingData.model,
+          year: listingData.year,
+          fuelType: listingData.fuelType,
+          transmission: listingData.transmission,
+          bodyType: listingData.bodyType,
+          mileage: listingData.mileage,
+          exteriorColor: listingData.exteriorColor,
+        });
+
+        try {
+          const createdListing = await prisma.listing.create({
+            data: listingData,
+            include: {
+              images: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
               },
             },
-          },
-        });
+          });
 
-        console.log(`\n✅ Created listing ${createdListing.id}`);
-        if (mainCategory === 'vehicles') {
-          const savedVehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].filter(field => (createdListing as any)[field]);
-          console.log(`  Saved vehicle fields: [${savedVehicleFields.join(', ')}]`);
+          console.log("\n✅ DATABASE INSERT SUCCESSFUL");
+          console.log("Created listing vehicle fields:", {
+            make: createdListing.make,
+            model: createdListing.model,
+            year: createdListing.year,
+            fuelType: createdListing.fuelType,
+            transmission: createdListing.transmission,
+            bodyType: createdListing.bodyType,
+            mileage: createdListing.mileage,
+            exteriorColor: createdListing.exteriorColor,
+          });
+
+          console.log(`\n✅ Created listing ${createdListing.id}`);
+          if (mainCategory === 'vehicles') {
+            const savedVehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].filter(field => (createdListing as any)[field]);
+            console.log(`  Saved vehicle fields: [${savedVehicleFields.join(', ')}]`);
+          }
+
+          const formattedListing = formatListingResponse(createdListing);
+          return reply.code(201).send({
+            success: true,
+            data: formattedListing,
+            status: 201,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (dbError) {
+          console.error("❌ DATABASE INSERT FAILED:", dbError);
+          console.error("Failed listingData:", JSON.stringify(listingData, null, 2));
+          throw dbError;
         }
-
-        const formattedListing = formatListingResponse(createdListing);
-        return reply.code(201).send({
-          success: true,
-          data: formattedListing,
-          status: 201,
-          timestamp: new Date().toISOString(),
-        });
       } catch (error) {
         console.error("Error creating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
