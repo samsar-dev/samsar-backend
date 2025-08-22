@@ -501,10 +501,15 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
         }
 
-        // Prepare images data
+        // Ensure required fields are present
+        if (!listingData.latitude || !listingData.longitude) {
+          return ResponseHelpers.badRequest(reply, "Location coordinates are required");
+        }
+
+        // Prepare images data with clean URLs
         const imagesData = imageUrls.length > 0 ? {
           create: imageUrls.map((url, index) => ({
-            url,
+            url: url.replace(/;$/, ''), // Remove trailing semicolons
             order: index,
           })),
         } : undefined;
@@ -512,6 +517,10 @@ export default async function (fastify: FastifyInstance) {
         const listing = await prisma.listing.create({
           data: {
             ...listingData,
+            // Ensure required fields have defaults
+            status: listingData.status || "ACTIVE",
+            views: 0,
+            viewUsersId: [],
             ...(imagesData && { images: imagesData }),
           },
           include: {
