@@ -543,6 +543,9 @@ export default async function (fastify: FastifyInstance) {
           exteriorColor: listingData.exteriorColor,
         });
 
+        console.log('📝 FINAL LISTING DATA BEFORE DATABASE INSERT:', JSON.stringify(listingData, null, 2));
+        console.log('🖼️ IMAGES TO CREATE:', imageUrls.length, 'images');
+
         try {
           const createdListing = await prisma.listing.create({
             data: {
@@ -591,14 +594,19 @@ export default async function (fastify: FastifyInstance) {
             status: 201,
             timestamp: new Date().toISOString(),
           });
-        } catch (dbError) {
-          console.error("❌ DATABASE INSERT FAILED:", dbError);
-          console.error("Failed listingData:", JSON.stringify(listingData, null, 2));
-          throw dbError;
+        } catch (error) {
+          console.error("❌ DATABASE INSERT FAILED:", error);
+          console.error("Error details:", {
+            message: (error as Error).message,
+            stack: (error as Error).stack,
+            listingDataKeys: Object.keys(listingData),
+            imageUrlsCount: imageUrls.length
+          });
+          return ErrorHandler.sendError(reply, error as Error, req.url);
         }
-      } catch (error) {
-        console.error("Error creating listing:", error);
-        return ErrorHandler.sendError(reply, error as Error, request.url);
+      } catch (outerError) {
+        console.error("❌ OUTER ERROR:", outerError);
+        return ErrorHandler.sendError(reply, outerError as Error, "listing creation");
       }
     }
   );
