@@ -146,6 +146,30 @@ export async function validateListingCreate(
         normalizedData[field] = body[field];
       }
     });
+
+    // Add parsed details to normalized data
+    if (parsedDetails) {
+      normalizedData.details = parsedDetails;
+    }
+
+    // Perform comprehensive validation using the detailed validation system
+    const validation = ListingValidator.validateBaseListing({
+      title: normalizedData.title,
+      description: normalizedData.description,
+      price: normalizedData.price,
+      mainCategory: normalizedData.mainCategory,
+      subCategory: normalizedData.subCategory,
+      location: normalizedData.location,
+      latitude: normalizedData.latitude,
+      longitude: normalizedData.longitude,
+      listingAction: normalizedData.listingAction,
+      details: normalizedData.details,
+      ...normalizedData // Include all other fields
+    });
+
+    if (!validation.isValid || validation.errors.length > 0) {
+      return ResponseHelpers.badRequest(reply, "Validation failed", validation.errors);
+    }
     
     // Attach validated data to request for use in route handler
     req.validatedData = normalizedData;

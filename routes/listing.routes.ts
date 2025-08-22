@@ -363,6 +363,7 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+        console.log("🎯 ROUTE HANDLER STARTED");
         const req = request as ListingCreateRequest;
         const user = req.user;
         
@@ -372,6 +373,7 @@ export default async function (fastify: FastifyInstance) {
         
         // Use validated and normalized data
         const validatedData = req.validatedData;
+        console.log("🎯 ROUTE HANDLER - validatedData exists:", !!validatedData);
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
@@ -445,27 +447,39 @@ export default async function (fastify: FastifyInstance) {
 
         // Add category-specific fields based on mainCategory
         if (mainCategory.toLowerCase() === 'vehicles') {
+          console.log("🚗 VEHICLE PROCESSING START");
+          console.log("validatedData vehicle fields:", {
+            make: validatedData.make,
+            model: validatedData.model,
+            year: validatedData.year,
+            mileage: validatedData.mileage,
+            fuelType: validatedData.fuelType,
+            transmission: validatedData.transmission,
+            bodyType: validatedData.bodyType,
+            exteriorColor: validatedData.exteriorColor,
+            horsepower: validatedData.horsepower,
+            registrationExpiry: validatedData.registrationExpiry,
+            accidental: validatedData.accidental
+          });
+          
           // Vehicle-specific fields only
+          console.log("Processing make:", validatedData.make, "||", vehicleDetails.make);
           addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
+          console.log("After make - listingData.make:", listingData.make);
+          
+          console.log("Processing model:", validatedData.model, "||", vehicleDetails.model);
           addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
+          console.log("After model - listingData.model:", listingData.model);
           
           const yearValue = validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
+          console.log("Processing year:", validatedData.year, "->", yearValue);
           addIfNotEmpty(listingData, 'year', yearValue);
+          console.log("After year - listingData.year:", listingData.year);
           
           addIfNotEmpty(listingData, 'bodyType', validatedData.bodyType || vehicleDetails.bodyType);
           const mileageValue = validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
           addIfNotEmpty(listingData, 'mileage', mileageValue);
           addIfNotEmpty(listingData, 'exteriorColor', validatedData.exteriorColor || validatedData.color || vehicleDetails.exteriorColor || vehicleDetails.color);
-          
-          // Add missing vehicle fields from details.vehicles
-          if (vehicleDetails.previousOwners !== undefined) {
-            addIfNotEmpty(listingData, 'previousOwners', parseInt(vehicleDetails.previousOwners) || null);
-          }
-          addIfNotEmpty(listingData, 'registrationStatus', vehicleDetails.registrationStatus);
-          addIfNotEmpty(listingData, 'warranty', vehicleDetails.warranty);
-          addIfNotEmpty(listingData, 'customsCleared', vehicleDetails.customsCleared);
-          addIfNotEmpty(listingData, 'driveType', vehicleDetails.driveType);
-          addIfNotEmpty(listingData, 'parkingSensor', vehicleDetails.parkingSensor);
           const horsepowerValue = validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
           addIfNotEmpty(listingData, 'horsepower', horsepowerValue);
           addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
@@ -474,23 +488,20 @@ export default async function (fastify: FastifyInstance) {
           
           // Handle enum fields with uppercase conversion
           if (validatedData.fuelType || vehicleDetails.fuelType) {
-            const fuelTypeValue = (validatedData.fuelType || vehicleDetails.fuelType).toString().trim();
-            addIfNotEmpty(listingData, 'fuelType', fuelTypeValue.toUpperCase());
+            addIfNotEmpty(listingData, 'fuelType', (validatedData.fuelType || vehicleDetails.fuelType).toUpperCase());
           }
           
           if (validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType) {
-            const transmissionValue = (validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType).toString().trim();
+            const transmissionValue = validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
             addIfNotEmpty(listingData, 'transmission', transmissionValue.toUpperCase());
           }
           
           if (validatedData.sellerType || vehicleDetails.sellerType) {
-            const sellerTypeValue = (validatedData.sellerType || vehicleDetails.sellerType).toString().trim();
-            addIfNotEmpty(listingData, 'sellerType', sellerTypeValue.toUpperCase());
+            addIfNotEmpty(listingData, 'sellerType', (validatedData.sellerType || vehicleDetails.sellerType).toUpperCase());
           }
           
           if (validatedData.condition || vehicleDetails.condition) {
-            const conditionValue = (validatedData.condition || vehicleDetails.condition).toString().trim().replace(/\n/g, ' ');
-            addIfNotEmpty(listingData, 'condition', conditionValue.toUpperCase());
+            addIfNotEmpty(listingData, 'condition', (validatedData.condition || vehicleDetails.condition).toUpperCase());
           }
           
           // Handle accidental status mapping
@@ -514,51 +525,75 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
         }
 
-        // Ensure required fields are present
-        if (!listingData.latitude || !listingData.longitude) {
-          return ResponseHelpers.badRequest(reply, "Location coordinates are required");
+        // Log final vehicle fields for debugging
+        if (mainCategory === 'vehicles') {
+          console.log("\n📊 FINAL LISTING DATA BEFORE DB INSERT:");
+          console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
+          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry'];
+          vehicleFields.forEach(field => {
+            console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
+          });
         }
 
-        // Prepare images data with clean URLs
-        const imagesData = imageUrls.length > 0 ? {
-          create: imageUrls.map((url, index) => ({
-            url: url.replace(/;$/, ''), // Remove trailing semicolons
-            order: index,
-          })),
-        } : undefined;
+        // Create the listing in database
+        console.log("\n🗄️ ATTEMPTING DATABASE INSERT:");
+        console.log("listingData keys:", Object.keys(listingData));
+        console.log("listingData vehicle fields:", {
+          make: listingData.make,
+          model: listingData.model,
+          year: listingData.year,
+          fuelType: listingData.fuelType,
+          transmission: listingData.transmission,
+          bodyType: listingData.bodyType,
+          mileage: listingData.mileage,
+          exteriorColor: listingData.exteriorColor,
+        });
 
-        const listing = await prisma.listing.create({
-          data: {
-            ...listingData,
-            // Ensure required fields have defaults
-            status: listingData.status || "ACTIVE",
-            views: 0,
-            viewUsersId: [],
-            ...(imagesData && { images: imagesData }),
-          },
-          include: {
-            images: true,
-            user: {
-              select: {
-                id: true,
-                username: true,
-                profilePicture: true,
+        try {
+          const createdListing = await prisma.listing.create({
+            data: listingData,
+            include: {
+              images: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
               },
             },
-            favorites: true
-          },
-        });
+          });
 
-        console.log("✅ Listing created successfully:", listing.id);
-        
-        const formattedResponse = formatListingResponse(listing);
-        
-        return reply.code(201).send({
+          console.log("\n✅ DATABASE INSERT SUCCESSFUL");
+          console.log("Created listing vehicle fields:", {
+            make: createdListing.make,
+            model: createdListing.model,
+            year: createdListing.year,
+            fuelType: createdListing.fuelType,
+            transmission: createdListing.transmission,
+            bodyType: createdListing.bodyType,
+            mileage: createdListing.mileage,
+            exteriorColor: createdListing.exteriorColor,
+          });
+
+          console.log(`\n✅ Created listing ${createdListing.id}`);
+          if (mainCategory === 'vehicles') {
+            const savedVehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].filter(field => (createdListing as any)[field]);
+            console.log(`  Saved vehicle fields: [${savedVehicleFields.join(', ')}]`);
+          }
+
+          const formattedListing = formatListingResponse(createdListing);
+          return reply.code(201).send({
             success: true,
-            data: formattedResponse,
+            data: formattedListing,
             status: 201,
             timestamp: new Date().toISOString(),
-        });
+          });
+        } catch (dbError) {
+          console.error("❌ DATABASE INSERT FAILED:", dbError);
+          console.error("Failed listingData:", JSON.stringify(listingData, null, 2));
+          throw dbError;
+        }
       } catch (error) {
         console.error("Error creating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
