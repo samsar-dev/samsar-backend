@@ -464,21 +464,14 @@ export default async function (fastify: FastifyInstance) {
           const horsepowerValue = validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
           addIfNotEmpty(listingData, 'horsepower', horsepowerValue);
           addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
-          addIfNotEmpty(listingData, 'previousOwners', vehicleDetails.previousOwners ? parseInt(vehicleDetails.previousOwners) : null);
-          addIfNotEmpty(listingData, 'registrationStatus', vehicleDetails.registrationStatus);
+          // previousOwners should only be in details JSON, not as top-level field
+          // registrationStatus should only be in details JSON, not as top-level field
+          // warranty should only be in details JSON, not as top-level field
           
-          // Handle warranty as string only (not nested object)
-          if (vehicleDetails.warranty && typeof vehicleDetails.warranty === 'string') {
-            addIfNotEmpty(listingData, 'warranty', vehicleDetails.warranty);
-          }
+          // customsCleared should only be in details JSON, not as top-level field
           
-          // Handle customsCleared as boolean
-          if (vehicleDetails.customsCleared !== undefined && vehicleDetails.customsCleared !== null) {
-            listingData.customsCleared = Boolean(vehicleDetails.customsCleared);
-          }
-          
-          addIfNotEmpty(listingData, 'driveType', vehicleDetails.driveType);
-          addIfNotEmpty(listingData, 'parkingSensor', vehicleDetails.parkingSensor);
+          // driveType should only be in details JSON, not as top-level field
+          // parkingSensor should only be in details JSON, not as top-level field
           
           const engineSizeValue = validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
           addIfNotEmpty(listingData, 'engineSize', engineSizeValue);
