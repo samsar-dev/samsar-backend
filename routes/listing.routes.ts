@@ -413,7 +413,7 @@ export default async function (fastify: FastifyInstance) {
         });
         console.log('  Nested details.vehicles:', vehicleDetails);
 
-        // Helper function to add non-empty values
+        // Helper function to add non-empty values - only for flat database fields
         const addIfNotEmpty = (obj: any, key: string, value: any) => {
           if (value !== undefined && value !== null && value !== '') {
             if (typeof value === 'string') {
@@ -423,7 +423,9 @@ export default async function (fastify: FastifyInstance) {
               }
             } else if (typeof value === 'number' && !isNaN(value)) {
               obj[key] = value;
-            } else if (value !== null && value !== undefined) {
+            } else if (typeof value === 'boolean') {
+              obj[key] = value;
+            } else if (value !== null && value !== undefined && typeof value !== 'object') {
               obj[key] = value;
             }
           }
@@ -442,6 +444,7 @@ export default async function (fastify: FastifyInstance) {
           subCategory,
           userId: user.id,
           listingAction,
+          // Store details as JSON object, not spread into top-level fields
           details,
         };
 
@@ -463,7 +466,11 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
           addIfNotEmpty(listingData, 'previousOwners', vehicleDetails.previousOwners ? parseInt(vehicleDetails.previousOwners) : null);
           addIfNotEmpty(listingData, 'registrationStatus', vehicleDetails.registrationStatus);
-          addIfNotEmpty(listingData, 'warranty', vehicleDetails.warranty);
+          
+          // Handle warranty as string only (not nested object)
+          if (vehicleDetails.warranty && typeof vehicleDetails.warranty === 'string') {
+            addIfNotEmpty(listingData, 'warranty', vehicleDetails.warranty);
+          }
           
           // Handle customsCleared as boolean
           if (vehicleDetails.customsCleared !== undefined && vehicleDetails.customsCleared !== null) {
