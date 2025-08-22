@@ -456,6 +456,16 @@ export default async function (fastify: FastifyInstance) {
           const mileageValue = validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
           addIfNotEmpty(listingData, 'mileage', mileageValue);
           addIfNotEmpty(listingData, 'exteriorColor', validatedData.exteriorColor || validatedData.color || vehicleDetails.exteriorColor || vehicleDetails.color);
+          
+          // Add missing vehicle fields from details.vehicles
+          if (vehicleDetails.previousOwners !== undefined) {
+            addIfNotEmpty(listingData, 'previousOwners', parseInt(vehicleDetails.previousOwners) || null);
+          }
+          addIfNotEmpty(listingData, 'registrationStatus', vehicleDetails.registrationStatus);
+          addIfNotEmpty(listingData, 'warranty', vehicleDetails.warranty);
+          addIfNotEmpty(listingData, 'customsCleared', vehicleDetails.customsCleared);
+          addIfNotEmpty(listingData, 'driveType', vehicleDetails.driveType);
+          addIfNotEmpty(listingData, 'parkingSensor', vehicleDetails.parkingSensor);
           const horsepowerValue = validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
           addIfNotEmpty(listingData, 'horsepower', horsepowerValue);
           addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
@@ -464,20 +474,23 @@ export default async function (fastify: FastifyInstance) {
           
           // Handle enum fields with uppercase conversion
           if (validatedData.fuelType || vehicleDetails.fuelType) {
-            addIfNotEmpty(listingData, 'fuelType', (validatedData.fuelType || vehicleDetails.fuelType).toUpperCase());
+            const fuelTypeValue = (validatedData.fuelType || vehicleDetails.fuelType).toString().trim();
+            addIfNotEmpty(listingData, 'fuelType', fuelTypeValue.toUpperCase());
           }
           
           if (validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType) {
-            const transmissionValue = validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
+            const transmissionValue = (validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType).toString().trim();
             addIfNotEmpty(listingData, 'transmission', transmissionValue.toUpperCase());
           }
           
           if (validatedData.sellerType || vehicleDetails.sellerType) {
-            addIfNotEmpty(listingData, 'sellerType', (validatedData.sellerType || vehicleDetails.sellerType).toUpperCase());
+            const sellerTypeValue = (validatedData.sellerType || vehicleDetails.sellerType).toString().trim();
+            addIfNotEmpty(listingData, 'sellerType', sellerTypeValue.toUpperCase());
           }
           
           if (validatedData.condition || vehicleDetails.condition) {
-            addIfNotEmpty(listingData, 'condition', (validatedData.condition || vehicleDetails.condition).toUpperCase());
+            const conditionValue = (validatedData.condition || vehicleDetails.condition).toString().trim().replace(/\n/g, ' ');
+            addIfNotEmpty(listingData, 'condition', conditionValue.toUpperCase());
           }
           
           // Handle accidental status mapping
