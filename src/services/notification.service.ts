@@ -84,7 +84,7 @@ export const handleNewListingMatch = async (
       select: {
         title: true,
         price: true,
-        category: true,
+        mainCategory: true,
       },
     });
 
@@ -98,7 +98,7 @@ export const handleNewListingMatch = async (
       return prismaClient.notification.create({
         data: {
           type: toPrismaNotificationType(NotificationType.NEW_LISTING_MATCH),
-          content: `New ${listing.category.toLowerCase()} listing matches your saved search: ${listing.title}`,
+          content: `New ${listing.mainCategory.toLowerCase()} listing matches your saved search: ${listing.title}`,
           userId,
           relatedListingId: listingId,
         },

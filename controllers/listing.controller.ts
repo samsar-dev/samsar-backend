@@ -330,7 +330,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         price: listingPrice,
         mainCategory,
         subCategory,
-        category: JSON.stringify({ mainCategory, subCategory }),
         location,
         latitude:
           typeof latitude === "string" ? parseFloat(latitude) : latitude,

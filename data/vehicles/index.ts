@@ -1,6 +1,7 @@
 // Vehicle Data Index - Centralized import for all vehicle types
 import { CARS_DATA } from './cars.data.js';
 import { MOTORCYCLES_DATA } from './motorcycles.data.js';
+import { PASSENGER_VEHICLES_DATA } from './passenger.data.js';
 import { COMMERCIAL_TRANSPORT_DATA } from './commercial.data.js';
 import { CONSTRUCTION_VEHICLES_DATA } from './construction.data.js';
 
@@ -17,6 +18,7 @@ export interface VehicleDataMap {
 export const VEHICLE_DATA: VehicleDataMap = {
   CARS: CARS_DATA,
   MOTORCYCLES: MOTORCYCLES_DATA,
+  PASSENGER_VEHICLES: PASSENGER_VEHICLES_DATA,
   COMMERCIAL_TRANSPORT: COMMERCIAL_TRANSPORT_DATA,
   CONSTRUCTION_VEHICLES: CONSTRUCTION_VEHICLES_DATA,
 };

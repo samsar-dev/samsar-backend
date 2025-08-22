@@ -439,7 +439,6 @@ export default async function (fastify: FastifyInstance) {
           location,
           latitude: parseNumeric(latitude),
           longitude: parseNumeric(longitude),
-          category: mainCategory, // For backwards compatibility
           mainCategory,
           subCategory,
           userId: user.id,

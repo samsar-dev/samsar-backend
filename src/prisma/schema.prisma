@@ -102,7 +102,6 @@ model Listing {
   title             String
   description       String?
   price             Float
-  category          String
   mainCategory      String
   subCategory       String
   location          String
