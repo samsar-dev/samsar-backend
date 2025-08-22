@@ -552,13 +552,19 @@ export default async function (fastify: FastifyInstance) {
           exteriorColor: listingData.exteriorColor,
         });
 
-        console.log('📝 FINAL LISTING DATA BEFORE DATABASE INSERT:', JSON.stringify(listingData, null, 2));
+        // Clean the listingData object to ensure no invalid properties
+        const cleanListingData = { ...listingData };
+        delete cleanListingData.include;
+        delete cleanListingData.select;
+        delete cleanListingData.where;
+        
+        console.log('📝 FINAL LISTING DATA BEFORE DATABASE INSERT:', JSON.stringify(cleanListingData, null, 2));
         console.log('🖼️ IMAGES TO CREATE:', imageUrls.length, 'images');
 
         try {
           const createdListing = await prisma.listing.create({
             data: {
-              ...listingData,
+              ...cleanListingData,
               images: {
                 create: imageUrls.map((url) => ({
                   url,
