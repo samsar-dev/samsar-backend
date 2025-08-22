@@ -452,6 +452,15 @@ export default async function (fastify: FastifyInstance) {
           details,
         };
 
+        // Filter out any invalid fields that might have been included in validatedData
+        const invalidFields = ['customsCleared', 'warranty', 'warrantyPeriod', 'driveType', 'parkingSensor', 'registrationStatus', 'previousOwners'];
+        invalidFields.forEach(field => {
+          if (listingData[field] !== undefined) {
+            console.log(`⚠️ Removing invalid field '${field}' from listingData`);
+            delete listingData[field];
+          }
+        });
+
         // Add category-specific fields based on mainCategory
         if (mainCategory.toLowerCase() === 'vehicles') {
           // Vehicle-specific fields only

@@ -153,7 +153,8 @@ export async function validateListingCreate(
     }
 
     // Perform comprehensive validation using the detailed validation system
-    const validation = ListingValidator.validateBaseListing({
+    // Only include valid database fields, not all fields from normalizedData
+    const validationData: any = {
       title: normalizedData.title,
       description: normalizedData.description,
       price: normalizedData.price,
@@ -164,8 +165,24 @@ export async function validateListingCreate(
       longitude: normalizedData.longitude,
       listingAction: normalizedData.listingAction,
       details: normalizedData.details,
-      ...normalizedData // Include all other fields
+    };
+
+    // Add only valid vehicle/real estate fields for validation
+    const validFields = [
+      'make', 'model', 'year', 'condition', 'sellerType', 'fuelType', 
+      'transmission', 'transmissionType', 'bodyType', 'engineSize', 
+      'mileage', 'exteriorColor', 'color', 'accidental', 'horsepower', 
+      'registrationExpiry', 'bedrooms', 'bathrooms', 'totalArea', 
+      'yearBuilt', 'furnishing', 'floor', 'totalFloors', 'parking'
+    ];
+
+    validFields.forEach(field => {
+      if (normalizedData[field] !== undefined) {
+        validationData[field] = normalizedData[field];
+      }
     });
+
+    const validation = ListingValidator.validateBaseListing(validationData);
 
     if (!validation.isValid || validation.errors.length > 0) {
       return ResponseHelpers.badRequest(reply, "Validation failed", validation.errors);
