@@ -261,7 +261,7 @@ export default async function (fastify: FastifyInstance) {
       };
       
       if (mainCategory) {
-        where.mainCategory = (mainCategory as string).toUpperCase();
+        where.mainCategory = mainCategory as string;
       }
       if (subCategory) {
         where.subCategory = subCategory as string;
@@ -363,6 +363,7 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+        console.log("🎯 ROUTE HANDLER STARTED");
         const req = request as ListingCreateRequest;
         const user = req.user;
         
@@ -372,6 +373,7 @@ export default async function (fastify: FastifyInstance) {
         
         // Use validated and normalized data
         const validatedData = req.validatedData;
+        console.log("🎯 ROUTE HANDLER - validatedData exists:", !!validatedData);
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
@@ -444,43 +446,72 @@ export default async function (fastify: FastifyInstance) {
         };
 
         // Add category-specific fields based on mainCategory
-        if (mainCategory === 'vehicles') {
+        if (mainCategory.toLowerCase() === 'vehicles') {
+          console.log("🚗 VEHICLE PROCESSING START");
+          console.log("validatedData vehicle fields:", {
+            make: validatedData.make,
+            model: validatedData.model,
+            year: validatedData.year,
+            mileage: validatedData.mileage,
+            fuelType: validatedData.fuelType,
+            transmission: validatedData.transmission,
+            bodyType: validatedData.bodyType,
+            exteriorColor: validatedData.exteriorColor,
+            horsepower: validatedData.horsepower,
+            registrationExpiry: validatedData.registrationExpiry,
+            accidental: validatedData.accidental
+          });
+          
           // Vehicle-specific fields only
+          console.log("Processing make:", validatedData.make, "||", vehicleDetails.make);
           addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
+          console.log("After make - listingData.make:", listingData.make);
+          
+          console.log("Processing model:", validatedData.model, "||", vehicleDetails.model);
           addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
-          addIfNotEmpty(listingData, 'year', validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null));
+          console.log("After model - listingData.model:", listingData.model);
           
-          // Handle enum fields with uppercase conversion
-          const fuelType = validatedData.fuelType || vehicleDetails.fuelType;
-          if (fuelType) {
-            addIfNotEmpty(listingData, 'fuelType', fuelType.toUpperCase());
-          }
-          
-          const transmission = validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
-          if (transmission) {
-            addIfNotEmpty(listingData, 'transmission', transmission.toUpperCase());
-          }
+          const yearValue = validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
+          console.log("Processing year:", validatedData.year, "->", yearValue);
+          addIfNotEmpty(listingData, 'year', yearValue);
+          console.log("After year - listingData.year:", listingData.year);
           
           addIfNotEmpty(listingData, 'bodyType', validatedData.bodyType || vehicleDetails.bodyType);
-          addIfNotEmpty(listingData, 'engineSize', validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null));
-          addIfNotEmpty(listingData, 'mileage', validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null));
-          addIfNotEmpty(listingData, 'exteriorColor', validatedData.color || validatedData.exteriorColor || vehicleDetails.color || vehicleDetails.exteriorColor);
+          const mileageValue = validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
+          addIfNotEmpty(listingData, 'mileage', mileageValue);
+          addIfNotEmpty(listingData, 'exteriorColor', validatedData.exteriorColor || validatedData.color || vehicleDetails.exteriorColor || vehicleDetails.color);
+          const horsepowerValue = validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
+          addIfNotEmpty(listingData, 'horsepower', horsepowerValue);
+          addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
+          const engineSizeValue = validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
+          addIfNotEmpty(listingData, 'engineSize', engineSizeValue);
           
-          const sellerType = validatedData.sellerType || vehicleDetails.sellerType;
-          if (sellerType) {
-            addIfNotEmpty(listingData, 'sellerType', sellerType.toUpperCase());
+          // Handle enum fields with uppercase conversion
+          if (validatedData.fuelType || vehicleDetails.fuelType) {
+            addIfNotEmpty(listingData, 'fuelType', (validatedData.fuelType || vehicleDetails.fuelType).toUpperCase());
           }
           
-          // Handle condition mapping
-          const condition = validatedData.condition || vehicleDetails.condition;
-          if (condition) {
-            addIfNotEmpty(listingData, 'condition', condition.toUpperCase());
+          if (validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType) {
+            const transmissionValue = validatedData.transmission || validatedData.transmissionType || vehicleDetails.transmission || vehicleDetails.transmissionType;
+            addIfNotEmpty(listingData, 'transmission', transmissionValue.toUpperCase());
+          }
+          
+          if (validatedData.sellerType || vehicleDetails.sellerType) {
+            addIfNotEmpty(listingData, 'sellerType', (validatedData.sellerType || vehicleDetails.sellerType).toUpperCase());
+          }
+          
+          if (validatedData.condition || vehicleDetails.condition) {
+            addIfNotEmpty(listingData, 'condition', (validatedData.condition || vehicleDetails.condition).toUpperCase());
           }
           
           // Handle accidental status mapping
-          const accidental = validatedData.accidental || vehicleDetails.accidental;
-          if (accidental !== undefined && accidental !== null && accidental !== '') {
-            const isAccidentFree = String(accidental).toLowerCase() === 'no' || accidental === false || String(accidental).toLowerCase() === 'false';
+          if (validatedData.accidental !== undefined && validatedData.accidental !== null && validatedData.accidental !== '') {
+            const accidentalValue = String(validatedData.accidental).toLowerCase();
+            const isAccidentFree = accidentalValue === 'no' || accidentalValue === 'false';
+            addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
+          } else if (vehicleDetails.accidental !== undefined) {
+            const accidentalValue = String(vehicleDetails.accidental).toLowerCase();
+            const isAccidentFree = accidentalValue === 'no' || accidentalValue === 'false';
             addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
           }
         } else if (mainCategory === 'real_estate') {
@@ -492,75 +523,133 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'totalArea', validatedData.totalArea ? parseFloat(validatedData.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
           addIfNotEmpty(listingData, 'yearBuilt', validatedData.yearBuilt ? parseInt(validatedData.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
-          addIfNotEmpty(listingData, 'floor', validatedData.floor ? parseInt(validatedData.floor) : (realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null));
-          addIfNotEmpty(listingData, 'totalFloors', validatedData.totalFloors ? parseInt(validatedData.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
-          addIfNotEmpty(listingData, 'parking', validatedData.parking || realEstateDetails.parking);
         }
 
-        console.log('🚗 FINAL VEHICLE FIELDS TO SAVE:', {
+        // Log final vehicle fields for debugging
+        if (mainCategory === 'vehicles') {
+          console.log("\n📊 FINAL LISTING DATA BEFORE DB INSERT:");
+          console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
+          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry'];
+          vehicleFields.forEach(field => {
+            console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
+          });
+        }
+
+        // Create the listing in database
+        console.log("\n🗄️ ATTEMPTING DATABASE INSERT:");
+        console.log("listingData keys:", Object.keys(listingData));
+        console.log("listingData vehicle fields:", {
           make: listingData.make,
           model: listingData.model,
           year: listingData.year,
           fuelType: listingData.fuelType,
           transmission: listingData.transmission,
           bodyType: listingData.bodyType,
-          engineSize: listingData.engineSize,
           mileage: listingData.mileage,
           exteriorColor: listingData.exteriorColor,
-          sellerType: listingData.sellerType,
-          condition: listingData.condition,
-          accidental: listingData.accidental,
         });
 
-        // Prepare images data
-        const imagesData = imageUrls.length > 0 ? {
-          create: imageUrls.map((url, index) => ({
-            url,
-            order: index,
-          })),
-        } : undefined;
-
-        // console.log("-------------------------------------------")
-        // console.log(listingData)
-        // console.log("=========================================")
-        // return;
-
-        // return listingData;
-        const listing = await prisma.listing.create({
-          data: {
-            ...listingData,
-            ...(imagesData && { images: imagesData }),
-          },
-          include: {
-            images: true,
-            user: {
-              select: {
-                id: true,
-                username: true,
-                profilePicture: true,
+        try {
+          const createdListing = await prisma.listing.create({
+            data: listingData,
+            include: {
+              images: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePicture: true,
+                },
               },
             },
-            favorites: true
-          },
-        });
+          });
 
-        console.log("✅ Listing created successfully:", listing.id);
-        
-        const formattedResponse = formatListingResponse(listing);
-        console.log("📄 Formatted response ready:", !!formattedResponse);
-        
-        // return reply.code(201).send(formattedResponse);
-        return  reply.code(201).send({
+          console.log("\n✅ DATABASE INSERT SUCCESSFUL");
+          console.log("Created listing vehicle fields:", {
+            make: createdListing.make,
+            model: createdListing.model,
+            year: createdListing.year,
+            fuelType: createdListing.fuelType,
+            transmission: createdListing.transmission,
+            bodyType: createdListing.bodyType,
+            mileage: createdListing.mileage,
+            exteriorColor: createdListing.exteriorColor,
+          });
+
+          console.log(`\n✅ Created listing ${createdListing.id}`);
+          if (mainCategory === 'vehicles') {
+            const savedVehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].filter(field => (createdListing as any)[field]);
+            console.log(`  Saved vehicle fields: [${savedVehicleFields.join(', ')}]`);
+          }
+
+          const formattedListing = formatListingResponse(createdListing);
+          return reply.code(201).send({
             success: true,
-            data: formattedResponse,
+            data: formattedListing,
             status: 201,
             timestamp: new Date().toISOString(),
-        });
+          });
+        } catch (dbError) {
+          console.error("❌ DATABASE INSERT FAILED:", dbError);
+          console.error("Failed listingData:", JSON.stringify(listingData, null, 2));
+          throw dbError;
+        }
       } catch (error) {
         console.error("Error creating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
       }
     }
+  );
+
+  // Get saved listings
+  fastify.get(
+    "/save",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const userId = validateUser(req);
+          const savedListings = await prisma.favorite.findMany({
+            where: {
+              userId,
+            },
+            include: {
+              listing: {
+                include: {
+                  images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      username: true,
+                      profilePicture: true,
+                    },
+                  },
+                  favorites: true,
+                },
+              },
+            },
+          });
+
+          const formattedListings = savedListings.map((favorite) =>
+            formatListingResponse(favorite.listing)
+          );
+
+          return reply.send({
+            success: true,
+            data: { items: formattedListings },
+            status: 200,
+          });
+        } catch (error) {
+          return reply.code(500).send({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+            status: 500,
+          });
+        }
+      }
+    )
   );
 
   // Get listing by ID (public route)
