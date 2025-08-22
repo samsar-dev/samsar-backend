@@ -1,8 +1,7 @@
 // Essential fields (required section) - Updated for Flutter compatibility
 export const carEssentialFields = [
   "color",
-  "exteriorColor", // Flutter field
-  "interiorColor",
+  "exteriorColor",  
   "condition",
   "transmissionType",
   "mileage",

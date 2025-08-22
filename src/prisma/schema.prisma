@@ -127,11 +127,11 @@ model Listing {
   engineSize        Float?
   mileage           Int?
   exteriorColor     String?
-  interiorColor     String?
   doors             Int?
   seatingCapacity   Int?
   horsepower        Int?
   accidental        String?
+  registrationExpiry String?
   // Real estate specific fields
   bedrooms          Int?
   bathrooms         Int?

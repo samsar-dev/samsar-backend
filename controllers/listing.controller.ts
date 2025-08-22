@@ -55,7 +55,6 @@ interface ListingResponse {
   engineSize?: number;
   mileage?: number;
   exteriorColor?: string;
-  interiorColor?: string;
   doors?: number;
   seatingCapacity?: number;
   horsepower?: number;
@@ -174,7 +173,6 @@ const formatListingResponse = (
     engineSize: listing.engineSize || undefined,
     mileage: listing.mileage || undefined,
     exteriorColor: listing.exteriorColor || undefined,
-    interiorColor: listing.interiorColor || undefined,
     doors: listing.doors || undefined,
     seatingCapacity: listing.seatingCapacity || undefined,
     horsepower: listing.horsepower || undefined,

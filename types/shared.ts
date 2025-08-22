@@ -80,7 +80,6 @@ export interface VehicleDetails {
   color?: string;
   condition?: Condition;
   features?: string[];
-  interiorColor?: string;
   engine?: string;
   warranty?: string;
   serviceHistory?: string[];
