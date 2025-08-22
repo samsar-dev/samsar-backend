@@ -384,6 +384,14 @@ await fastify.register(locationRoutes);
 import diagnosticRoutes from "./routes/diagnostic.routes.js";
 await fastify.register(diagnosticRoutes, { prefix: "/api" });
 
+// Register vehicle routes
+import vehicleRoutes from "./routes/vehicle.routes.js";
+await fastify.register(vehicleRoutes, { prefix: "/api/vehicles" });
+
+// Register vehicle stats routes
+import vehicleStatsRoutes from "./routes/vehicle-stats.routes.js";
+await fastify.register(vehicleStatsRoutes, { prefix: "/api/vehicles" });
+
 // Error handling
 fastify.setErrorHandler((error, _, reply) => {
 
