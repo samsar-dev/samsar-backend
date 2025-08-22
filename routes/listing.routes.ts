@@ -447,34 +447,12 @@ export default async function (fastify: FastifyInstance) {
 
         // Add category-specific fields based on mainCategory
         if (mainCategory.toLowerCase() === 'vehicles') {
-          console.log("🚗 VEHICLE PROCESSING START");
-          console.log("validatedData vehicle fields:", {
-            make: validatedData.make,
-            model: validatedData.model,
-            year: validatedData.year,
-            mileage: validatedData.mileage,
-            fuelType: validatedData.fuelType,
-            transmission: validatedData.transmission,
-            bodyType: validatedData.bodyType,
-            exteriorColor: validatedData.exteriorColor,
-            horsepower: validatedData.horsepower,
-            registrationExpiry: validatedData.registrationExpiry,
-            accidental: validatedData.accidental
-          });
-          
           // Vehicle-specific fields only
-          console.log("Processing make:", validatedData.make, "||", vehicleDetails.make);
           addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
-          console.log("After make - listingData.make:", listingData.make);
-          
-          console.log("Processing model:", validatedData.model, "||", vehicleDetails.model);
           addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
-          console.log("After model - listingData.model:", listingData.model);
           
           const yearValue = validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
-          console.log("Processing year:", validatedData.year, "->", yearValue);
           addIfNotEmpty(listingData, 'year', yearValue);
-          console.log("After year - listingData.year:", listingData.year);
           
           addIfNotEmpty(listingData, 'bodyType', validatedData.bodyType || vehicleDetails.bodyType);
           const mileageValue = validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
@@ -483,6 +461,13 @@ export default async function (fastify: FastifyInstance) {
           const horsepowerValue = validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
           addIfNotEmpty(listingData, 'horsepower', horsepowerValue);
           addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
+          addIfNotEmpty(listingData, 'previousOwners', vehicleDetails.previousOwners ? parseInt(vehicleDetails.previousOwners) : null);
+          addIfNotEmpty(listingData, 'registrationStatus', vehicleDetails.registrationStatus);
+          addIfNotEmpty(listingData, 'warranty', vehicleDetails.warranty);
+          addIfNotEmpty(listingData, 'customsCleared', vehicleDetails.customsCleared);
+          addIfNotEmpty(listingData, 'driveType', vehicleDetails.driveType);
+          addIfNotEmpty(listingData, 'parkingSensor', vehicleDetails.parkingSensor);
+          
           const engineSizeValue = validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
           addIfNotEmpty(listingData, 'engineSize', engineSizeValue);
           
