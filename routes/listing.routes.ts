@@ -394,11 +394,6 @@ export default async function (fastify: FastifyInstance) {
 
         // Get processed image URLs
         const imageUrls = req.processedImages?.map((img) => img.url) || [];
-        console.log('🖼️ IMAGE DEBUG:', {
-          processedImages: req.processedImages,
-          imageUrls,
-          imageCount: imageUrls.length
-        });
 
         // Extract vehicle fields from validated data (includes both form fields and details)
         const vehicleDetails = details?.vehicles || {};
@@ -451,15 +446,6 @@ export default async function (fastify: FastifyInstance) {
           // Store details as JSON object, not spread into top-level fields
           details,
         };
-
-        // Filter out any invalid fields that might have been included in validatedData
-        const invalidFields = ['customsCleared', 'warranty', 'warrantyPeriod', 'driveType', 'parkingSensor', 'registrationStatus', 'previousOwners'];
-        invalidFields.forEach(field => {
-          if (listingData[field] !== undefined) {
-            console.log(`⚠️ Removing invalid field '${field}' from listingData`);
-            delete listingData[field];
-          }
-        });
 
         // Add category-specific fields based on mainCategory
         if (mainCategory.toLowerCase() === 'vehicles') {
@@ -552,26 +538,9 @@ export default async function (fastify: FastifyInstance) {
           exteriorColor: listingData.exteriorColor,
         });
 
-        // Clean the listingData object to ensure no invalid properties
-        const cleanListingData = { ...listingData };
-        delete cleanListingData.include;
-        delete cleanListingData.select;
-        delete cleanListingData.where;
-        
-        console.log('📝 FINAL LISTING DATA BEFORE DATABASE INSERT:', JSON.stringify(cleanListingData, null, 2));
-        console.log('🖼️ IMAGES TO CREATE:', imageUrls.length, 'images');
-
         try {
           const createdListing = await prisma.listing.create({
-            data: {
-              ...cleanListingData,
-              images: {
-                create: imageUrls.map((url) => ({
-                  url,
-                  altText: `${title} image`,
-                })),
-              },
-            },
+            data: listingData,
             include: {
               images: true,
               user: {
@@ -609,19 +578,14 @@ export default async function (fastify: FastifyInstance) {
             status: 201,
             timestamp: new Date().toISOString(),
           });
-        } catch (error) {
-          console.error("❌ DATABASE INSERT FAILED:", error);
-          console.error("Error details:", {
-            message: (error as Error).message,
-            stack: (error as Error).stack,
-            listingDataKeys: Object.keys(listingData),
-            imageUrlsCount: imageUrls.length
-          });
-          return ErrorHandler.sendError(reply, error as Error, req.url);
+        } catch (dbError) {
+          console.error("❌ DATABASE INSERT FAILED:", dbError);
+          console.error("Failed listingData:", JSON.stringify(listingData, null, 2));
+          throw dbError;
         }
-      } catch (outerError) {
-        console.error("❌ OUTER ERROR:", outerError);
-        return ErrorHandler.sendError(reply, outerError as Error, "listing creation");
+      } catch (error) {
+        console.error("Error creating listing:", error);
+        return ErrorHandler.sendError(reply, error as Error, request.url);
       }
     }
   );
