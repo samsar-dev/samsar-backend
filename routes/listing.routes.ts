@@ -394,6 +394,11 @@ export default async function (fastify: FastifyInstance) {
 
         // Get processed image URLs
         const imageUrls = req.processedImages?.map((img) => img.url) || [];
+        console.log('🖼️ IMAGE DEBUG:', {
+          processedImages: req.processedImages,
+          imageUrls,
+          imageCount: imageUrls.length
+        });
 
         // Extract vehicle fields from validated data (includes both form fields and details)
         const vehicleDetails = details?.vehicles || {};
@@ -540,7 +545,15 @@ export default async function (fastify: FastifyInstance) {
 
         try {
           const createdListing = await prisma.listing.create({
-            data: listingData,
+            data: {
+              ...listingData,
+              images: {
+                create: imageUrls.map((url) => ({
+                  url,
+                  altText: `${title} image`,
+                })),
+              },
+            },
             include: {
               images: true,
               user: {
@@ -746,6 +759,71 @@ export default async function (fastify: FastifyInstance) {
         return ErrorHandler.sendError(reply, error as Error, req.url);
       }
     }
+  );
+
+  // Get user's own listings (authenticated)
+  fastify.get(
+    "/user",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const userId = validateUser(req);
+          const { page = "1", limit = "10" } = req.query as { page?: string; limit?: string };
+          
+          const skip = (Number(page) - 1) * Number(limit);
+          
+          const [listings, total] = await Promise.all([
+            prisma.listing.findMany({
+              where: {
+                userId,
+              },
+              include: {
+                images: true,
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    profilePicture: true,
+                    allowMessaging: true,
+                    privateProfile: true,
+                  },
+                },
+                favorites: true,
+              },
+              orderBy: { createdAt: "desc" },
+              take: Number(limit),
+              skip,
+            }),
+            prisma.listing.count({ where: { userId } }),
+          ]);
+
+          const formattedListings = listings.map((listing) =>
+            formatListingResponse(listing)
+          );
+
+          return reply.send({
+            success: true,
+            data: {
+              listings: formattedListings,
+              total,
+              page: Number(page),
+              limit: Number(limit),
+              hasMore: total > Number(page) * Number(limit),
+            },
+            status: 200,
+          });
+        } catch (error) {
+          return reply.code(500).send({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+            status: 500,
+          });
+        }
+      }
+    )
   );
 
   // Other routes continue with similar improvements...
