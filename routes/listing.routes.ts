@@ -464,7 +464,12 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'previousOwners', vehicleDetails.previousOwners ? parseInt(vehicleDetails.previousOwners) : null);
           addIfNotEmpty(listingData, 'registrationStatus', vehicleDetails.registrationStatus);
           addIfNotEmpty(listingData, 'warranty', vehicleDetails.warranty);
-          addIfNotEmpty(listingData, 'customsCleared', vehicleDetails.customsCleared);
+          
+          // Handle customsCleared as boolean
+          if (vehicleDetails.customsCleared !== undefined && vehicleDetails.customsCleared !== null) {
+            listingData.customsCleared = Boolean(vehicleDetails.customsCleared);
+          }
+          
           addIfNotEmpty(listingData, 'driveType', vehicleDetails.driveType);
           addIfNotEmpty(listingData, 'parkingSensor', vehicleDetails.parkingSensor);
           
