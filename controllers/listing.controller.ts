@@ -196,7 +196,7 @@ const formatListingResponse = (
     },
     images: listing.images.map((img) => ({
       id: img.id,
-      url: img.url,
+      url: img.url || '', // Handle nullable URL
       order: img.order,
       listingId: img.listingId,
     })),
@@ -346,9 +346,14 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         },
         images: {
           create:
-            req.processedImages?.map((img) => ({
+            req.processedImages?.map((img, index) => ({
+              storageProvider: 'CLOUDFLARE',
+              storageKey: `listings/${userId}/${Date.now()}_${index}.jpg`,
               url: img.url,
               order: img.order,
+              isCover: index === 0,
+              status: 'VALID',
+              lastChecked: new Date(),
             })) || [],
         },
       };
@@ -942,9 +947,14 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
           imagesToCreate.length > 0
             ? {
                 deleteMany: {},
-                create: imagesToCreate.map((img) => ({
+                create: imagesToCreate.map((img, index) => ({
+                  storageProvider: 'CLOUDFLARE',
+                  storageKey: `listings/${oldListing.userId}/${Date.now()}_${index}.jpg`,
                   url: img.url,
                   order: img.order,
+                  isCover: index === 0,
+                  status: 'VALID',
+                  lastChecked: new Date(),
                 })),
               }
             : undefined,
@@ -1020,7 +1030,9 @@ export const deleteListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     // Delete images from storage
     for (const image of listing.images) {
-      await deleteFromR2(image.url);
+      if (image.url) {
+        await deleteFromR2(image.url);
+      }
     }
 
     await prisma.listing.delete({ where: { id } });
@@ -1163,9 +1175,14 @@ export const addListingImages = async (req: FastifyRequest, res: FastifyReply): 
 
     const image = await prisma.image.create({
       data: {
+        storageProvider: 'CLOUDFLARE',
+        storageKey: `listings/${listing.userId}/${Date.now()}_0.jpg`,
         url: req.processedImages?.[0].url || "",
         order: req.processedImages?.[0].order || 0,
         listingId: id,
+        isCover: true,
+        status: 'VALID',
+        lastChecked: new Date(),
       },
     });
 

@@ -21,8 +21,7 @@ import {
 } from "../types/shared.js";
 import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType, ListingCategory } from "../types/enums.js";
-import { filterListingDetails } from "../utils/listing.utils.js";
-import { ErrorHandler, ResponseHelpers } from "../utils/error.handler.js";
+import { ErrorHandler, ValidationError, ResponseHelpers } from "../utils/error.handler.js";
 import { addListingImages } from "../controllers/listing.controller.js";
 
 interface ListingQuery {
@@ -445,6 +444,22 @@ export default async function (fastify: FastifyInstance) {
           listingAction,
           // Store details as JSON object, not spread into top-level fields
           details,
+          // Add images if any were uploaded
+          images: imageUrls.length > 0 ? {
+            create: imageUrls.map((url, index) => {
+              const storageKey = `listings/${user.id}/${Date.now()}_${index}.jpg`;
+              return {
+                storageProvider: 'CLOUDFLARE',
+                storageKey,
+                url, // Keep URL for backward compatibility during migration
+                altText: title || 'Listing image',
+                order: index,
+                isCover: index === 0, // First image is cover
+                status: 'VALID',
+                lastChecked: new Date(),
+              };
+            })
+          } : undefined,
         };
 
         // Add category-specific fields based on mainCategory

@@ -162,14 +162,61 @@ model Listing {
   @@index([transmission])
 }
 
+enum StorageProvider {
+  CLOUDFLARE
+  R2
+  S3
+  LOCAL
+}
+
+enum ImageStatus {
+  VALID
+  BROKEN_URL
+  UNSUPPORTED_FORMAT
+  TOO_LARGE
+  FLAGGED
+}
+
 model Image {
-  id        String  @id @default(cuid())
-  url       String
-  order     Int     @default(0)
-  listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  id              String          @id @default(cuid())
+  // Store a provider-agnostic object key; build URLs at runtime
+  storageProvider StorageProvider
+  storageKey      String          // e.g., "listings/abcd123/img_001.webp"
+
+  // Optional direct URL (if you must), but prefer building from provider+key
+  url             String?         // consider dropping once you centralize URL building
+
+  // Accessibility / SEO
+  altText         String?
+
+  // Display/ordering
+  order           Int             @default(0)
+  isCover         Boolean         @default(false)
+
+  // Validation & metadata
+  status          ImageStatus     @default(VALID)
+  lastChecked     DateTime        @default(now())
+  fileSize        Int?            // bytes
+  width           Int?            // px
+  height          Int?            // px
+  format          String?         // "webp","jpg","png","avif"
+
+  // CDN variant handling (avoid storing static URLs)
+  variant         String?         // e.g., "thumb" | "sm" | "lg"
+  cloudflareId    String?         // keep if using Cloudflare Images now (optional)
+
+  // Relations
+  listingId       String
+  listing         Listing         @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([listingId])
+  @@index([status])
+  @@index([lastChecked])
+  // Ensure unique order per listing
+  @@unique([listingId, order])
 }
 
 model Favorite {
