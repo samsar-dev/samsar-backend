@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import prisma from "../src/lib/prismaClient.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
+import { deleteFromR2 } from "../config/cloudflareR2.js";
  
 import { Prisma, User } from "@prisma/client";
 import {
@@ -469,7 +470,37 @@ export const deleteUser = async (
 
       // Step 6: Delete listing-related data
       if (listingIds.length > 0) {
-        // Delete other listing-related data
+        // First, get all images to delete from R2 storage
+        const imagesToDelete = await prisma.image.findMany({
+          where: { listingId: { in: listingIds } },
+          select: { storageKey: true, url: true },
+        });
+
+        // Delete images from Cloudflare R2 storage
+        for (const image of imagesToDelete) {
+          try {
+            if (image.storageKey) {
+              console.log(`🗑️ Deleting image with key: ${image.storageKey}`);
+              await deleteFromR2(image.storageKey);
+            } else if (image.url) {
+              // Extract key from URL if no storage key is available
+              const urlParts = image.url.split('/');
+              const keyStartIndex = urlParts.findIndex(part => part === 'uploads');
+              if (keyStartIndex !== -1) {
+                const key = urlParts.slice(keyStartIndex).join('/');
+                console.log(`🗑️ Deleting image with extracted key: ${key}`);
+                await deleteFromR2(key);
+              } else {
+                console.warn(`⚠️ Could not extract storage key from URL: ${image.url}`);
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Failed to delete image from R2:`, error);
+            // Continue with other deletions even if one fails
+          }
+        }
+
+        // Then delete image records from database
         await prisma.image.deleteMany({
           where: { listingId: { in: listingIds } },
         });

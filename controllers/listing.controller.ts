@@ -878,6 +878,35 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     console.log("- Final imagesToCreate (deduped & reindexed):", imagesToCreate);
 
+    // Clean up existing images from R2 storage if we're replacing them
+    if (imagesToCreate.length > 0) {
+      const existingImages = await prisma.image.findMany({
+        where: { listingId: id },
+        select: { storageKey: true, url: true },
+      });
+
+      for (const image of existingImages) {
+        try {
+          if (image.storageKey) {
+            console.log(`🗑️ Deleting existing image with key: ${image.storageKey}`);
+            await deleteFromR2(image.storageKey);
+          } else if (image.url) {
+            // Extract key from URL if no storage key is available
+            const urlParts = image.url.split('/');
+            const keyStartIndex = urlParts.findIndex(part => part === 'uploads');
+            if (keyStartIndex !== -1) {
+              const key = urlParts.slice(keyStartIndex).join('/');
+              console.log(`🗑️ Deleting existing image with extracted key: ${key}`);
+              await deleteFromR2(key);
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Failed to delete existing image from R2:`, error);
+          // Continue with other deletions even if one fails
+        }
+      }
+    }
+
     // Ensure price is a number and handle potential string input
     const newPrice = typeof price === "string" ? parseFloat(price) : price;
 
@@ -1030,8 +1059,21 @@ export const deleteListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     // Delete images from storage
     for (const image of listing.images) {
-      if (image.url) {
-        await deleteFromR2(image.url);
+      if (image.storageKey) {
+        // Use the storage key if available
+        console.log(`🗑️ Deleting image with key: ${image.storageKey}`);
+        await deleteFromR2(image.storageKey);
+      } else if (image.url) {
+        // Extract key from URL if no storage key is available
+        const urlParts = image.url.split('/');
+        const keyStartIndex = urlParts.findIndex(part => part === 'uploads');
+        if (keyStartIndex !== -1) {
+          const key = urlParts.slice(keyStartIndex).join('/');
+          console.log(`🗑️ Deleting image with extracted key: ${key}`);
+          await deleteFromR2(key);
+        } else {
+          console.warn(`⚠️ Could not extract storage key from URL: ${image.url}`);
+        }
       }
     }
 

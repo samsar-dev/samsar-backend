@@ -4,7 +4,25 @@ import { MultipartFile } from "@fastify/multipart";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
-import { uploadToR2, type UploadOptions } from "../config/cloudflareR2.js";
+import { uploadToR2, UploadOptions } from "../config/cloudflareR2.js";
+
+// Image compression configuration
+const IMAGE_CONFIG = {
+  // Only compress files larger than this threshold (KB)
+  COMPRESSION_THRESHOLD_KB: 500,
+  // Maximum dimensions for resizing
+  MAX_WIDTH: 2048,
+  MAX_HEIGHT: 2048,
+  // Quality settings for different formats
+  JPEG_QUALITY: 85,
+  PNG_QUALITY: 85,
+  WEBP_QUALITY: 85,
+  WEBP_ALPHA_QUALITY: 90,
+  // PNG compression level (0-9)
+  PNG_COMPRESSION_LEVEL: 6,
+  // WebP effort level (0-6, higher = better compression but slower)
+  WEBP_EFFORT: 4,
+};
 
 // Define Express.Multer.File interface for compatibility
 interface ExpressMulterFile {
@@ -36,69 +54,94 @@ function isImage(mimetype: string) {
   return mimetype.startsWith("image/");
 }
 
-// Process image with sharp - TEMPORARILY DISABLED FOR TESTING
+// Smart image processing with configurable compression
 export const processImage = async (
   buffer: Buffer,
   originalMimetype: string,
-): Promise<{ buffer: Buffer; format: string }> => {
-  console.log("🔧 TESTING MODE: Image compression disabled");
-  console.log(`Original image: ${(buffer.length / 1024).toFixed(1)}KB, mimetype: ${originalMimetype}`);
+): Promise<{ buffer: Buffer; format: string; metadata?: any }> => {
+  console.log(`🔧 Processing image: ${(buffer.length / 1024).toFixed(1)}KB, mimetype: ${originalMimetype}`);
   
-  // Return original buffer without any processing for testing
-  let format = "jpg";
-  if (originalMimetype === "image/png") {
-    format = "png";
-  } else if (originalMimetype === "image/webp") {
-    format = "webp";
-  } else if (originalMimetype === "image/jpeg") {
-    format = "jpg";
-  }
-  
-  return {
-    buffer: buffer, // Return original buffer without compression
-    format: format,
-  };
-  
-  /* ORIGINAL CODE - COMMENTED OUT FOR TESTING
-  // Extract metadata to preserve orientation and other important data
-  const metadata = await sharp(buffer).metadata();
+  try {
+    // Extract metadata to preserve orientation and other important data
+    const metadata = await sharp(buffer).metadata();
+    console.log(`📊 Image metadata: ${metadata.width}x${metadata.height}, channels: ${metadata.channels}, hasAlpha: ${metadata.hasAlpha}`);
 
-  // Create a base sharp instance with proper orientation handling
-  let processor = sharp(buffer)
-    .rotate() // Auto-rotate based on EXIF orientation
-    .resize(1920, 1920, {
-      // Support higher resolution images
-      fit: sharp.fit.inside,
-      withoutEnlargement: true,
-    });
+    // Determine if we should compress based on file size and type
+    const fileSizeKB = buffer.length / 1024;
+    const shouldCompress = fileSizeKB > IMAGE_CONFIG.COMPRESSION_THRESHOLD_KB;
+    
+    if (!shouldCompress) {
+      console.log("📁 File is small enough, skipping compression");
+      let format = "jpg";
+      if (originalMimetype === "image/png") format = "png";
+      else if (originalMimetype === "image/webp") format = "webp";
+      else if (originalMimetype === "image/jpeg") format = "jpg";
+      
+      return { buffer, format, metadata };
+    }
 
-  // Determine best output format
-  // WebP for best compression, but keep original format for transparency (PNG) if needed
-  if (metadata.hasAlpha && originalMimetype === "image/png") {
-    // For PNGs with transparency, keep as PNG with good compression
-    return {
-      buffer: await processor
-        .png({ quality: 90, compressionLevel: 9, palette: true })
-        .toBuffer(),
-      format: "png",
-    };
-  } else {
-    // For all other images, convert to WebP for best quality/size ratio
-    return {
-      buffer: await processor
-        .webp({
-          quality: 92, // Higher quality for better images
-          alphaQuality: 100, // Preserve alpha channel quality
-          lossless: false, // Use lossy compression for smaller files
-          nearLossless: false, // Better compression
-          smartSubsample: true, // Improve color detail
-          effort: 6, // Higher effort for better compression (0-6)
+    // Create a base sharp instance with proper orientation handling
+    let processor = sharp(buffer)
+      .rotate() // Auto-rotate based on EXIF orientation
+      .resize(IMAGE_CONFIG.MAX_WIDTH, IMAGE_CONFIG.MAX_HEIGHT, {
+        fit: sharp.fit.inside,
+        withoutEnlargement: true,
+      });
+
+    // Smart format selection based on content and transparency
+    if (metadata.hasAlpha && originalMimetype === "image/png") {
+      // For PNGs with transparency, keep as PNG with gentle compression
+      const processedBuffer = await processor
+        .png({ 
+          quality: IMAGE_CONFIG.PNG_QUALITY,
+          compressionLevel: IMAGE_CONFIG.PNG_COMPRESSION_LEVEL,
+          palette: true // Use palette when possible for smaller files
         })
-        .toBuffer(),
-      format: "webp",
-    };
+        .toBuffer();
+      
+      console.log(`✅ PNG processed: ${(buffer.length / 1024).toFixed(1)}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB`);
+      return { buffer: processedBuffer, format: "png", metadata };
+      
+    } else if (originalMimetype === "image/webp") {
+      // Keep WebP format with optimized settings
+      const processedBuffer = await processor
+        .webp({
+          quality: IMAGE_CONFIG.WEBP_QUALITY,
+          alphaQuality: IMAGE_CONFIG.WEBP_ALPHA_QUALITY,
+          lossless: false,
+          nearLossless: false,
+          smartSubsample: true,
+          effort: IMAGE_CONFIG.WEBP_EFFORT,
+        })
+        .toBuffer();
+      
+      console.log(`✅ WebP processed: ${(buffer.length / 1024).toFixed(1)}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB`);
+      return { buffer: processedBuffer, format: "webp", metadata };
+      
+    } else {
+      // For JPEG and other formats, convert to JPEG with high quality
+      const processedBuffer = await processor
+        .jpeg({
+          quality: IMAGE_CONFIG.JPEG_QUALITY,
+          progressive: true, // Progressive loading
+          mozjpeg: true, // Use mozjpeg for better compression
+        })
+        .toBuffer();
+      
+      console.log(`✅ JPEG processed: ${(buffer.length / 1024).toFixed(1)}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB`);
+      return { buffer: processedBuffer, format: "jpg", metadata };
+    }
+    
+  } catch (error) {
+    console.error("❌ Image processing failed, returning original:", error);
+    // Fallback: return original image if processing fails
+    let format = "jpg";
+    if (originalMimetype === "image/png") format = "png";
+    else if (originalMimetype === "image/webp") format = "webp";
+    else if (originalMimetype === "image/jpeg") format = "jpg";
+    
+    return { buffer, format };
   }
-  */
 };
 
 // Middleware: Process & upload all images
@@ -140,15 +183,15 @@ export const processImagesMiddleware = async (
         console.log(
           `Processing image file: ${part.filename}, field: ${part.fieldname}, size: ${(part.file.bytesRead / 1024).toFixed(1)}KB`,
         );
-        const buffer = await part.toBuffer();
-        const { buffer: processedBuffer, format } = await processImage(
-          buffer,
+        const fileBuffer = await part.toBuffer();
+        const originalSizeKB = (fileBuffer.length / 1024).toFixed(1);
+        const { buffer: processedBuffer, format, metadata } = await processImage(
+          fileBuffer,
           part.mimetype,
         );
 
-        // Log compression results
         console.log(
-          `Image processed: Original: ${(buffer.length / 1024).toFixed(1)}KB, Compressed: ${(processedBuffer.length / 1024).toFixed(1)}KB, Savings: ${((1 - processedBuffer.length / buffer.length) * 100).toFixed(1)}%`,
+          `📸 Image processed: ${originalSizeKB}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB (${format})`,
         );
 
         const fileForUpload: ExpressMulterFile = {
@@ -372,7 +415,7 @@ export const uploadMiddleware = async (
 };
 
 // Re-export for convenience
-export { uploadToR2 } from "../config/cloudflareR2.js";
+
 export { default as s3 } from "../config/cloudflareR2.js";
 
 // Placeholder for upload object to maintain compatibility
