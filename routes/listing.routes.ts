@@ -363,7 +363,6 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        console.log("🎯 ROUTE HANDLER STARTED");
         const req = request as ListingCreateRequest;
         const user = req.user;
         
@@ -373,7 +372,6 @@ export default async function (fastify: FastifyInstance) {
         
         // Use validated and normalized data
         const validatedData = req.validatedData;
-        console.log("🎯 ROUTE HANDLER - validatedData exists:", !!validatedData);
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
@@ -447,34 +445,12 @@ export default async function (fastify: FastifyInstance) {
 
         // Add category-specific fields based on mainCategory
         if (mainCategory.toLowerCase() === 'vehicles') {
-          console.log("🚗 VEHICLE PROCESSING START");
-          console.log("validatedData vehicle fields:", {
-            make: validatedData.make,
-            model: validatedData.model,
-            year: validatedData.year,
-            mileage: validatedData.mileage,
-            fuelType: validatedData.fuelType,
-            transmission: validatedData.transmission,
-            bodyType: validatedData.bodyType,
-            exteriorColor: validatedData.exteriorColor,
-            horsepower: validatedData.horsepower,
-            registrationExpiry: validatedData.registrationExpiry,
-            accidental: validatedData.accidental
-          });
-          
           // Vehicle-specific fields only
-          console.log("Processing make:", validatedData.make, "||", vehicleDetails.make);
           addIfNotEmpty(listingData, 'make', validatedData.make || vehicleDetails.make);
-          console.log("After make - listingData.make:", listingData.make);
-          
-          console.log("Processing model:", validatedData.model, "||", vehicleDetails.model);
           addIfNotEmpty(listingData, 'model', validatedData.model || vehicleDetails.model);
-          console.log("After model - listingData.model:", listingData.model);
           
           const yearValue = validatedData.year ? parseInt(validatedData.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
-          console.log("Processing year:", validatedData.year, "->", yearValue);
           addIfNotEmpty(listingData, 'year', yearValue);
-          console.log("After year - listingData.year:", listingData.year);
           
           addIfNotEmpty(listingData, 'bodyType', validatedData.bodyType || vehicleDetails.bodyType);
           const mileageValue = validatedData.mileage ? parseInt(validatedData.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
@@ -525,75 +501,42 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
         }
 
-        // Log final vehicle fields for debugging
-        if (mainCategory === 'vehicles') {
-          console.log("\n📊 FINAL LISTING DATA BEFORE DB INSERT:");
-          console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
-          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry'];
-          vehicleFields.forEach(field => {
-            console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
-          });
-        }
+        // Prepare images data
+        const imagesData = imageUrls.length > 0 ? {
+          create: imageUrls.map((url, index) => ({
+            url,
+            order: index,
+          })),
+        } : undefined;
 
-        // Create the listing in database
-        console.log("\n🗄️ ATTEMPTING DATABASE INSERT:");
-        console.log("listingData keys:", Object.keys(listingData));
-        console.log("listingData vehicle fields:", {
-          make: listingData.make,
-          model: listingData.model,
-          year: listingData.year,
-          fuelType: listingData.fuelType,
-          transmission: listingData.transmission,
-          bodyType: listingData.bodyType,
-          mileage: listingData.mileage,
-          exteriorColor: listingData.exteriorColor,
-        });
-
-        try {
-          const createdListing = await prisma.listing.create({
-            data: listingData,
-            include: {
-              images: true,
-              user: {
-                select: {
-                  id: true,
-                  username: true,
-                  profilePicture: true,
-                },
+        const listing = await prisma.listing.create({
+          data: {
+            ...listingData,
+            ...(imagesData && { images: imagesData }),
+          },
+          include: {
+            images: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+                profilePicture: true,
               },
             },
-          });
+            favorites: true
+          },
+        });
 
-          console.log("\n✅ DATABASE INSERT SUCCESSFUL");
-          console.log("Created listing vehicle fields:", {
-            make: createdListing.make,
-            model: createdListing.model,
-            year: createdListing.year,
-            fuelType: createdListing.fuelType,
-            transmission: createdListing.transmission,
-            bodyType: createdListing.bodyType,
-            mileage: createdListing.mileage,
-            exteriorColor: createdListing.exteriorColor,
-          });
-
-          console.log(`\n✅ Created listing ${createdListing.id}`);
-          if (mainCategory === 'vehicles') {
-            const savedVehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].filter(field => (createdListing as any)[field]);
-            console.log(`  Saved vehicle fields: [${savedVehicleFields.join(', ')}]`);
-          }
-
-          const formattedListing = formatListingResponse(createdListing);
-          return reply.code(201).send({
+        console.log("✅ Listing created successfully:", listing.id);
+        
+        const formattedResponse = formatListingResponse(listing);
+        
+        return reply.code(201).send({
             success: true,
-            data: formattedListing,
+            data: formattedResponse,
             status: 201,
             timestamp: new Date().toISOString(),
-          });
-        } catch (dbError) {
-          console.error("❌ DATABASE INSERT FAILED:", dbError);
-          console.error("Failed listingData:", JSON.stringify(listingData, null, 2));
-          throw dbError;
-        }
+        });
       } catch (error) {
         console.error("Error creating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
