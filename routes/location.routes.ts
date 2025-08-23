@@ -291,6 +291,16 @@ export default async function (fastify: FastifyInstance) {
           });
         }
 
+        if (!MAPBOX_ACCESS_TOKEN) {
+          return reply.code(404).send({
+            success: false,
+            error: {
+              code: "NO_LOCATION_FOUND",
+              message: "Reverse geocoding not available - no API token configured",
+            },
+          });
+        }
+
         const response = await axios.get(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=place,locality`,
         );
