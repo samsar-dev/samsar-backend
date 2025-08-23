@@ -133,16 +133,18 @@ export default async function (fastify: FastifyInstance) {
           });
         }
 
-        // Search in Arabic cities database
-        const localResults = CityService.searchCities(q as string, parseInt(limit as string));
+        // Search using optimized Arabic cities database
+        const searchResults = CityService.searchCities(q as string, parseInt(limit as string));
         
-        if (localResults.length > 0) {
-          // Transform local results to match the expected interface
-          const results = localResults.map((city) => {
-            // Check if this is a neighborhood and find its parent city
-            const parentCity = CityService.findParentCity(city.name);
-            const formattedLocation = parentCity ? 
-              CityService.formatLocationForDatabase(parentCity, city.name) : city.name;
+        if (searchResults.length > 0) {
+          // Transform optimized results to match the expected interface
+          const results = searchResults.map((city) => {
+            // Parse location to get neighborhood and city components
+            const locationComponents = CityService.parseLocationString(city.name);
+            const formattedLocation = CityService.formatLocationForDatabase(
+              locationComponents.city || city.name, 
+              locationComponents.neighborhood
+            );
             
             return {
               place_id: `syrian_city_${city.name.replace(/\s+/g, '_')}`,
@@ -150,8 +152,8 @@ export default async function (fastify: FastifyInstance) {
               lat: city.latitude,
               lon: city.longitude,
               address: {
-                city: parentCity || city.name,
-                neighborhood: parentCity ? city.name : undefined,
+                city: locationComponents.city || city.name,
+                neighborhood: locationComponents.neighborhood,
                 country: "سوريا",
                 country_code: "sy",
               },
@@ -165,8 +167,8 @@ export default async function (fastify: FastifyInstance) {
           return reply.send({
             success: true,
             data: results,
-            source: "comprehensive_database_arabic",
-            total_cities_available: CityService.getTotalCityCount(),
+            source: "optimized_database_arabic",
+            stats: CityService.getLocationStats(),
           });
         }
 

@@ -1,84 +1,49 @@
 import { CityCoordinates, CityWithDistance } from "../../types/city.js";
+import optimizedCityService from "./optimizedCityService.js";
 
-// Import Arabic Syrian cities data - this is the only data we need
-import syrianCitiesArabic from "../data/syrianCities.js";
-
-// Convert Arabic cities data to our backend format
-const syrianCities: CityCoordinates[] = syrianCitiesArabic.flatMap(city => [
-  // Add the main city
-  {
-    name: city.name,
-    latitude: city.latitude,
-    longitude: city.longitude,
-  },
-  // Add all neighbors as separate cities
-  ...city.neighbors.map(neighbor => ({
-    name: neighbor.name,
-    latitude: neighbor.latitude,
-    longitude: neighbor.longitude,
-  }))
-]);
-
+/**
+ * CityService - Wrapper for optimized location service
+ * Maintains backward compatibility while using high-performance backend
+ */
 export class CityService {
   /**
    * Get all Syrian cities (Arabic only)
    */
   static getAllCities(): CityCoordinates[] {
-    return syrianCities;
+    return optimizedCityService.getAllCities().map(location => ({
+      name: location.name,
+      latitude: location.latitude,
+      longitude: location.longitude
+    }));
   }
 
   /**
    * Get total count of cities in database
    */
   static getTotalCityCount(): number {
-    return syrianCities.length;
+    return optimizedCityService.getTotalLocationCount();
   }
 
   /**
    * Search cities by name with intelligent filtering (Arabic)
    */
   static searchCities(query: string, limit: number = 10): CityCoordinates[] {
-    if (!query || query.trim().length === 0) {
-      return [];
-    }
-
-    const searchTerm = query.trim();
-    
-    // Exact matches first
-    const exactMatches = syrianCities.filter(city => 
-      city.name === searchTerm
-    );
-
-    // Starts with matches
-    const startsWithMatches = syrianCities.filter(city => 
-      city.name.startsWith(searchTerm) && 
-      !exactMatches.some(exact => exact.name === city.name)
-    );
-
-    // Contains matches
-    const containsMatches = syrianCities.filter(city => 
-      city.name.includes(searchTerm) && 
-      !exactMatches.some(exact => exact.name === city.name) &&
-      !startsWithMatches.some(starts => starts.name === city.name)
-    );
-
-    // Combine results with priority order
-    const allMatches = [...exactMatches, ...startsWithMatches, ...containsMatches];
-    
-    return allMatches.slice(0, limit);
+    const results = optimizedCityService.searchCities(query, limit);
+    return results.map(result => ({
+      name: result.name,
+      latitude: result.latitude,
+      longitude: result.longitude
+    }));
   }
 
   /**
-   * Format location for database storage (City,Neighborhood format)
+   * Format location for database storage (Neighborhood، City format)
    * @param cityName - Main city name
    * @param neighborhoodName - Neighborhood/area name (optional)
    * @returns Formatted location string
    */
   static formatLocationForDatabase(cityName: string, neighborhoodName?: string): string {
-    if (neighborhoodName && neighborhoodName !== cityName) {
-      return `${neighborhoodName}، ${cityName}`;
-    }
-    return cityName;
+    return optimizedCityService.formatLocationForDatabase(cityName, neighborhoodName);
   }
 
   /**
@@ -87,15 +52,7 @@ export class CityService {
    * @returns Parent city name or null if not found
    */
   static findParentCity(neighborhoodName: string): string | null {
-    for (const city of syrianCitiesArabic) {
-      const neighborFound = city.neighbors.find(neighbor => 
-        neighbor.name === neighborhoodName
-      );
-      if (neighborFound) {
-        return city.name;
-      }
-    }
-    return null;
+    return optimizedCityService.findParentCity(neighborhoodName);
   }
 
   /**
@@ -107,16 +64,17 @@ export class CityService {
     radiusKm: number = 50,
     limit: number = 10
   ): CityWithDistance[] {
-    const nearbyCities = syrianCities
-      .map(city => ({
-        ...city,
-        distance: this.calculateDistance(latitude, longitude, city.latitude, city.longitude)
-      }))
-      .filter(city => city.distance <= radiusKm)
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, limit);
-
-    return nearbyCities;
+    const nearbyLocations = optimizedCityService.findNearbyLocations(
+      latitude, longitude, radiusKm, limit
+    );
+    
+    // Calculate distances for compatibility
+    return nearbyLocations.map(location => ({
+      name: location.name,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      distance: this.calculateDistance(latitude, longitude, location.latitude, location.longitude)
+    }));
   }
 
   /**
@@ -146,5 +104,39 @@ export class CityService {
    */
   private static toRadians(degrees: number): number {
     return degrees * (Math.PI / 180);
+  }
+
+  // === NEW OPTIMIZED METHODS ===
+
+  /**
+   * Validate location string format: "حديقة السبكي، دمشق"
+   */
+  static validateLocation(locationString: string): boolean {
+    return optimizedCityService.validateLocation(locationString);
+  }
+
+  /**
+   * Parse location string into components
+   */
+  static parseLocationString(locationString: string): { neighborhood?: string; city?: string } {
+    return optimizedCityService.parseLocationString(locationString);
+  }
+
+  /**
+   * Get location statistics
+   */
+  static getLocationStats(): { cities: number; neighborhoods: number; total: number } {
+    return optimizedCityService.getLocationStats();
+  }
+
+  /**
+   * Get neighborhoods for a specific city
+   */
+  static getNeighborhoodsForCity(cityName: string): CityCoordinates[] {
+    return optimizedCityService.getNeighborhoodsForCity(cityName).map(location => ({
+      name: location.name,
+      latitude: location.latitude,
+      longitude: location.longitude
+    }));
   }
 }
