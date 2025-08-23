@@ -205,13 +205,13 @@ export const processImagesMiddleware = async (
 
         // Get user and listing IDs from request
         const userId = (request as any).user?.id;
-        const listingId = (request.body as any)?.listingId;
+        const listingId = (request.body as any)?.listingId || formData.listingId;
 
         if (!userId) {
           throw new Error("User authentication required for uploads");
         }
 
-        // Determine upload type based on fieldname
+        // Determine upload type based on fieldname and context
         let uploadType: "avatar" | "listing" | "other" = "other";
         if (
           part.fieldname === "avatar" ||
@@ -220,8 +220,16 @@ export const processImagesMiddleware = async (
           uploadType = "avatar";
         } else if (listingId) {
           uploadType = "listing";
+        } else if (
+          part.fieldname?.toLowerCase().includes("listing") ||
+          part.fieldname?.toLowerCase().includes("image") ||
+          request.url?.includes("/listings") ||
+          request.method === "POST" && request.url === "/"
+        ) {
+          // For listing creation/editing, treat images as listing images even without listingId
+          uploadType = "listing";
         } else {
-          uploadType = "other"; // temporary until listingId is available
+          uploadType = "other";
         }
 
         const uploadOptions: UploadOptions = {

@@ -580,6 +580,30 @@ export default async function (fastify: FastifyInstance) {
             exteriorColor: createdListing.exteriorColor,
           });
 
+          // Move images from temp folder to proper listing folder
+          const { moveListingImagesFromTemp } = await import("../config/cloudflareR2.js");
+          const moveResult = await moveListingImagesFromTemp(user.id, createdListing.id);
+          
+          if (moveResult.success && moveResult.movedImages.length > 0) {
+            console.log(`✅ Moved ${moveResult.movedImages.length} images to listing ${createdListing.id}`);
+            
+            // Update listing with proper image URLs
+            await prisma.listing.update({
+              where: { id: createdListing.id },
+              data: {
+                images: {
+                  deleteMany: {}, // Remove old temp image records
+                  create: moveResult.movedImages.map((url, index) => ({
+                    url,
+                    storageProvider: 'CLOUDFLARE',
+                    storageKey: url.split('/').slice(-4).join('/'), // Extract key from URL
+                    order: index,
+                  }))
+                }
+              }
+            });
+          }
+
           console.log(`\n✅ Created listing ${createdListing.id}`);
           if (mainCategory === 'vehicles') {
             const savedVehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].filter(field => (createdListing as any)[field]);

@@ -77,11 +77,13 @@ export const uploadToR2 = async (
         break;
 
       case "listing":
-        if (!options.listingId) {
-          throw new Error("Listing ID is required for listing images");
+        if (options.listingId) {
+          // Store listing images in user's listings directory with specific listing ID
+          fileName = `uploads/users/${options.userId}/listings/${options.listingId}/images/${timestamp}-${random}.${ext}`;
+        } else {
+          // For new listings without ID yet, store in temporary listing folder
+          fileName = `uploads/users/${options.userId}/listings/temp/${timestamp}-${random}.${ext}`;
         }
-        // Store listing images in user's listings directory
-        fileName = `uploads/users/${options.userId}/listings/${options.listingId}/images/${timestamp}-${random}.${ext}`;
         break;
 
       default:
@@ -155,6 +157,61 @@ export const moveObjectInR2 = async (
   } catch (err) {
     console.error("Failed to move object in R2", err);
     return { success: false, message: "Failed to move object" };
+  }
+};
+
+/**
+ * Move images from temp listing folder to proper listing folder
+ */
+export const moveListingImagesFromTemp = async (
+  userId: string,
+  listingId: string,
+): Promise<{ success: boolean; message: string; movedImages: string[] }> => {
+  if (!isR2Configured || !s3) {
+    return { success: false, message: "Cloudflare R2 not configured", movedImages: [] };
+  }
+
+  try {
+    const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
+    const tempPrefix = `uploads/users/${userId}/listings/temp/`;
+    const movedImages: string[] = [];
+
+    // List all files in temp folder
+    const listCommand = new ListObjectsV2Command({
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET!,
+      Prefix: tempPrefix,
+    });
+
+    const response = await s3.send(listCommand);
+    
+    if (response.Contents && response.Contents.length > 0) {
+      for (const object of response.Contents) {
+        if (object.Key) {
+          // Extract filename from temp path
+          const filename = object.Key.split('/').pop();
+          const newKey = `uploads/users/${userId}/listings/${listingId}/images/${filename}`;
+          
+          // Move the file
+          const moveResult = await moveObjectInR2(object.Key, newKey);
+          if (moveResult.success && moveResult.url) {
+            movedImages.push(moveResult.url);
+          }
+        }
+      }
+    }
+
+    return {
+      success: true,
+      message: `Moved ${movedImages.length} images from temp to listing ${listingId}`,
+      movedImages,
+    };
+  } catch (error) {
+    console.error("Failed to move listing images from temp:", error);
+    return {
+      success: false,
+      message: "Failed to move images from temp folder",
+      movedImages: [],
+    };
   }
 };
 
