@@ -91,14 +91,48 @@ export default async function (fastify: FastifyInstance) {
   );
 
   /**
-   * Get all cities (for frontend to use)
+   * Get all cities with neighborhoods (for Flutter app)
    */
   fastify.get("/api/locations/cities", async (_req, reply) => {
     try {
-      const cities = CityService.getAllCities();
+      // Get major Syrian cities
+      const majorCityNames = [
+        'دمشق', 'حلب', 'حمص', 'اللاذقية', 'الرقة', 'القامشلي',
+        'السويداء', 'الحسكة', 'درعا', 'طرطوس', 'إدلب', 'القنيطرة',
+        'دير الزور', 'الباب', 'منبج'
+      ];
+
+      const allCities = CityService.getAllCities();
+      
+      // Filter to get only major cities
+      const majorCities = allCities.filter(city => 
+        majorCityNames.includes(city.name)
+      );
+
+      // Build cities with their neighborhoods
+      const citiesWithNeighborhoods = majorCities.map(city => {
+        const neighborhoods = CityService.getNeighborhoodsForCity(city.name);
+        
+        return {
+          name: city.name,
+          latitude: city.latitude,
+          longitude: city.longitude,
+          neighbors: neighborhoods.map(neighborhood => ({
+            name: neighborhood.name,
+            latitude: neighborhood.latitude,
+            longitude: neighborhood.longitude
+          }))
+        };
+      });
+
+      console.log(`🏙️ Returning ${citiesWithNeighborhoods.length} major cities with neighborhoods`);
+      citiesWithNeighborhoods.forEach(city => {
+        console.log(`   ${city.name}: ${city.neighbors.length} neighborhoods`);
+      });
+
       return {
         success: true,
-        data: cities,
+        data: citiesWithNeighborhoods,
       };
     } catch (error) {
       console.error("Error getting cities:", error);
