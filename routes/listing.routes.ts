@@ -828,6 +828,62 @@ export default async function (fastify: FastifyInstance) {
     )
   );
 
+  // Delete listing (authenticated - only owner can delete)
+  fastify.delete<{ Params: { id: string } }>(
+    "/:id",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const userId = validateUser(req);
+          const listingId = (req.params as { id: string }).id;
+
+          // First check if listing exists and belongs to user
+          const listing = await prisma.listing.findUnique({
+            where: { id: listingId },
+            include: { images: true },
+          });
+
+          if (!listing) {
+            return reply.code(404).send({
+              success: false,
+              error: "Listing not found",
+              status: 404,
+            });
+          }
+
+          if (listing.userId !== userId) {
+            return reply.code(403).send({
+              success: false,
+              error: "You can only delete your own listings",
+              status: 403,
+            });
+          }
+
+          // Delete the listing (this will cascade delete related records)
+          await prisma.listing.delete({
+            where: { id: listingId },
+          });
+
+          return reply.send({
+            success: true,
+            message: "Listing deleted successfully",
+            status: 200,
+          });
+        } catch (error) {
+          console.error("Error deleting listing:", error);
+          return reply.code(500).send({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+            status: 500,
+          });
+        }
+      }
+    )
+  );
+
   // Other routes continue with similar improvements...
   // (Keeping remaining routes from original for space, but applying same patterns)
 }

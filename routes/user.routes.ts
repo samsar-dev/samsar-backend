@@ -12,8 +12,8 @@ import {
 } from "../controllers/user.controller.js";
 import {
   processImagesMiddleware,
-  uploadToR2,
 } from "../middleware/upload.middleware.js";
+import { uploadToR2 } from "../config/cloudflareR2.js";
 import { MultipartFile } from "@fastify/multipart";
 import prisma from "../src/lib/prismaClient.js";
 import { deleteFromR2 } from "../config/cloudflareR2.js";
