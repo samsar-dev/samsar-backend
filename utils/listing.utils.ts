@@ -1,6 +1,6 @@
 import { RealEstateDetails, VehicleDetails } from "../types/shared.js";
 import { PropertyType, VehicleType } from "../types/enums.js";
-import { schemaMap } from "../schemas/listingSchemaMap.js";
+import { schemaMap } from "../schemas/consolidated-schemas.js";
 
 export const filterListingDetails = (
   listingDetails: VehicleDetails | RealEstateDetails,
