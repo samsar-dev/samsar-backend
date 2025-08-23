@@ -582,7 +582,7 @@ export default async function (fastify: FastifyInstance) {
 
           // Move images from temp folder to proper listing folder
           const { moveListingImagesFromTemp } = await import("../config/cloudflareR2.js");
-          const moveResult = await moveListingImagesFromTemp(user.id, createdListing.id);
+          const moveResult = await moveListingImagesFromTemp(user.id!, createdListing.id);
           
           if (moveResult.success && moveResult.movedImages.length > 0) {
             console.log(`✅ Moved ${moveResult.movedImages.length} images to listing ${createdListing.id}`);
