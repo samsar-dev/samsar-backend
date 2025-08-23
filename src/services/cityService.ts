@@ -1,11 +1,10 @@
 import { CityCoordinates, CityWithDistance } from "../../types/city.js";
 
-// Import comprehensive Syrian cities data from your frontend database
-// This data should ideally be loaded from a database, but for now we'll import it directly
-import { syrianCities as comprehensiveCities } from "../data/syrianCities.js";
+// Import Arabic Syrian cities data - this is the only data we need
+import syrianCitiesArabic from "../data/syrianCities.js";
 
-// Convert the comprehensive data to our backend format
-const syrianCities: CityCoordinates[] = comprehensiveCities.flatMap(city => [
+// Convert Arabic cities data to our backend format
+const syrianCities: CityCoordinates[] = syrianCitiesArabic.flatMap(city => [
   // Add the main city
   {
     name: city.name,
@@ -22,7 +21,7 @@ const syrianCities: CityCoordinates[] = comprehensiveCities.flatMap(city => [
 
 export class CityService {
   /**
-   * Get all Syrian cities
+   * Get all Syrian cities (Arabic only)
    */
   static getAllCities(): CityCoordinates[] {
     return syrianCities;
@@ -36,29 +35,29 @@ export class CityService {
   }
 
   /**
-   * Search cities by name with intelligent filtering
+   * Search cities by name with intelligent filtering (Arabic)
    */
   static searchCities(query: string, limit: number = 10): CityCoordinates[] {
     if (!query || query.trim().length === 0) {
       return [];
     }
 
-    const searchTerm = query.toLowerCase().trim();
+    const searchTerm = query.trim();
     
     // Exact matches first
     const exactMatches = syrianCities.filter(city => 
-      city.name.toLowerCase() === searchTerm
+      city.name === searchTerm
     );
 
     // Starts with matches
     const startsWithMatches = syrianCities.filter(city => 
-      city.name.toLowerCase().startsWith(searchTerm) && 
+      city.name.startsWith(searchTerm) && 
       !exactMatches.some(exact => exact.name === city.name)
     );
 
     // Contains matches
     const containsMatches = syrianCities.filter(city => 
-      city.name.toLowerCase().includes(searchTerm) && 
+      city.name.includes(searchTerm) && 
       !exactMatches.some(exact => exact.name === city.name) &&
       !startsWithMatches.some(starts => starts.name === city.name)
     );
@@ -67,6 +66,36 @@ export class CityService {
     const allMatches = [...exactMatches, ...startsWithMatches, ...containsMatches];
     
     return allMatches.slice(0, limit);
+  }
+
+  /**
+   * Format location for database storage (City,Neighborhood format)
+   * @param cityName - Main city name
+   * @param neighborhoodName - Neighborhood/area name (optional)
+   * @returns Formatted location string
+   */
+  static formatLocationForDatabase(cityName: string, neighborhoodName?: string): string {
+    if (neighborhoodName && neighborhoodName !== cityName) {
+      return `${neighborhoodName}، ${cityName}`;
+    }
+    return cityName;
+  }
+
+  /**
+   * Find parent city for a given neighborhood
+   * @param neighborhoodName - Name of the neighborhood
+   * @returns Parent city name or null if not found
+   */
+  static findParentCity(neighborhoodName: string): string | null {
+    for (const city of syrianCitiesArabic) {
+      const neighborFound = city.neighbors.find(neighbor => 
+        neighbor.name === neighborhoodName
+      );
+      if (neighborFound) {
+        return city.name;
+      }
+    }
+    return null;
   }
 
   /**

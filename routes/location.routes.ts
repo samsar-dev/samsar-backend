@@ -112,8 +112,10 @@ export default async function (fastify: FastifyInstance) {
     }
   });
 
+
+
   /**
-   * Search for locations using comprehensive Syrian cities database with Mapbox fallback
+   * Search for locations using comprehensive Syrian cities database (Arabic only)
    */
   fastify.get<{ Querystring: SearchQuery }>(
     "/api/locations/search",
@@ -131,30 +133,39 @@ export default async function (fastify: FastifyInstance) {
           });
         }
 
-        // First, search in our comprehensive Syrian cities database
+        // Search in Arabic cities database
         const localResults = CityService.searchCities(q as string, parseInt(limit as string));
         
         if (localResults.length > 0) {
           // Transform local results to match the expected interface
-          const results = localResults.map((city) => ({
-            place_id: `syrian_city_${city.name.toLowerCase().replace(/\s+/g, '_')}`,
-            display_name: `${city.name}, Syria`,
-            lat: city.latitude,
-            lon: city.longitude,
-            address: {
-              city: city.name,
-              country: "Syria",
-              country_code: "sy",
-            },
-            namedetails: {
-              name: city.name,
-            },
-          }));
+          const results = localResults.map((city) => {
+            // Check if this is a neighborhood and find its parent city
+            const parentCity = CityService.findParentCity(city.name);
+            const formattedLocation = parentCity ? 
+              CityService.formatLocationForDatabase(parentCity, city.name) : city.name;
+            
+            return {
+              place_id: `syrian_city_${city.name.replace(/\s+/g, '_')}`,
+              display_name: `${formattedLocation}، سوريا`,
+              lat: city.latitude,
+              lon: city.longitude,
+              address: {
+                city: parentCity || city.name,
+                neighborhood: parentCity ? city.name : undefined,
+                country: "سوريا",
+                country_code: "sy",
+              },
+              namedetails: {
+                name: city.name,
+                formatted_location: formattedLocation,
+              },
+            };
+          });
 
           return reply.send({
             success: true,
             data: results,
-            source: "comprehensive_database",
+            source: "comprehensive_database_arabic",
             total_cities_available: CityService.getTotalCityCount(),
           });
         }

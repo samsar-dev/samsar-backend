@@ -1,2431 +1,1915 @@
-export const syrianCities = [
+const syrianCitiesArabic = [
   {
-    "name": "Raqqa",
-    "latitude": 35.95,
-    "longitude": 39.0167,
+    "name": "دمشق",
+    "latitude": 33.5138,
+    "longitude": 36.2765,
     "neighbors": [
       {
-        "name": "Al-Mashlab",
-        "latitude": 35.96,
-        "longitude": 39.02
+        "name": "الميدان",
+        "latitude": 33.4951,
+        "longitude": 36.2918
       },
       {
-        "name": "Al-Romaniya",
-        "latitude": 35.955,
-        "longitude": 39.01
+        "name": "باب توما",
+        "latitude": 33.5147,
+        "longitude": 36.3089
       },
       {
-        "name": "Al-Qadisiyah",
-        "latitude": 35.945,
-        "longitude": 39.005
+        "name": "القصاع",
+        "latitude": 33.5234,
+        "longitude": 36.2456
       },
       {
-        "name": "Al-Daraiya",
-        "latitude": 35.95,
-        "longitude": 39.025
+        "name": "المهاجرين",
+        "latitude": 33.5289,
+        "longitude": 36.2634
       },
       {
-        "name": "Al-Mansoura",
-        "latitude": 35.94,
-        "longitude": 39.015
+        "name": "الصالحية",
+        "latitude": 33.5201,
+        "longitude": 36.2789
       },
       {
-        "name": "Al-Badu",
-        "latitude": 35.965,
-        "longitude": 39.02
+        "name": "الشاغور",
+        "latitude": 33.5045,
+        "longitude": 36.2834
       },
       {
-        "name": "Al-Sinaa",
-        "latitude": 35.955,
-        "longitude": 39.03
+        "name": "القيمرية",
+        "latitude": 33.5156,
+        "longitude": 36.2923
       },
       {
-        "name": "Al-Hani",
-        "latitude": 35.945,
-        "longitude": 39.035
+        "name": "العمارة",
+        "latitude": 33.5089,
+        "longitude": 36.2567
       },
       {
-        "name": "Al-Nahda",
-        "latitude": 35.95,
-        "longitude": 39.04
+        "name": "الأمين",
+        "latitude": 33.5178,
+        "longitude": 36.2445
       },
       {
-        "name": "Al-Matar",
-        "latitude": 35.965,
-        "longitude": 39.01
+        "name": "المزة",
+        "latitude": 33.5023,
+        "longitude": 36.2234
       },
       {
-        "name": "Al-Thawra",
-        "latitude": 35.95,
-        "longitude": 39.015
+        "name": "كفر سوسة",
+        "latitude": 33.4867,
+        "longitude": 36.2345
       },
       {
-        "name": "Al-Qusour",
-        "latitude": 35.955,
-        "longitude": 39.025
+        "name": "جرمانا",
+        "latitude": 33.4789,
+        "longitude": 36.3456
       },
       {
-        "name": "Al-Hamidiyah",
-        "latitude": 35.945,
-        "longitude": 39.03
+        "name": "دوما",
+        "latitude": 33.5712,
+        "longitude": 36.4023
       },
       {
-        "name": "Al-Ghouta",
-        "latitude": 35.96,
-        "longitude": 39.015
+        "name": "حرستا",
+        "latitude": 33.5634,
+        "longitude": 36.3789
       },
       {
-        "name": "Al-Jalaa",
-        "latitude": 35.955,
-        "longitude": 39.035
+        "name": "عربين",
+        "latitude": 33.5456,
+        "longitude": 36.3678
       },
       {
-        "name": "Al-Mazzeh",
-        "latitude": 35.95,
-        "longitude": 39.01
+        "name": "زملكا",
+        "latitude": 33.5389,
+        "longitude": 36.3567
       },
       {
-        "name": "Al-Muhafaza",
-        "latitude": 35.945,
-        "longitude": 39.025
+        "name": "عين ترما",
+        "latitude": 33.5234,
+        "longitude": 36.3445
       },
       {
-        "name": "Al-Wahda",
-        "latitude": 35.96,
-        "longitude": 39.03
+        "name": "سقبا",
+        "latitude": 33.5567,
+        "longitude": 36.3789
       },
       {
-        "name": "Al-Saada",
-        "latitude": 35.955,
-        "longitude": 39.02
+        "name": "حمورية",
+        "latitude": 33.5345,
+        "longitude": 36.3234
       },
       {
-        "name": "Al-Nasr",
-        "latitude": 35.95,
-        "longitude": 39.035
+        "name": "كفر بطنا",
+        "latitude": 33.5456,
+        "longitude": 36.3123
       },
       {
-        "name": "Al-Karama",
-        "latitude": 35.955,
-        "longitude": 39.028
+        "name": "المليحة",
+        "latitude": 33.4789,
+        "longitude": 36.3567
       },
       {
-        "name": "Al-Andalus",
-        "latitude": 35.952,
-        "longitude": 39.022
+        "name": "جيسرين",
+        "latitude": 33.4567,
+        "longitude": 36.3234
       },
       {
-        "name": "Al-Zahraa",
-        "latitude": 35.948,
-        "longitude": 39.03
+        "name": "بيت سحم",
+        "latitude": 33.4345,
+        "longitude": 36.3456
       },
       {
-        "name": "Al-Rawda",
-        "latitude": 35.953,
-        "longitude": 39.018
+        "name": "داريا",
+        "latitude": 33.4234,
+        "longitude": 36.2789
       },
       {
-        "name": "Al-Mashtal",
-        "latitude": 35.957,
-        "longitude": 39.025
+        "name": "معضمية الشام",
+        "latitude": 33.4456,
+        "longitude": 36.2567
       },
       {
-        "name": "Al-Nour",
-        "latitude": 35.951,
-        "longitude": 39.032
+        "name": "برزة",
+        "latitude": 33.5456,
+        "longitude": 36.2789
       },
       {
-        "name": "Al-Quds",
-        "latitude": 35.949,
-        "longitude": 39.027
+        "name": "التجارة",
+        "latitude": 33.5123,
+        "longitude": 36.2890
       },
       {
-        "name": "Al-Amal",
-        "latitude": 35.954,
-        "longitude": 39.023
+        "name": "الروضة",
+        "latitude": 33.5234,
+        "longitude": 36.2678
       },
       {
-        "name": "Al-Safwa",
-        "latitude": 35.956,
-        "longitude": 39.029
+        "name": "المالكي",
+        "latitude": 33.5089,
+        "longitude": 36.2456
+      },
+      {
+        "name": "أبو رمانة",
+        "latitude": 33.5167,
+        "longitude": 36.2534
+      },
+      {
+        "name": "الشعلان",
+        "latitude": 33.5145,
+        "longitude": 36.2612
+      },
+      {
+        "name": "المزرعة",
+        "latitude": 33.5201,
+        "longitude": 36.2723
+      },
+      {
+        "name": "الجسر الأبيض",
+        "latitude": 33.5312,
+        "longitude": 36.2845
+      },
+      {
+        "name": "ركن الدين",
+        "latitude": 33.5389,
+        "longitude": 36.2756
+      },
+      {
+        "name": "المزة فيلات غربية",
+        "latitude": 33.4989,
+        "longitude": 36.2123
+      },
+      {
+        "name": "المزة فيلات شرقية",
+        "latitude": 33.5012,
+        "longitude": 36.2189
+      },
+      {
+        "name": "المزة جبل",
+        "latitude": 33.4956,
+        "longitude": 36.2067
+      },
+      {
+        "name": "المزة أوتوستراد",
+        "latitude": 33.5034,
+        "longitude": 36.2234
+      },
+      {
+        "name": "كفر سوسة البلد",
+        "latitude": 33.4834,
+        "longitude": 36.2312
+      },
+      {
+        "name": "كفر سوسة الجديدة",
+        "latitude": 33.4889,
+        "longitude": 36.2378
+      },
+      {
+        "name": "الزاهرة الجديدة",
+        "latitude": 33.5456,
+        "longitude": 36.2934
+      },
+      {
+        "name": "الزاهرة القديمة",
+        "latitude": 33.5423,
+        "longitude": 36.2867
+      },
+      {
+        "name": "الدويلعة",
+        "latitude": 33.5378,
+        "longitude": 36.2789
+      },
+      {
+        "name": "الحريقة",
+        "latitude": 33.5234,
+        "longitude": 36.2945
+      },
+      {
+        "name": "باب الجابية",
+        "latitude": 33.5089,
+        "longitude": 36.2823
+      },
+      {
+        "name": "باب السريجة",
+        "latitude": 33.5123,
+        "longitude": 36.2856
+      },
+      {
+        "name": "باب الفراديس",
+        "latitude": 33.5167,
+        "longitude": 36.2912
+      },
+      {
+        "name": "باب شرقي",
+        "latitude": 33.5145,
+        "longitude": 36.2978
+      },
+      {
+        "name": "القنوات",
+        "latitude": 33.5201,
+        "longitude": 36.3023
+      },
+      {
+        "name": "ساروجة",
+        "latitude": 33.5234,
+        "longitude": 36.2834
+      },
+      {
+        "name": "العقيبة",
+        "latitude": 33.5178,
+        "longitude": 36.2767
+      },
+      {
+        "name": "الدحداح",
+        "latitude": 33.5312,
+        "longitude": 36.2689
+      },
+      {
+        "name": "تشرين",
+        "latitude": 33.5389,
+        "longitude": 36.2612
+      },
+      {
+        "name": "الثورة",
+        "latitude": 33.5423,
+        "longitude": 36.2545
+      },
+      {
+        "name": "المنطقة الصناعية",
+        "latitude": 33.4756,
+        "longitude": 36.2456
+      },
+      {
+        "name": "الست زينب",
+        "latitude": 33.4623,
+        "longitude": 36.3123
+      },
+      {
+        "name": "الأشرفية",
+        "latitude": 33.5456,
+        "longitude": 36.3234
+      },
+      {
+        "name": "التل",
+        "latitude": 33.5567,
+        "longitude": 36.3345
+      },
+      {
+        "name": "عدرا العمالية",
+        "latitude": 33.5678,
+        "longitude": 36.3456
+      },
+      {
+        "name": "عدرا البلد",
+        "latitude": 33.5634,
+        "longitude": 36.3389
+      },
+      {
+        "name": "النشابية",
+        "latitude": 33.5789,
+        "longitude": 36.3567
+      },
+      {
+        "name": "الغباغب",
+        "latitude": 33.5845,
+        "longitude": 36.3678
+      },
+      {
+        "name": "حوش عرب",
+        "latitude": 33.5901,
+        "longitude": 36.3789
+      },
+      {
+        "name": "حوش الضواهر",
+        "latitude": 33.5823,
+        "longitude": 36.3712
+      },
+      {
+        "name": "الضمير",
+        "latitude": 33.6234,
+        "longitude": 36.4123
+      },
+      {
+        "name": "الرحيبة",
+        "latitude": 33.6178,
+        "longitude": 36.4056
+      },
+      {
+        "name": "المعلولا",
+        "latitude": 33.8456,
+        "longitude": 36.5234
+      },
+      {
+        "name": "صيدنايا",
+        "latitude": 33.6789,
+        "longitude": 36.3789
+      },
+      {
+        "name": "رنكوس",
+        "latitude": 33.6567,
+        "longitude": 36.3567
+      },
+      {
+        "name": "يبرود",
+        "latitude": 33.9678,
+        "longitude": 36.6567
+      },
+      {
+        "name": "النبك",
+        "latitude": 34.0234,
+        "longitude": 36.7234
+      },
+      {
+        "name": "دير عطية",
+        "latitude": 33.8234,
+        "longitude": 36.6123
+      },
+      {
+        "name": "القطيفة",
+        "latitude": 33.7456,
+        "longitude": 36.5456
+      },
+      {
+        "name": "التلفيتا",
+        "latitude": 33.4123,
+        "longitude": 36.1789
+      },
+      {
+        "name": "قدسيا",
+        "latitude": 33.4567,
+        "longitude": 36.2123
+      },
+      {
+        "name": "الدرعية",
+        "latitude": 33.4234,
+        "longitude": 36.1956
+      },
+      {
+        "name": "الهامة",
+        "latitude": 33.4345,
+        "longitude": 36.2067
+      },
+      {
+        "name": "عش الورور",
+        "latitude": 33.4456,
+        "longitude": 36.2178
+      },
+      {
+        "name": "الكسوة",
+        "latitude": 33.3456,
+        "longitude": 36.2456
+      },
+      {
+        "name": "الديماس",
+        "latitude": 33.5678,
+        "longitude": 36.1234
+      },
+      {
+        "name": "بلودان",
+        "latitude": 33.7234,
+        "longitude": 36.1567
+      },
+      {
+        "name": "الزبداني",
+        "latitude": 33.7456,
+        "longitude": 36.1123
+      },
+      {
+        "name": "مضايا",
+        "latitude": 33.7123,
+        "longitude": 36.1345
+      },
+      {
+        "name": "بقين",
+        "latitude": 33.6789,
+        "longitude": 36.1456
+      },
+      {
+        "name": "سرغايا",
+        "latitude": 33.6567,
+        "longitude": 36.1234
+      },
+      {
+        "name": "عين الفيجة",
+        "latitude": 33.6345,
+        "longitude": 36.1567
+      },
+      {
+        "name": "وادي بردى",
+        "latitude": 33.6123,
+        "longitude": 36.1345
       }
     ]
   },
   {
-    "name": "Qamishli",
-    "latitude": 37.05,
-    "longitude": 41.2167,
+    "name": "حلب",
+    "latitude": 36.2021,
+    "longitude": 37.1343,
     "neighbors": [
       {
-        "name": "Al-Wasta",
-        "latitude": 37.055,
-        "longitude": 41.22
+        "name": "العزيزية",
+        "latitude": 36.1934,
+        "longitude": 37.1456
       },
       {
-        "name": "Al-Antariya",
-        "latitude": 37.06,
-        "longitude": 41.21
+        "name": "الشعار",
+        "latitude": 36.2089,
+        "longitude": 37.1234
       },
       {
-        "name": "Al-Qusour",
-        "latitude": 37.045,
-        "longitude": 41.215
+        "name": "السكري",
+        "latitude": 36.1856,
+        "longitude": 37.1567
       },
       {
-        "name": "Al-Arbawiyah",
-        "latitude": 37.055,
-        "longitude": 41.225
+        "name": "السبيل",
+        "latitude": 36.2156,
+        "longitude": 37.1089
       },
       {
-        "name": "Al-Mufti",
-        "latitude": 37.05,
-        "longitude": 41.23
+        "name": "صلاح الدين",
+        "latitude": 36.2034,
+        "longitude": 37.1345
       },
       {
-        "name": "Al-Mahata",
-        "latitude": 37.045,
-        "longitude": 41.22
+        "name": "الكلاسة",
+        "latitude": 36.1789,
+        "longitude": 37.1678
       },
       {
-        "name": "Al-Qudud",
-        "latitude": 37.055,
-        "longitude": 41.21
+        "name": "المرجة",
+        "latitude": 36.2234,
+        "longitude": 37.1123
       },
       {
-        "name": "Al-Tayy",
-        "latitude": 37.06,
-        "longitude": 41.215
+        "name": "الجميلية",
+        "latitude": 36.1945,
+        "longitude": 37.1456
       },
       {
-        "name": "Al-Quds",
-        "latitude": 37.05,
-        "longitude": 41.225
+        "name": "الفردوس",
+        "latitude": 36.1678,
+        "longitude": 37.1789
       },
       {
-        "name": "Al-Ghazal",
-        "latitude": 37.055,
-        "longitude": 41.235
+        "name": "الحيدرية",
+        "latitude": 36.2345,
+        "longitude": 37.1012
       },
       {
-        "name": "Al-Nasr",
-        "latitude": 37.052,
-        "longitude": 41.222
+        "name": "الأشرفية",
+        "latitude": 36.2123,
+        "longitude": 37.1567
       },
       {
-        "name": "Al-Saada",
-        "latitude": 37.048,
-        "longitude": 41.218
+        "name": "المحافظة",
+        "latitude": 36.2056,
+        "longitude": 37.1289
       },
       {
-        "name": "Al-Wahda",
-        "latitude": 37.053,
-        "longitude": 41.228
+        "name": "العقبة",
+        "latitude": 36.1867,
+        "longitude": 37.1434
       },
       {
-        "name": "Al-Andalus",
-        "latitude": 37.057,
-        "longitude": 41.232
+        "name": "بستان القصر",
+        "latitude": 36.1734,
+        "longitude": 37.1623
       },
       {
-        "name": "Al-Nour",
-        "latitude": 37.051,
-        "longitude": 41.224
+        "name": "القاطرجي",
+        "latitude": 36.1623,
+        "longitude": 37.1734
       },
       {
-        "name": "Al-Thawra",
-        "latitude": 37.049,
-        "longitude": 41.22
+        "name": "الميسر",
+        "latitude": 36.1567,
+        "longitude": 37.1845
       },
       {
-        "name": "Al-Mashtal",
-        "latitude": 37.054,
-        "longitude": 41.226
+        "name": "تل رفعت",
+        "latitude": 36.4567,
+        "longitude": 37.0987
       },
       {
-        "name": "Al-Zuhour",
-        "latitude": 37.056,
-        "longitude": 41.23
+        "name": "الباب",
+        "latitude": 36.3709,
+        "longitude": 37.5151
       },
       {
-        "name": "Al-Hamidiyah",
-        "latitude": 37.05,
-        "longitude": 41.228
+        "name": "جرابلس",
+        "latitude": 36.8167,
+        "longitude": 38.0111
       },
       {
-        "name": "Al-Jalaa",
-        "latitude": 37.053,
-        "longitude": 41.225
+        "name": "اعزاز",
+        "latitude": 36.5869,
+        "longitude": 37.0486
       },
       {
-        "name": "Al-Karama",
-        "latitude": 37.054,
-        "longitude": 41.227
+        "name": "مارع",
+        "latitude": 36.6567,
+        "longitude": 37.1234
       },
       {
-        "name": "Al-Rawda",
-        "latitude": 37.051,
-        "longitude": 41.223
+        "name": "الراعي",
+        "latitude": 36.5234,
+        "longitude": 37.2345
       },
       {
-        "name": "Al-Safwa",
-        "latitude": 37.049,
-        "longitude": 41.225
+        "name": "دابق",
+        "latitude": 36.4789,
+        "longitude": 37.1567
       },
       {
-        "name": "Al-Zahraa",
-        "latitude": 37.052,
-        "longitude": 41.229
+        "name": "سوران",
+        "latitude": 36.4345,
+        "longitude": 37.0789
       },
       {
-        "name": "Al-Amal",
-        "latitude": 37.05,
-        "longitude": 41.226
+        "name": "الأتارب",
+        "latitude": 36.1389,
+        "longitude": 36.8278
       },
       {
-        "name": "Al-Mazzeh",
-        "latitude": 37.053,
-        "longitude": 41.222
+        "name": "حريتان",
+        "latitude": 36.3456,
+        "longitude": 37.0456
       },
       {
-        "name": "Al-Ghouta",
-        "latitude": 37.055,
-        "longitude": 41.224
+        "name": "تادف",
+        "latitude": 36.3567,
+        "longitude": 37.5234
       },
       {
-        "name": "Al-Qadisiyah",
-        "latitude": 37.056,
-        "longitude": 41.228
+        "name": "الخفسة",
+        "latitude": 36.2789,
+        "longitude": 37.4567
       },
       {
-        "name": "Al-Matar",
-        "latitude": 37.049,
-        "longitude": 41.227
+        "name": "كويرس",
+        "latitude": 36.1234,
+        "longitude": 37.5789
       },
       {
-        "name": "Al-Baath",
-        "latitude": 37.051,
-        "longitude": 41.229
+        "name": "دير حافر",
+        "latitude": 36.1567,
+        "longitude": 37.7234
+      },
+      {
+        "name": "مسكنة",
+        "latitude": 36.0789,
+        "longitude": 38.0456
+      },
+      {
+        "name": "الثورة",
+        "latitude": 36.2456,
+        "longitude": 37.0789
+      },
+      {
+        "name": "الزهراء",
+        "latitude": 36.2234,
+        "longitude": 37.0567
+      },
+      {
+        "name": "الهلك",
+        "latitude": 36.1789,
+        "longitude": 37.0345
+      },
+      {
+        "name": "الانصاري",
+        "latitude": 36.1945,
+        "longitude": 37.1678
+      },
+      {
+        "name": "بني زيد",
+        "latitude": 36.1823,
+        "longitude": 37.1789
+      },
+      {
+        "name": "المشهد",
+        "latitude": 36.1678,
+        "longitude": 37.1567
+      },
+      {
+        "name": "الكندي",
+        "latitude": 36.2567,
+        "longitude": 37.1789
+      },
+      {
+        "name": "الشيخ مقصود",
+        "latitude": 36.2345,
+        "longitude": 37.1456
+      },
+      {
+        "name": "عين العرب",
+        "latitude": 36.8906,
+        "longitude": 38.3489
+      },
+      {
+        "name": "منبج",
+        "latitude": 36.5281,
+        "longitude": 37.9553
+      },
+      {
+        "name": "الجرنية",
+        "latitude": 36.4567,
+        "longitude": 37.8234
+      },
+      {
+        "name": "الأرشاف",
+        "latitude": 36.3789,
+        "longitude": 37.7456
+      },
+      {
+        "name": "تل عفار",
+        "latitude": 36.3234,
+        "longitude": 37.6789
+      },
+      {
+        "name": "الحوار",
+        "latitude": 36.2789,
+        "longitude": 37.6234
+      },
+      {
+        "name": "الصفيرة",
+        "latitude": 36.2345,
+        "longitude": 37.5789
+      },
+      {
+        "name": "النيرب",
+        "latitude": 36.1789,
+        "longitude": 37.2345
+      },
+      {
+        "name": "الجندول",
+        "latitude": 36.1456,
+        "longitude": 37.2789
+      },
+      {
+        "name": "حندرات",
+        "latitude": 36.2678,
+        "longitude": 37.0234
+      },
+      {
+        "name": "الكاستيلو",
+        "latitude": 36.2456,
+        "longitude": 37.0456
+      },
+      {
+        "name": "عنجارة",
+        "latitude": 36.2234,
+        "longitude": 37.0678
+      },
+      {
+        "name": "الليرمون",
+        "latitude": 36.2012,
+        "longitude": 37.0890
+      },
+      {
+        "name": "الشيخ نجار",
+        "latitude": 36.2789,
+        "longitude": 37.2456
+      },
+      {
+        "name": "السفيرة",
+        "latitude": 36.0678,
+        "longitude": 37.4234
+      },
+      {
+        "name": "كناكر",
+        "latitude": 36.0456,
+        "longitude": 37.3789
+      },
+      {
+        "name": "تل حاصل",
+        "latitude": 36.0234,
+        "longitude": 37.3456
+      },
+      {
+        "name": "الحاضر",
+        "latitude": 36.0012,
+        "longitude": 37.3234
+      },
+      {
+        "name": "عفرين",
+        "latitude": 36.5167,
+        "longitude": 36.8667
+      },
+      {
+        "name": "راجو",
+        "latitude": 36.6167,
+        "longitude": 36.9167
+      },
+      {
+        "name": "نبل",
+        "latitude": 36.3833,
+        "longitude": 36.9833
       }
     ]
   },
   {
-    "name": "As-Suwayda",
-    "latitude": 32.7,
-    "longitude": 36.5667,
+    "name": "حمص",
+    "latitude": 34.7267,
+    "longitude": 36.7063,
     "neighbors": [
       {
-        "name": "Al-Mashtal",
-        "latitude": 32.705,
-        "longitude": 36.57
+        "name": "الوعر",
+        "latitude": 34.7089,
+        "longitude": 36.6789
       },
       {
-        "name": "Al-Zuhour",
-        "latitude": 32.695,
-        "longitude": 36.565
+        "name": "الغوطة",
+        "latitude": 34.7345,
+        "longitude": 36.7234
       },
       {
-        "name": "Al-Wahda",
-        "latitude": 32.7,
-        "longitude": 36.575
+        "name": "الخالدية",
+        "latitude": 34.7156,
+        "longitude": 36.6934
       },
       {
-        "name": "Al-Matar",
-        "latitude": 32.705,
-        "longitude": 36.56
+        "name": "النزهة",
+        "latitude": 34.7234,
+        "longitude": 36.7156
       },
       {
-        "name": "Al-Qusour",
-        "latitude": 32.695,
-        "longitude": 36.57
+        "name": "الحميدية",
+        "latitude": 34.7178,
+        "longitude": 36.7089
       },
       {
-        "name": "Al-Hamidiyah",
-        "latitude": 32.705,
-        "longitude": 36.575
+        "name": "الإنشاءات",
+        "latitude": 34.7289,
+        "longitude": 36.7234
       },
       {
-        "name": "Al-Sinaa",
-        "latitude": 32.7,
-        "longitude": 36.57
+        "name": "الدبلان",
+        "latitude": 34.7123,
+        "longitude": 36.6856
       },
       {
-        "name": "Al-Baath",
-        "latitude": 32.705,
-        "longitude": 36.565
+        "name": "الزهراء",
+        "latitude": 34.7345,
+        "longitude": 36.7345
       },
       {
-        "name": "Al-Jalaa",
-        "latitude": 32.695,
-        "longitude": 36.575
+        "name": "الصفصافة",
+        "latitude": 34.7067,
+        "longitude": 36.6723
       },
       {
-        "name": "Al-Nasr",
-        "latitude": 32.702,
-        "longitude": 36.572
+        "name": "القرابيص",
+        "latitude": 34.7456,
+        "longitude": 36.7456
       },
       {
-        "name": "Al-Saada",
-        "latitude": 32.698,
-        "longitude": 36.568
+        "name": "باب السباع",
+        "latitude": 34.7234,
+        "longitude": 36.7089
       },
       {
-        "name": "Al-Andalus",
-        "latitude": 32.704,
-        "longitude": 36.574
+        "name": "باب تدمر",
+        "latitude": 34.7345,
+        "longitude": 36.7234
       },
       {
-        "name": "Al-Nour",
-        "latitude": 32.696,
-        "longitude": 36.566
+        "name": "باب الدريب",
+        "latitude": 34.7156,
+        "longitude": 36.6945
       },
       {
-        "name": "Al-Rawda",
-        "latitude": 32.703,
-        "longitude": 36.571
+        "name": "الأرمن",
+        "latitude": 34.7289,
+        "longitude": 36.7156
       },
       {
-        "name": "Al-Qadisiyah",
-        "latitude": 32.697,
-        "longitude": 36.569
+        "name": "جورة الشياح",
+        "latitude": 34.7123,
+        "longitude": 36.6867
       },
       {
-        "name": "Al-Karama",
-        "latitude": 32.706,
-        "longitude": 36.573
+        "name": "الحولة",
+        "latitude": 34.8567,
+        "longitude": 36.2789
       },
       {
-        "name": "Al-Ghouta",
-        "latitude": 32.701,
-        "longitude": 36.572
+        "name": "تلبيسة",
+        "latitude": 34.8234,
+        "longitude": 36.7345
       },
       {
-        "name": "Al-Zahraa",
-        "latitude": 32.699,
-        "longitude": 36.567
+        "name": "الرستن",
+        "latitude": 35.1333,
+        "longitude": 36.7333
       },
       {
-        "name": "Al-Amal",
-        "latitude": 32.704,
-        "longitude": 36.568
+        "name": "تلدو",
+        "latitude": 35.0789,
+        "longitude": 36.6789
       },
       {
-        "name": "Al-Safwa",
-        "latitude": 32.698,
-        "longitude": 36.573
+        "name": "الدار الكبيرة",
+        "latitude": 34.9456,
+        "longitude": 36.7123
       },
       {
-        "name": "Al-Fayhaa",
-        "latitude": 32.702,
-        "longitude": 36.567
+        "name": "تير معلة",
+        "latitude": 34.8789,
+        "longitude": 36.6456
       },
       {
-        "name": "Al-Yarmouk",
-        "latitude": 32.7,
-        "longitude": 36.569
+        "name": "الغنطو",
+        "latitude": 34.8234,
+        "longitude": 36.6123
       },
       {
-        "name": "Al-Quds",
-        "latitude": 32.703,
-        "longitude": 36.566
+        "name": "كفر لاها",
+        "latitude": 34.8567,
+        "longitude": 36.5789
       },
       {
-        "name": "Al-Majd",
-        "latitude": 32.696,
-        "longitude": 36.571
+        "name": "الحصن",
+        "latitude": 34.7456,
+        "longitude": 36.2789
       },
       {
-        "name": "Al-Farah",
-        "latitude": 32.701,
-        "longitude": 36.574
+        "name": "مشتى الحلو",
+        "latitude": 34.7123,
+        "longitude": 36.2456
       },
       {
-        "name": "Al-Nahda",
-        "latitude": 32.699,
-        "longitude": 36.568
+        "name": "الناصرة",
+        "latitude": 34.6789,
+        "longitude": 36.2123
+      },
+      {
+        "name": "عين التينة",
+        "latitude": 34.6456,
+        "longitude": 36.1789
+      },
+      {
+        "name": "الشين",
+        "latitude": 34.6123,
+        "longitude": 36.1456
+      },
+      {
+        "name": "القريتين",
+        "latitude": 34.2333,
+        "longitude": 37.1833
+      },
+      {
+        "name": "المخرم",
+        "latitude": 34.2789,
+        "longitude": 37.2234
+      },
+      {
+        "name": "فيروزة",
+        "latitude": 34.3456,
+        "longitude": 37.2789
+      },
+      {
+        "name": "الفرقلس",
+        "latitude": 34.4123,
+        "longitude": 37.3234
+      },
+      {
+        "name": "تدمر",
+        "latitude": 34.5562,
+        "longitude": 38.2840
+      },
+      {
+        "name": "السخنة",
+        "latitude": 34.8956,
+        "longitude": 37.7234
       }
     ]
   },
   {
-    "name": "Al-Bab",
-    "latitude": 36.3722,
-    "longitude": 37.5178,
+    "name": "اللاذقية",
+    "latitude": 35.5138,
+    "longitude": 35.7713,
     "neighbors": [
       {
-        "name": "Al-Qusour",
-        "latitude": 36.37,
-        "longitude": 37.52
+        "name": "السلمان",
+        "latitude": 35.5234,
+        "longitude": 35.7834
       },
       {
-        "name": "Al-Mashhad",
-        "latitude": 36.375,
-        "longitude": 37.525
+        "name": "العزيزية",
+        "latitude": 35.5089,
+        "longitude": 35.7567
       },
       {
-        "name": "Al-Hamidiyah",
-        "latitude": 36.37,
-        "longitude": 37.515
+        "name": "القدس",
+        "latitude": 35.5156,
+        "longitude": 35.7689
       },
       {
-        "name": "Al-Nour",
-        "latitude": 36.368,
-        "longitude": 37.518
+        "name": "الصناعة",
+        "latitude": 35.5267,
+        "longitude": 35.7912
       },
       {
-        "name": "Al-Sinaa",
-        "latitude": 36.372,
-        "longitude": 37.522
+        "name": "الميناء",
+        "latitude": 35.5045,
+        "longitude": 35.7456
       },
       {
-        "name": "Al-Qadisiyah",
-        "latitude": 36.374,
-        "longitude": 37.516
+        "name": "الشاطئ الأزرق",
+        "latitude": 35.4978,
+        "longitude": 35.7345
       },
       {
-        "name": "Al-Matar",
-        "latitude": 36.37,
-        "longitude": 37.51
+        "name": "الزراعة",
+        "latitude": 35.5345,
+        "longitude": 35.8023
       },
       {
-        "name": "Al-Nahda",
-        "latitude": 36.375,
-        "longitude": 37.515
+        "name": "الرمل الشمالي",
+        "latitude": 35.5456,
+        "longitude": 35.8134
       },
       {
-        "name": "Al-Mashtal",
-        "latitude": 36.373,
-        "longitude": 37.518
+        "name": "الرمل الجنوبي",
+        "latitude": 35.4867,
+        "longitude": 35.7234
       },
       {
-        "name": "Al-Zuhour",
-        "latitude": 36.371,
-        "longitude": 37.519
+        "name": "الكورنيش",
+        "latitude": 35.5123,
+        "longitude": 35.7678
       },
       {
-        "name": "Al-Wahda",
-        "latitude": 36.372,
-        "longitude": 37.52
+        "name": "الطابيات",
+        "latitude": 35.5289,
+        "longitude": 35.7945
       },
       {
-        "name": "Al-Jalaa",
-        "latitude": 36.374,
-        "longitude": 37.519
+        "name": "الشيخ ضاهر",
+        "latitude": 35.5367,
+        "longitude": 35.8012
       },
       {
-        "name": "Al-Saada",
-        "latitude": 36.37,
-        "longitude": 37.521
+        "name": "المشروع",
+        "latitude": 35.5412,
+        "longitude": 35.8089
       },
       {
-        "name": "Al-Andalus",
-        "latitude": 36.373,
-        "longitude": 37.517
+        "name": "الأوقاف",
+        "latitude": 35.5178,
+        "longitude": 35.7723
       },
       {
-        "name": "Al-Thawra",
-        "latitude": 36.371,
-        "longitude": 37.516
+        "name": "المدينة الرياضية",
+        "latitude": 35.5234,
+        "longitude": 35.7856
       },
       {
-        "name": "Al-Mazzeh",
-        "latitude": 36.375,
-        "longitude": 37.52
+        "name": "جبلة",
+        "latitude": 35.3650,
+        "longitude": 35.9281
       },
       {
-        "name": "Al-Muhafaza",
-        "latitude": 36.37,
-        "longitude": 37.519
+        "name": "بانياس",
+        "latitude": 35.1818,
+        "longitude": 35.9479
       },
       {
-        "name": "Al-Rawda",
-        "latitude": 36.372,
-        "longitude": 37.518
+        "name": "القرداحة",
+        "latitude": 35.4567,
+        "longitude": 36.0123
       },
       {
-        "name": "Al-Karama",
-        "latitude": 36.373,
-        "longitude": 37.519
+        "name": "صافيتا",
+        "latitude": 34.8203,
+        "longitude": 36.1178
       },
       {
-        "name": "Al-Baath",
-        "latitude": 36.371,
-        "longitude": 37.52
+        "name": "الحفة",
+        "latitude": 35.6089,
+        "longitude": 36.1234
       },
       {
-        "name": "Al-Ghouta",
-        "latitude": 36.3725,
-        "longitude": 37.518
+        "name": "سلمى",
+        "latitude": 35.6234,
+        "longitude": 36.0789
       },
       {
-        "name": "Al-Zahraa",
-        "latitude": 36.3715,
-        "longitude": 37.517
+        "name": "كسب",
+        "latitude": 35.8567,
+        "longitude": 35.9456
       },
       {
-        "name": "Al-Amal",
-        "latitude": 36.3735,
-        "longitude": 37.516
+        "name": "الفاخورة",
+        "latitude": 35.7234,
+        "longitude": 36.0567
       },
       {
-        "name": "Al-Safwa",
-        "latitude": 36.3705,
-        "longitude": 37.5195
+        "name": "ربيعة",
+        "latitude": 35.7789,
+        "longitude": 36.1234
       },
       {
-        "name": "Al-Fayhaa",
-        "latitude": 36.3725,
-        "longitude": 37.5205
+        "name": "عين البيضا",
+        "latitude": 35.6789,
+        "longitude": 35.9789
       },
       {
-        "name": "Al-Yarmouk",
-        "latitude": 36.3715,
-        "longitude": 37.5215
-      },
-      {
-        "name": "Al-Quds",
-        "latitude": 36.3735,
-        "longitude": 37.5195
-      },
-      {
-        "name": "Al-Majd",
-        "latitude": 36.3705,
-        "longitude": 37.5185
-      },
-      {
-        "name": "Al-Farah",
-        "latitude": 36.3725,
-        "longitude": 37.5175
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 36.3715,
-        "longitude": 37.5195
+        "name": "قنسرين",
+        "latitude": 35.6456,
+        "longitude": 35.9234
       }
     ]
   },
   {
-    "name": "Manbij",
-    "latitude": 36.5333,
-    "longitude": 37.95,
+    "name": "طرطوس",
+    "latitude": 34.8886,
+    "longitude": 35.8854,
     "neighbors": [
       {
-        "name": "Al-Sinaa",
-        "latitude": 36.535,
-        "longitude": 37.955
+        "name": "الثورة",
+        "latitude": 34.8945,
+        "longitude": 35.8912
       },
       {
-        "name": "Al-Qusour",
-        "latitude": 36.53,
-        "longitude": 37.945
+        "name": "المشتل",
+        "latitude": 34.8823,
+        "longitude": 35.8789
       },
       {
-        "name": "Al-Mahata",
-        "latitude": 36.535,
-        "longitude": 37.96
+        "name": "الكورنيش",
+        "latitude": 34.8867,
+        "longitude": 35.8823
       },
       {
-        "name": "Al-Hamidiyah",
-        "latitude": 36.53,
-        "longitude": 37.95
+        "name": "الميناء",
+        "latitude": 34.8912,
+        "longitude": 35.8867
       },
       {
-        "name": "Al-Matar",
-        "latitude": 36.535,
-        "longitude": 37.945
+        "name": "الزهراء",
+        "latitude": 34.8756,
+        "longitude": 35.8712
       },
       {
-        "name": "Al-Wahda",
-        "latitude": 36.53,
-        "longitude": 37.96
+        "name": "المدينة القديمة",
+        "latitude": 34.8889,
+        "longitude": 35.8834
       },
       {
-        "name": "Al-Nasr",
-        "latitude": 36.535,
-        "longitude": 37.95
+        "name": "الأندلس",
+        "latitude": 34.8934,
+        "longitude": 35.8923
+      },
+      {
+        "name": "الوحدة",
+        "latitude": 34.8812,
+        "longitude": 35.8745
+      },
+      {
+        "name": "الشهداء",
+        "latitude": 34.8856,
+        "longitude": 35.8798
+      },
+      {
+        "name": "الرياضة",
+        "latitude": 34.8923,
+        "longitude": 35.8889
+      },
+      {
+        "name": "صافيتا",
+        "latitude": 34.8203,
+        "longitude": 36.1178
+      },
+      {
+        "name": "الدريكيش",
+        "latitude": 34.8956,
+        "longitude": 36.1423
+      },
+      {
+        "name": "الشيخ بدر",
+        "latitude": 34.7234,
+        "longitude": 35.9567
+      },
+      {
+        "name": "بانياس",
+        "latitude": 35.1818,
+        "longitude": 35.9479
+      },
+      {
+        "name": "القدموس",
+        "latitude": 35.0234,
+        "longitude": 36.3789
+      },
+      {
+        "name": "مصياف",
+        "latitude": 35.0656,
+        "longitude": 36.3434
+      },
+      {
+        "name": "وادي العيون",
+        "latitude": 34.9123,
+        "longitude": 36.2456
+      },
+      {
+        "name": "الحميدية",
+        "latitude": 34.8567,
+        "longitude": 35.9234
+      },
+      {
+        "name": "عرمطة",
+        "latitude": 34.7789,
+        "longitude": 35.8789
+      },
+      {
+        "name": "الخراب",
+        "latitude": 34.7456,
+        "longitude": 35.8456
       }
     ]
   },
   {
-    "name": "Damascus",
-    "latitude": 33.5131,
-    "longitude": 36.2913,
+    "name": "درعا",
+    "latitude": 32.6189,
+    "longitude": 36.1021,
     "neighbors": [
       {
-        "name": "Al-Midan",
-        "latitude": 33.5111,
-        "longitude": 36.2994
+        "name": "المحطة",
+        "latitude": 32.6234,
+        "longitude": 36.1089
       },
       {
-        "name": "Al-Mazzeh",
-        "latitude": 33.5231,
-        "longitude": 36.2731
+        "name": "الصنمين",
+        "latitude": 33.0667,
+        "longitude": 36.5167
       },
       {
-        "name": "Barzeh",
-        "latitude": 33.54,
-        "longitude": 36.31
+        "name": "إزرع",
+        "latitude": 32.8667,
+        "longitude": 36.2500
       },
       {
-        "name": "Jaramana",
-        "latitude": 33.5,
-        "longitude": 36.33
+        "name": "نوى",
+        "latitude": 32.8833,
+        "longitude": 36.0333
       },
       {
-        "name": "Douma",
-        "latitude": 33.5833,
-        "longitude": 36.4167
+        "name": "الشيخ مسكين",
+        "latitude": 32.8167,
+        "longitude": 36.1500
       },
       {
-        "name": "Darayya",
-        "latitude": 33.4833,
-        "longitude": 36.2833
+        "name": "درعا البلد",
+        "latitude": 32.6156,
+        "longitude": 36.0989
       },
       {
-        "name": "Moadamiyah",
-        "latitude": 33.5,
-        "longitude": 36.25
+        "name": "درعا المحطة",
+        "latitude": 32.6234,
+        "longitude": 36.1089
       },
       {
-        "name": "Al-Tal",
-        "latitude": 33.6,
-        "longitude": 36.3
+        "name": "الطيبة",
+        "latitude": 32.7123,
+        "longitude": 36.0456
       },
       {
-        "name": "Al-Harasta",
-        "latitude": 33.5833,
-        "longitude": 36.4
+        "name": "الجيزة",
+        "latitude": 32.5789,
+        "longitude": 36.1234
       },
       {
-        "name": "Al-Qaboun",
-        "latitude": 33.5333,
-        "longitude": 36.35
+        "name": "المزيريب",
+        "latitude": 32.6789,
+        "longitude": 36.2456
       },
       {
-        "name": "Kafr Sousa",
-        "latitude": 33.51,
-        "longitude": 36.28
+        "name": "تسيل",
+        "latitude": 32.8456,
+        "longitude": 36.0789
       },
       {
-        "name": "Al-Mezzeh 86",
-        "latitude": 33.52,
-        "longitude": 36.27
+        "name": "الحراك",
+        "latitude": 32.7456,
+        "longitude": 36.3123
       },
       {
-        "name": "Al-Zahraa",
-        "latitude": 33.53,
-        "longitude": 36.3
+        "name": "بصرى الشام",
+        "latitude": 32.5167,
+        "longitude": 36.4833
       },
       {
-        "name": "Al-Maliki",
-        "latitude": 33.515,
-        "longitude": 36.29
+        "name": "الصورة",
+        "latitude": 32.4789,
+        "longitude": 36.3456
       },
       {
-        "name": "Abu Rummaneh",
-        "latitude": 33.52,
-        "longitude": 36.29
+        "name": "غباغب",
+        "latitude": 32.8234,
+        "longitude": 36.4567
       },
       {
-        "name": "Al-Shahbandar",
-        "latitude": 33.515,
-        "longitude": 36.3
+        "name": "جاسم",
+        "latitude": 32.9789,
+        "longitude": 36.0567
       },
       {
-        "name": "Al-Amara",
-        "latitude": 33.51,
-        "longitude": 36.295
+        "name": "الكرك الشرقي",
+        "latitude": 32.7234,
+        "longitude": 36.1789
       },
       {
-        "name": "Al-Qanawat",
-        "latitude": 33.505,
-        "longitude": 36.305
+        "name": "المسيفرة",
+        "latitude": 32.6567,
+        "longitude": 35.9789
       },
       {
-        "name": "Bab Tuma",
-        "latitude": 33.515,
-        "longitude": 36.31
+        "name": "طفس",
+        "latitude": 32.7345,
+        "longitude": 36.0234
       },
       {
-        "name": "Al-Salihiyah",
-        "latitude": 33.525,
-        "longitude": 36.295
-      },
-      {
-        "name": "Al-Qassaa",
-        "latitude": 33.518,
-        "longitude": 36.265
-      },
-      {
-        "name": "Rukn al-Din",
-        "latitude": 33.52,
-        "longitude": 36.3
-      },
-      {
-        "name": "Shaghour al-Juwani",
-        "latitude": 33.51,
-        "longitude": 36.31
-      },
-      {
-        "name": "Midan",
-        "latitude": 33.5,
-        "longitude": 36.3
-      },
-      {
-        "name": "Kafr Souseh",
-        "latitude": 33.5,
-        "longitude": 36.27
-      },
-      {
-        "name": "Malki",
-        "latitude": 33.515,
-        "longitude": 36.28
-      },
-      {
-        "name": "Dummar",
-        "latitude": 33.55,
-        "longitude": 36.25
-      },
-      {
-        "name": "Jobar",
-        "latitude": 33.5333,
-        "longitude": 36.3333
-      },
-      {
-        "name": "Qadam",
-        "latitude": 33.4667,
-        "longitude": 36.3
+        "name": "الشجرة",
+        "latitude": 32.6123,
+        "longitude": 35.9456
       }
     ]
   },
   {
-    "name": "Aleppo",
-    "latitude": 36.2167,
-    "longitude": 37.1667,
-    "neighbors": [
-      {
-        "name": "Al-Aziziyah",
-        "latitude": 36.2,
-        "longitude": 37.15
-      },
-      {
-        "name": "Al-Shaar",
-        "latitude": 36.2333,
-        "longitude": 37.15
-      },
-      {
-        "name": "Al-Sukkari",
-        "latitude": 36.2167,
-        "longitude": 37.15
-      },
-      {
-        "name": "Al-Sabil Roundabout",
-        "latitude": 36.23,
-        "longitude": 37.155
-      },
-      {
-        "name": "Al-Sabil Park",
-        "latitude": 36.232,
-        "longitude": 37.152
-      },
-      {
-        "name": "Al-Sabil Market",
-        "latitude": 36.231,
-        "longitude": 37.153
-      },
-      {
-        "name": "Al-Sabil School",
-        "latitude": 36.233,
-        "longitude": 37.151
-      },
-      {
-        "name": "Al-Sabil Hospital",
-        "latitude": 36.23,
-        "longitude": 37.154
-      },
-      {
-        "name": "Al-Sabil Mall",
-        "latitude": 36.232,
-        "longitude": 37.155
-      },
-      {
-        "name": "Al-Sabil Street",
-        "latitude": 36.231,
-        "longitude": 37.156
-      },
-      {
-        "name": "Al-Sabil Square",
-        "latitude": 36.23,
-        "longitude": 37.157
-      },
-      {
-        "name": "Al-Sabil Mosque",
-        "latitude": 36.232,
-        "longitude": 37.158
-      },
-      {
-        "name": "Al-Sabil Garden",
-        "latitude": 36.233,
-        "longitude": 37.159
-      },
-      {
-        "name": "Al-Sha'ar",
-        "latitude": 36.2167,
-        "longitude": 37.1333
-      },
-      {
-        "name": "Al-Sabil Roundabout",
-        "latitude": 36.2167,
-        "longitude": 37.1667
-      },
-      {
-        "name": "Al-Sabil Park",
-        "latitude": 36.22,
-        "longitude": 37.17
-      },
-      {
-        "name": "Al-Sabil Market",
-        "latitude": 36.225,
-        "longitude": 37.165
-      },
-      {
-        "name": "Al-Sabil School",
-        "latitude": 36.218,
-        "longitude": 37.168
-      },
-      {
-        "name": "Al-Sabil Hospital",
-        "latitude": 36.222,
-        "longitude": 37.163
-      },
-      {
-        "name": "Al-Sabil Mall",
-        "latitude": 36.224,
-        "longitude": 37.169
-      },
-      {
-        "name": "Al-Sabil Street",
-        "latitude": 36.226,
-        "longitude": 37.167
-      },
-      {
-        "name": "Al-Sabil Square",
-        "latitude": 36.22,
-        "longitude": 37.162
-      },
-      {
-        "name": "Al-Sabil Mosque",
-        "latitude": 36.223,
-        "longitude": 37.164
-      },
-      {
-        "name": "Al-Sabil Garden",
-        "latitude": 36.221,
-        "longitude": 37.166
-      }
-    ]
-  },
-  {
-    "name": "Homs",
-    "latitude": 34.7333,
-    "longitude": 36.7167,
-    "neighbors": [
-      {
-        "name": "Al-Waer",
-        "latitude": 34.75,
-        "longitude": 36.7
-      },
-      {
-        "name": "Al-Ghouta",
-        "latitude": 34.7333,
-        "longitude": 36.7
-      },
-      {
-        "name": "Al-Khaldiyah",
-        "latitude": 34.735,
-        "longitude": 36.705
-      },
-      {
-        "name": "Al-Nuzha",
-        "latitude": 34.73,
-        "longitude": 36.71
-      },
-      {
-        "name": "Al-Sabeel",
-        "latitude": 34.732,
-        "longitude": 36.715
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 34.734,
-        "longitude": 36.72
-      },
-      {
-        "name": "Al-Andalus",
-        "latitude": 34.736,
-        "longitude": 36.718
-      },
-      {
-        "name": "Al-Qusour Al-Jadidah",
-        "latitude": 34.738,
-        "longitude": 36.72
-      },
-      {
-        "name": "Al-Zahraa",
-        "latitude": 34.74,
-        "longitude": 36.715
-      },
-      {
-        "name": "Al-Majd",
-        "latitude": 34.742,
-        "longitude": 36.71
-      },
-      {
-        "name": "Al-Saada",
-        "latitude": 34.744,
-        "longitude": 36.705
-      },
-      {
-        "name": "Al-Wuroud",
-        "latitude": 34.746,
-        "longitude": 36.7
-      },
-      {
-        "name": "Al-Sabil",
-        "latitude": 34.735,
-        "longitude": 36.71
-      },
-      {
-        "name": "Al-Mazzeh",
-        "latitude": 34.738,
-        "longitude": 36.715
-      },
-      {
-        "name": "Al-Matar Al-Qadim",
-        "latitude": 34.74,
-        "longitude": 36.72
-      },
-      {
-        "name": "Al-Matar Al-Jadid",
-        "latitude": 34.742,
-        "longitude": 36.725
-      },
-      {
-        "name": "Al-Matar Al-Shamali",
-        "latitude": 34.744,
-        "longitude": 36.73
-      },
-      {
-        "name": "Al-Matar Al-Janoubi",
-        "latitude": 34.746,
-        "longitude": 36.735
-      },
-      {
-        "name": "Al-Matar Al-Gharbi",
-        "latitude": 34.748,
-        "longitude": 36.74
-      },
-      {
-        "name": "Al-Matar Al-Sharqi",
-        "latitude": 34.75,
-        "longitude": 36.745
-      },
-      {
-        "name": "Al-Matar Al-Wasti",
-        "latitude": 34.752,
-        "longitude": 36.75
-      },
-      {
-        "name": "Al-Waer",
-        "latitude": 34.7333,
-        "longitude": 36.6833
-      }
-    ]
-  },
-  {
-    "name": "Latakia",
-    "latitude": 35.5167,
-    "longitude": 35.7833,
-    "neighbors": [
-      {
-        "name": "Al-Samman",
-        "latitude": 35.52,
-        "longitude": 35.785
-      },
-      {
-        "name": "Al-Aziziyah",
-        "latitude": 35.518,
-        "longitude": 35.784
-      },
-      {
-        "name": "Al-Quds",
-        "latitude": 35.517,
-        "longitude": 35.786
-      },
-      {
-        "name": "Al-Sinaa",
-        "latitude": 35.519,
-        "longitude": 35.782
-      },
-      {
-        "name": "Al-Mina",
-        "latitude": 35.521,
-        "longitude": 35.788
-      },
-      {
-        "name": "Al-Qusour",
-        "latitude": 35.515,
-        "longitude": 35.784
-      },
-      {
-        "name": "Al-Raml",
-        "latitude": 35.52,
-        "longitude": 35.782
-      },
-      {
-        "name": "Al-Sahel",
-        "latitude": 35.522,
-        "longitude": 35.786
-      },
-      {
-        "name": "Al-Safinat",
-        "latitude": 35.516,
-        "longitude": 35.785
-      },
-      {
-        "name": "Al-Samman Roundabout",
-        "latitude": 35.519,
-        "longitude": 35.787
-      },
-      {
-        "name": "Al-Nuzha",
-        "latitude": 35.525,
-        "longitude": 35.79
-      },
-      {
-        "name": "Al-Ziraa",
-        "latitude": 35.517,
-        "longitude": 35.782
-      },
-      {
-        "name": "Al-Mazzeh",
-        "latitude": 35.52,
-        "longitude": 35.783
-      },
-      {
-        "name": "Al-Andalus",
-        "latitude": 35.518,
-        "longitude": 35.781
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 35.524,
-        "longitude": 35.785
-      },
-      {
-        "name": "Al-Wahda",
-        "latitude": 35.519,
-        "longitude": 35.786
-      },
-      {
-        "name": "Al-Hamra",
-        "latitude": 35.517,
-        "longitude": 35.784
-      },
-      {
-        "name": "Al-Saada",
-        "latitude": 35.52,
-        "longitude": 35.788
-      },
-      {
-        "name": "Al-Ghazal",
-        "latitude": 35.518,
-        "longitude": 35.783
-      },
-      {
-        "name": "Al-Mashtal",
-        "latitude": 35.521,
-        "longitude": 35.787
-      },
-      {
-        "name": "Al-Assad Suburb",
-        "latitude": 35.523,
-        "longitude": 35.8
-      },
-      {
-        "name": "Al-Hamidiyah",
-        "latitude": 35.518,
-        "longitude": 35.795
-      },
-      {
-        "name": "Al-Baath",
-        "latitude": 35.52,
-        "longitude": 35.798
-      },
-      {
-        "name": "Al-Quds Roundabout",
-        "latitude": 35.517,
-        "longitude": 35.799
-      },
-      {
-        "name": "Al-Nahda",
-        "latitude": 35.521,
-        "longitude": 35.802
-      },
-      {
-        "name": "Al-Kanissa",
-        "latitude": 35.519,
-        "longitude": 35.8
-      },
-      {
-        "name": "Al-Masaken Al-Jadida",
-        "latitude": 35.522,
-        "longitude": 35.805
-      },
-      {
-        "name": "Al-Masaken Al-Qadima",
-        "latitude": 35.52,
-        "longitude": 35.808
-      },
-      {
-        "name": "Al-Mahatta Al-Jadida",
-        "latitude": 35.518,
-        "longitude": 35.81
-      },
-      {
-        "name": "Al-Mahatta Al-Qadima",
-        "latitude": 35.521,
-        "longitude": 35.812
-      },
-      {
-        "name": "Corniche",
-        "latitude": 35.515,
-        "longitude": 35.775
-      },
-      {
-        "name": "Al-Sanoubar",
-        "latitude": 35.517,
-        "longitude": 35.772
-      },
-      {
-        "name": "Al-Basel",
-        "latitude": 35.519,
-        "longitude": 35.77
-      },
-      {
-        "name": "Al-Matar Al-Qadim",
-        "latitude": 35.513,
-        "longitude": 35.768
-      },
-      {
-        "name": "Al-Matar Al-Jadid",
-        "latitude": 35.516,
-        "longitude": 35.765
-      },
-      {
-        "name": "Al-Sayyad",
-        "latitude": 35.518,
-        "longitude": 35.762
-      },
-      {
-        "name": "Al-Nakheel",
-        "latitude": 35.52,
-        "longitude": 35.76
-      },
-      {
-        "name": "Al-Sahel Al-Shamali",
-        "latitude": 35.522,
-        "longitude": 35.758
-      },
-      {
-        "name": "Al-Sahel Al-Janoubi",
-        "latitude": 35.52,
-        "longitude": 35.755
-      },
-      {
-        "name": "Al-Mina Al-Qadim",
-        "latitude": 35.518,
-        "longitude": 35.752
-      },
-      {
-        "name": "Al-Ziraa Al-Janoubiyah",
-        "latitude": 35.51,
-        "longitude": 35.788
-      },
-      {
-        "name": "Al-Mahatta Al-Janoubiyah",
-        "latitude": 35.508,
-        "longitude": 35.79
-      },
-      {
-        "name": "Al-Sinaa Al-Jadid",
-        "latitude": 35.512,
-        "longitude": 35.792
-      },
-      {
-        "name": "Al-Masaken Al-Shaabiya",
-        "latitude": 35.514,
-        "longitude": 35.795
-      },
-      {
-        "name": "Al-Masaken Al-Askariya",
-        "latitude": 35.516,
-        "longitude": 35.798
-      },
-      {
-        "name": "Al-Masaken Al-Idaria",
-        "latitude": 35.518,
-        "longitude": 35.8
-      },
-      {
-        "name": "Al-Masaken Al-Muhandiseen",
-        "latitude": 35.52,
-        "longitude": 35.802
-      },
-      {
-        "name": "Al-Masaken Al-Muallimeen",
-        "latitude": 35.524,
-        "longitude": 35.808
-      },
-      {
-        "name": "Al-Masaken Al-Tibbiya",
-        "latitude": 35.526,
-        "longitude": 35.81
-      },
-      {
-        "name": "Tishreen University",
-        "latitude": 35.53,
-        "longitude": 35.78
-      },
-      {
-        "name": "Al-Jamea Al-Qanuniyah",
-        "latitude": 35.532,
-        "longitude": 35.778
-      },
-      {
-        "name": "Al-Jamea Al-Adabiyah",
-        "latitude": 35.534,
-        "longitude": 35.776
-      },
-      {
-        "name": "Al-Jamea Al-Tibbiyah",
-        "latitude": 35.536,
-        "longitude": 35.774
-      },
-      {
-        "name": "Al-Jamea Al-Handasiyah",
-        "latitude": 35.538,
-        "longitude": 35.772
-      },
-      {
-        "name": "Al-Jamea Al-Ziraiyah",
-        "latitude": 35.54,
-        "longitude": 35.77
-      },
-      {
-        "name": "Al-Jamea Al-Tijariyah",
-        "latitude": 35.542,
-        "longitude": 35.768
-      },
-      {
-        "name": "Al-Jamea Al-Iqtisadiyah",
-        "latitude": 35.544,
-        "longitude": 35.766
-      },
-      {
-        "name": "Al-Jamea Al-Ilmiyah",
-        "latitude": 35.546,
-        "longitude": 35.764
-      },
-      {
-        "name": "Al-Jamea Al-Adabiyah",
-        "latitude": 35.548,
-        "longitude": 35.762
-      },
-      {
-        "name": "Al-Sinaa Al-Kabir",
-        "latitude": 35.505,
-        "longitude": 35.795
-      },
-      {
-        "name": "Al-Sinaa Al-Saghir",
-        "latitude": 35.508,
-        "longitude": 35.798
-      },
-      {
-        "name": "Al-Mina Al-Sinai",
-        "latitude": 35.512,
-        "longitude": 35.802
-      },
-      {
-        "name": "Al-Mina Al-Tijari",
-        "latitude": 35.515,
-        "longitude": 35.805
-      },
-      {
-        "name": "Al-Mina Al-Raheeb",
-        "latitude": 35.518,
-        "longitude": 35.808
-      },
-      {
-        "name": "Al-Mina Al-Jadid",
-        "latitude": 35.52,
-        "longitude": 35.81
-      },
-      {
-        "name": "Al-Mina Al-Qadim",
-        "latitude": 35.522,
-        "longitude": 35.812
-      },
-      {
-        "name": "Al-Mina Al-Shamali",
-        "latitude": 35.524,
-        "longitude": 35.814
-      },
-      {
-        "name": "Al-Mina Al-Janoubi",
-        "latitude": 35.526,
-        "longitude": 35.816
-      },
-      {
-        "name": "Al-Mina Al-Gharbi",
-        "latitude": 35.528,
-        "longitude": 35.818
-      },
-      {
-        "name": "Al-Safsaf",
-        "latitude": 35.505,
-        "longitude": 35.77
-      },
-      {
-        "name": "Al-Qantarah",
-        "latitude": 35.508,
-        "longitude": 35.768
-      },
-      {
-        "name": "Al-Salloura",
-        "latitude": 35.512,
-        "longitude": 35.766
-      },
-      {
-        "name": "Al-Saliba",
-        "latitude": 35.515,
-        "longitude": 35.764
-      },
-      {
-        "name": "Al-Sayyad",
-        "latitude": 35.524,
-        "longitude": 35.756
-      },
-      {
-        "name": "Al-Shahba",
-        "latitude": 35.526,
-        "longitude": 35.754
-      },
-      {
-        "name": "Al-Shallal",
-        "latitude": 35.528,
-        "longitude": 35.752
-      },
-      {
-        "name": "Al-Talaa",
-        "latitude": 35.51,
-        "longitude": 35.775
-      },
-      {
-        "name": "Al-Tal Al-Saghir",
-        "latitude": 35.512,
-        "longitude": 35.772
-      },
-      {
-        "name": "Al-Tal Al-Kabir",
-        "latitude": 35.514,
-        "longitude": 35.77
-      },
-      {
-        "name": "Al-Taqadom",
-        "latitude": 35.516,
-        "longitude": 35.768
-      },
-      {
-        "name": "Al-Tawhid",
-        "latitude": 35.518,
-        "longitude": 35.766
-      },
-      {
-        "name": "Al-Thawra",
-        "latitude": 35.52,
-        "longitude": 35.764
-      },
-      {
-        "name": "Al-Umara",
-        "latitude": 35.522,
-        "longitude": 35.762
-      },
-      {
-        "name": "Al-Wahda Al-Jadida",
-        "latitude": 35.524,
-        "longitude": 35.76
-      },
-      {
-        "name": "Al-Wahda Al-Qadima",
-        "latitude": 35.526,
-        "longitude": 35.758
-      },
-      {
-        "name": "Al-Wahda Al-Shamaliyah",
-        "latitude": 35.528,
-        "longitude": 35.756
-      },
-      {
-        "name": "Al-Wahda Al-Janoubiyah",
-        "latitude": 35.53,
-        "longitude": 35.754
-      },
-      {
-        "name": "Al-Wahda Al-Sharqiyah",
-        "latitude": 35.532,
-        "longitude": 35.752
-      },
-      {
-        "name": "Al-Wahda Al-Gharbiyah",
-        "latitude": 35.534,
-        "longitude": 35.75
-      }
-    ]
-  },
-  {
-    "name": "Hama",
-    "latitude": 35.1333,
-    "longitude": 36.75,
-    "neighbors": [
-      {
-        "name": "Al-Hamidiyah",
-        "latitude": 35.135,
-        "longitude": 36.751
-      },
-      {
-        "name": "Al-Baath",
-        "latitude": 35.134,
-        "longitude": 36.752
-      },
-      {
-        "name": "Al-Qusour",
-        "latitude": 35.133,
-        "longitude": 36.753
-      },
-      {
-        "name": "Al-Hamraa",
-        "latitude": 35.136,
-        "longitude": 36.75
-      },
-      {
-        "name": "Al-Hamidiyah Roundabout",
-        "latitude": 35.134,
-        "longitude": 36.751
-      },
-      {
-        "name": "Al-Nour",
-        "latitude": 35.135,
-        "longitude": 36.749
-      },
-      {
-        "name": "Al-Andalus",
-        "latitude": 35.137,
-        "longitude": 36.752
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 35.138,
-        "longitude": 36.753
-      },
-      {
-        "name": "Al-Wahda",
-        "latitude": 35.136,
-        "longitude": 36.754
-      },
-      {
-        "name": "Al-Saada",
-        "latitude": 35.135,
-        "longitude": 36.755
-      },
-      {
-        "name": "Al-Ghouta",
-        "latitude": 35.137,
-        "longitude": 36.756
-      },
-      {
-        "name": "Al-Mashtal",
-        "latitude": 35.139,
-        "longitude": 36.754
-      },
-      {
-        "name": "Al-Zuhour",
-        "latitude": 35.14,
-        "longitude": 36.753
-      },
-      {
-        "name": "Al-Jalaa",
-        "latitude": 35.138,
-        "longitude": 36.755
-      },
-      {
-        "name": "Al-Mazzeh",
-        "latitude": 35.136,
-        "longitude": 36.757
-      },
-      {
-        "name": "Al-Muhafaza",
-        "latitude": 35.137,
-        "longitude": 36.758
-      },
-      {
-        "name": "Al-Rawda",
-        "latitude": 35.139,
-        "longitude": 36.756
-      },
-      {
-        "name": "Al-Karama",
-        "latitude": 35.14,
-        "longitude": 36.755
-      },
-      {
-        "name": "Al-Ghazal",
-        "latitude": 35.138,
-        "longitude": 36.754
-      }
-    ]
-  },
-  {
-    "name": "Deir ez-Zor",
-    "latitude": 35.3333,
-    "longitude": 40.15,
-    "neighbors": [
-      {
-        "name": "Al-Joura",
-        "latitude": 35.335,
-        "longitude": 40.152
-      },
-      {
-        "name": "Al-Qusour",
-        "latitude": 35.334,
-        "longitude": 40.153
-      },
-      {
-        "name": "Al-Hamidiyah",
-        "latitude": 35.336,
-        "longitude": 40.154
-      },
-      {
-        "name": "Al-Matar",
-        "latitude": 35.335,
-        "longitude": 40.155
-      },
-      {
-        "name": "Al-Wahda",
-        "latitude": 35.337,
-        "longitude": 40.153
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 35.338,
-        "longitude": 40.152
-      },
-      {
-        "name": "Al-Saada",
-        "latitude": 35.336,
-        "longitude": 40.151
-      },
-      {
-        "name": "Al-Andalus",
-        "latitude": 35.335,
-        "longitude": 40.15
-      },
-      {
-        "name": "Al-Nour",
-        "latitude": 35.334,
-        "longitude": 40.149
-      },
-      {
-        "name": "Al-Thawra",
-        "latitude": 35.333,
-        "longitude": 40.148
-      },
-      {
-        "name": "Al-Mashtal",
-        "latitude": 35.335,
-        "longitude": 40.147
-      },
-      {
-        "name": "Al-Zuhour",
-        "latitude": 35.337,
-        "longitude": 40.146
-      },
-      {
-        "name": "Al-Jalaa",
-        "latitude": 35.338,
-        "longitude": 40.145
-      },
-      {
-        "name": "Al-Mazzeh",
-        "latitude": 35.336,
-        "longitude": 40.144
-      },
-      {
-        "name": "Al-Muhafaza",
-        "latitude": 35.335,
-        "longitude": 40.143
-      },
-      {
-        "name": "Al-Rawda",
-        "latitude": 35.334,
-        "longitude": 40.142
-      },
-      {
-        "name": "Al-Karama",
-        "latitude": 35.333,
-        "longitude": 40.141
-      },
-      {
-        "name": "Al-Ghazal",
-        "latitude": 35.335,
-        "longitude": 40.14
-      },
-      {
-        "name": "Al-Safwa",
-        "latitude": 35.337,
-        "longitude": 40.139
-      },
-      {
-        "name": "Al-Nuzha",
-        "latitude": 35.338,
-        "longitude": 40.138
-      },
-      {
-        "name": "Al-Joura Street",
-        "latitude": 35.3333,
-        "longitude": 40.15
-      }
-    ]
-  },
-  {
-    "name": "Al-Hasakah",
-    "latitude": 36.5,
-    "longitude": 40.75,
-    "neighbors": [
-      {
-        "name": "Al-Aziziyah",
-        "latitude": 36.505,
-        "longitude": 40.755
-      },
-      {
-        "name": "Al-Qusour",
-        "latitude": 36.502,
-        "longitude": 40.752
-      },
-      {
-        "name": "Al-Hamidiyah",
-        "latitude": 36.498,
-        "longitude": 40.748
-      },
-      {
-        "name": "Al-Rashidiyah",
-        "latitude": 36.501,
-        "longitude": 40.751
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 36.503,
-        "longitude": 40.746
-      },
-      {
-        "name": "Al-Saada",
-        "latitude": 36.499,
-        "longitude": 40.749
-      },
-      {
-        "name": "Al-Andalus",
-        "latitude": 36.504,
-        "longitude": 40.753
-      },
-      {
-        "name": "Al-Nour",
-        "latitude": 36.497,
-        "longitude": 40.747
-      },
-      {
-        "name": "Al-Thawra",
-        "latitude": 36.5,
-        "longitude": 40.75
-      },
-      {
-        "name": "Al-Mazzeh",
-        "latitude": 36.502,
-        "longitude": 40.748
-      },
-      {
-        "name": "Al-Muhafaza",
-        "latitude": 36.498,
-        "longitude": 40.752
-      },
-      {
-        "name": "Al-Rawda",
-        "latitude": 36.501,
-        "longitude": 40.753
-      },
-      {
-        "name": "Al-Qadisiyah",
-        "latitude": 36.503,
-        "longitude": 40.749
-      },
-      {
-        "name": "Al-Karama",
-        "latitude": 36.499,
-        "longitude": 40.751
-      },
-      {
-        "name": "Al-Ghouta",
-        "latitude": 36.502,
-        "longitude": 40.747
-      },
-      {
-        "name": "Al-Zahraa",
-        "latitude": 36.498,
-        "longitude": 40.753
-      },
-      {
-        "name": "Al-Amal",
-        "latitude": 36.501,
-        "longitude": 40.749
-      },
-      {
-        "name": "Al-Safwa",
-        "latitude": 36.503,
-        "longitude": 40.751
-      },
-      {
-        "name": "Al-Fayhaa",
-        "latitude": 36.499,
-        "longitude": 40.752
-      },
-      {
-        "name": "Al-Yarmouk",
-        "latitude": 36.502,
-        "longitude": 40.75
-      },
-      {
-        "name": "Al-Quds",
-        "latitude": 36.498,
-        "longitude": 40.749
-      },
-      {
-        "name": "Al-Farah",
-        "latitude": 36.503,
-        "longitude": 40.747
-      },
-      {
-        "name": "Al-Urouba",
-        "latitude": 36.501,
-        "longitude": 40.75
-      },
-      {
-        "name": "Al-Salam",
-        "latitude": 36.499,
-        "longitude": 40.753
-      }
-    ]
-  },
-  {
-    "name": "Daraa",
-    "latitude": 32.6256,
-    "longitude": 36.105,
-    "neighbors": [
-      {
-        "name": "Al-Mahatta",
-        "latitude": 32.628,
-        "longitude": 36.108
-      },
-      {
-        "name": "Al-Balad",
-        "latitude": 32.626,
-        "longitude": 36.106
-      },
-      {
-        "name": "Al-Sad Road",
-        "latitude": 32.624,
-        "longitude": 36.104
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 32.627,
-        "longitude": 36.105
-      },
-      {
-        "name": "Al-Saada",
-        "latitude": 32.625,
-        "longitude": 36.107
-      },
-      {
-        "name": "Al-Andalus",
-        "latitude": 32.623,
-        "longitude": 36.105
-      },
-      {
-        "name": "Al-Nour",
-        "latitude": 32.626,
-        "longitude": 36.103
-      },
-      {
-        "name": "Al-Thawra",
-        "latitude": 32.624,
-        "longitude": 36.106
-      },
-      {
-        "name": "Al-Mazzeh",
-        "latitude": 32.627,
-        "longitude": 36.104
-      },
-      {
-        "name": "Al-Muhafaza",
-        "latitude": 32.625,
-        "longitude": 36.105
-      },
-      {
-        "name": "Al-Rawda",
-        "latitude": 32.623,
-        "longitude": 36.107
-      },
-      {
-        "name": "Al-Qadisiyah",
-        "latitude": 32.626,
-        "longitude": 36.105
-      },
-      {
-        "name": "Al-Ghouta",
-        "latitude": 32.627,
-        "longitude": 36.107
-      },
-      {
-        "name": "Al-Zahraa",
-        "latitude": 32.625,
-        "longitude": 36.103
-      },
-      {
-        "name": "Al-Amal",
-        "latitude": 32.623,
-        "longitude": 36.106
-      },
-      {
-        "name": "Al-Safwa",
-        "latitude": 32.626,
-        "longitude": 36.104
-      },
-      {
-        "name": "Al-Fayhaa",
-        "latitude": 32.624,
-        "longitude": 36.107
-      }
-    ]
-  },
-  {
-    "name": "Tartus",
-    "latitude": 34.8833,
-    "longitude": 35.8833,
-    "neighbors": [
-      {
-        "name": "Al-Mina",
-        "latitude": 34.885,
-        "longitude": 35.885
-      },
-      {
-        "name": "Al-Qusour",
-        "latitude": 34.882,
-        "longitude": 35.882
-      },
-      {
-        "name": "Al-Hamidiyah",
-        "latitude": 34.881,
-        "longitude": 35.881
-      },
-      {
-        "name": "Al-Raml",
-        "latitude": 34.884,
-        "longitude": 35.884
-      },
-      {
-        "name": "Al-Nasr",
-        "latitude": 34.883,
-        "longitude": 35.883
-      },
-      {
-        "name": "Al-Saada",
-        "latitude": 34.885,
-        "longitude": 35.882
-      },
-      {
-        "name": "Al-Andalus",
-        "latitude": 34.883,
-        "longitude": 35.885
-      },
-      {
-        "name": "Al-Nour",
-        "latitude": 34.882,
-        "longitude": 35.884
-      },
-      {
-        "name": "Al-Thawra",
-        "latitude": 34.884,
-        "longitude": 35.883
-      },
-      {
-        "name": "Al-Mazzeh",
-        "latitude": 34.883,
-        "longitude": 35.882
-      },
-      {
-        "name": "Al-Muhafaza",
-        "latitude": 34.885,
-        "longitude": 35.881
-      },
-      {
-        "name": "Al-Rawda",
-        "latitude": 34.882,
-        "longitude": 35.885
-      },
-      {
-        "name": "Al-Qadisiyah",
-        "latitude": 34.884,
-        "longitude": 35.882
-      },
-      {
-        "name": "Al-Karama",
-        "latitude": 34.883,
-        "longitude": 35.884
-      },
-      {
-        "name": "Al-Ghouta",
-        "latitude": 34.885,
-        "longitude": 35.883
-      },
-      {
-        "name": "Al-Amal",
-        "latitude": 34.884,
-        "longitude": 35.881
-      }
-    ]
-  },
-  {
-    "name": "Idlib",
-    "latitude": 35.9333,
+    "name": "إدلب",
+    "latitude": 35.9312,
     "longitude": 36.6333,
     "neighbors": [
       {
-        "name": "Al-Qusour",
-        "latitude": 35.935,
-        "longitude": 36.635
+        "name": "الثورة",
+        "latitude": 35.9356,
+        "longitude": 36.6389
       },
       {
-        "name": "Al-Hamidiyah",
-        "latitude": 35.932,
-        "longitude": 36.632
+        "name": "الأندلس",
+        "latitude": 35.9278,
+        "longitude": 36.6278
       },
       {
-        "name": "Al-Rashidiyah",
-        "latitude": 35.934,
-        "longitude": 36.631
+        "name": "الشهداء",
+        "latitude": 35.9334,
+        "longitude": 36.6356
       },
       {
-        "name": "Al-Nasr",
-        "latitude": 35.933,
-        "longitude": 36.634
+        "name": "الزهراء",
+        "latitude": 35.9289,
+        "longitude": 36.6312
       },
       {
-        "name": "Al-Saada",
-        "latitude": 35.931,
-        "longitude": 36.633
+        "name": "الوحدة",
+        "latitude": 35.9345,
+        "longitude": 36.6367
       },
       {
-        "name": "Al-Andalus",
-        "latitude": 35.935,
-        "longitude": 36.632
+        "name": "المدينة القديمة",
+        "latitude": 35.9312,
+        "longitude": 36.6333
       },
       {
-        "name": "Al-Nour",
-        "latitude": 35.932,
-        "longitude": 36.634
+        "name": "الحي الشرقي",
+        "latitude": 35.9367,
+        "longitude": 36.6412
       },
       {
-        "name": "Al-Thawra",
-        "latitude": 35.934,
-        "longitude": 36.633
+        "name": "الحي الغربي",
+        "latitude": 35.9256,
+        "longitude": 36.6234
       },
       {
-        "name": "Al-Mazzeh",
-        "latitude": 35.933,
-        "longitude": 36.631
+        "name": "معرة النعمان",
+        "latitude": 35.6489,
+        "longitude": 36.6789
       },
       {
-        "name": "Al-Muhafaza",
-        "latitude": 35.931,
-        "longitude": 36.635
+        "name": "سراقب",
+        "latitude": 35.8644,
+        "longitude": 36.8056
+      },
+      {
+        "name": "أريحا",
+        "latitude": 35.8167,
+        "longitude": 36.6083
+      },
+      {
+        "name": "جسر الشغور",
+        "latitude": 35.8167,
+        "longitude": 36.3167
+      },
+      {
+        "name": "بنش",
+        "latitude": 36.0167,
+        "longitude": 36.7333
+      },
+      {
+        "name": "كفر نبل",
+        "latitude": 35.6167,
+        "longitude": 36.5667
+      },
+      {
+        "name": "خان شيخون",
+        "latitude": 35.4417,
+        "longitude": 36.6500
+      },
+      {
+        "name": "حاس",
+        "latitude": 35.7167,
+        "longitude": 36.7333
+      },
+      {
+        "name": "كفر تخاريم",
+        "latitude": 36.1167,
+        "longitude": 36.5167
+      },
+      {
+        "name": "سلقين",
+        "latitude": 36.1500,
+        "longitude": 36.4500
+      },
+      {
+        "name": "الدانا",
+        "latitude": 36.2167,
+        "longitude": 36.7500
+      },
+      {
+        "name": "أطمة",
+        "latitude": 36.2000,
+        "longitude": 36.8167
       }
     ]
   },
   {
-    "name": "Afrin",
-    "latitude": 36.5119,
-    "longitude": 36.8694,
+    "name": "الحسكة",
+    "latitude": 36.5004,
+    "longitude": 40.7478,
     "neighbors": [
       {
-        "name": "Basuta",
-        "latitude": 36.52,
-        "longitude": 36.87
+        "name": "الصالحية",
+        "latitude": 36.5089,
+        "longitude": 40.7534
       },
       {
-        "name": "Inab",
-        "latitude": 36.5,
-        "longitude": 36.88
+        "name": "الأزهرية",
+        "latitude": 36.4956,
+        "longitude": 40.7423
       },
       {
-        "name": "Ain Dara",
-        "latitude": 36.52,
-        "longitude": 36.85
+        "name": "الناصرة",
+        "latitude": 36.5034,
+        "longitude": 40.7489
       },
       {
-        "name": "Maryamin",
-        "latitude": 36.51,
-        "longitude": 36.87
+        "name": "الغويران",
+        "latitude": 36.4978,
+        "longitude": 40.7456
       },
       {
-        "name": "Ibbin",
-        "latitude": 36.51,
-        "longitude": 36.86
+        "name": "الكلاسة",
+        "latitude": 36.5067,
+        "longitude": 40.7512
       },
       {
-        "name": "Maaratah",
-        "latitude": 36.5,
-        "longitude": 36.84
+        "name": "المدينة القديمة",
+        "latitude": 36.5004,
+        "longitude": 40.7478
       },
       {
-        "name": "Ziyarah",
-        "latitude": 36.52,
-        "longitude": 36.88
+        "name": "الشرقية",
+        "latitude": 36.5123,
+        "longitude": 40.7567
       },
       {
-        "name": "Kimar",
-        "latitude": 36.53,
-        "longitude": 36.87
+        "name": "الغربية",
+        "latitude": 36.4889,
+        "longitude": 40.7389
       },
       {
-        "name": "Kabashin",
-        "latitude": 36.52,
-        "longitude": 36.89
+        "name": "الجنوبية",
+        "latitude": 36.4934,
+        "longitude": 40.7445
       },
       {
-        "name": "Jalbul",
-        "latitude": 36.53,
-        "longitude": 36.86
+        "name": "الشمالية",
+        "latitude": 36.5078,
+        "longitude": 40.7523
       },
       {
-        "name": "Qibar",
-        "latitude": 36.5,
-        "longitude": 36.9
+        "name": "رأس العين",
+        "latitude": 36.8500,
+        "longitude": 40.0667
       },
       {
-        "name": "Kafr Safra",
-        "latitude": 36.49,
-        "longitude": 36.87
+        "name": "المالكية",
+        "latitude": 37.1833,
+        "longitude": 42.3667
       },
       {
-        "name": "Maratah",
-        "latitude": 36.53,
-        "longitude": 36.85
+        "name": "عامودا",
+        "latitude": 37.1000,
+        "longitude": 40.9167
       },
       {
-        "name": "Qatma",
-        "latitude": 36.54,
-        "longitude": 36.88
+        "name": "الدرباسية",
+        "latitude": 37.0667,
+        "longitude": 40.6333
       },
       {
-        "name": "Kafr Naya",
-        "latitude": 36.49,
-        "longitude": 36.86
+        "name": "الجوادية",
+        "latitude": 36.8000,
+        "longitude": 40.8000
       },
       {
-        "name": "Sharan",
-        "latitude": 36.52,
-        "longitude": 36.91
+        "name": "الشدادي",
+        "latitude": 36.4000,
+        "longitude": 40.7333
       },
       {
-        "name": "Qazahil",
-        "latitude": 36.54,
-        "longitude": 36.87
+        "name": "المركدة",
+        "latitude": 36.6667,
+        "longitude": 40.7333
       },
       {
-        "name": "Qarah Mazar",
-        "latitude": 36.5,
-        "longitude": 36.83
+        "name": "تل تمر",
+        "latitude": 36.6333,
+        "longitude": 40.3833
       },
       {
-        "name": "Kafr Naseh",
-        "latitude": 36.48,
-        "longitude": 36.88
+        "name": "تل براك",
+        "latitude": 36.4167,
+        "longitude": 40.9833
       }
     ]
   },
   {
-    "name": "Rajo",
-    "latitude": 36.6667,
-    "longitude": 36.6667,
-    "neighbors": [
-      {
-        "name": "Sorkê",
-        "latitude": 36.63,
-        "longitude": 36.6
-      },
-      {
-        "name": "Bulbul",
-        "latitude": 36.6,
-        "longitude": 36.8
-      },
-      {
-        "name": "Maabatli",
-        "latitude": 36.64,
-        "longitude": 36.76
-      },
-      {
-        "name": "Sharran",
-        "latitude": 36.67,
-        "longitude": 36.85
-      },
-      {
-        "name": "Jindires",
-        "latitude": 36.72,
-        "longitude": 36.78
-      },
-      {
-        "name": "Shaykh al-Hadid",
-        "latitude": 36.65,
-        "longitude": 36.84
-      },
-      {
-        "name": "Kafr Safra",
-        "latitude": 36.68,
-        "longitude": 36.82
-      },
-      {
-        "name": "Kafr Safra East",
-        "latitude": 36.67,
-        "longitude": 36.83
-      },
-      {
-        "name": "Arab Qawzaq",
-        "latitude": 36.66,
-        "longitude": 36.81
-      },
-      {
-        "name": "Mankal",
-        "latitude": 36.65,
-        "longitude": 36.79
-      },
-      {
-        "name": "Khanasir",
-        "latitude": 36.68,
-        "longitude": 36.7
-      },
-      {
-        "name": "Qarah Qawzaq",
-        "latitude": 36.64,
-        "longitude": 36.82
-      },
-      {
-        "name": "Qarah Mazar",
-        "latitude": 36.62,
-        "longitude": 36.78
-      },
-      {
-        "name": "Qastal Miqdad",
-        "latitude": 36.66,
-        "longitude": 36.68
-      },
-      {
-        "name": "Qastal Jando",
-        "latitude": 36.63,
-        "longitude": 36.72
-      },
-      {
-        "name": "Qarqafin",
-        "latitude": 36.61,
-        "longitude": 36.75
-      },
-      {
-        "name": "Qarqafin al-Jadidah",
-        "latitude": 36.62,
-        "longitude": 36.76
-      },
-      {
-        "name": "Qarqafin al-Qadimah",
-        "latitude": 36.6,
-        "longitude": 36.74
-      }
-    ]
-  },
-  {
-    "name": "Nubl",
-    "latitude": 36.3786,
-    "longitude": 37.0008,
-    "neighbors": [
-      {
-        "name": "Al-Zahraa",
-        "latitude": 36.37,
-        "longitude": 36.995
-      },
-      {
-        "name": "Mayer",
-        "latitude": 36.385,
-        "longitude": 37.015
-      },
-      {
-        "name": "Bayanoun",
-        "latitude": 36.365,
-        "longitude": 36.98
-      },
-      {
-        "name": "Ratyan",
-        "latitude": 36.403,
-        "longitude": 36.971
-      },
-      {
-        "name": "Kafin",
-        "latitude": 36.39,
-        "longitude": 36.98
-      },
-      {
-        "name": "Hardatnin",
-        "latitude": 36.375,
-        "longitude": 36.99
-      },
-      {
-        "name": "Zuq al-Kabir",
-        "latitude": 36.38,
-        "longitude": 36.97
-      },
-      {
-        "name": "Maarset Elkhan",
-        "latitude": 36.36,
-        "longitude": 36.94
-      },
-      {
-        "name": "Burj Elqas",
-        "latitude": 36.35,
-        "longitude": 36.96
-      },
-      {
-        "name": "Bashmra",
-        "latitude": 36.37,
-        "longitude": 36.97
-      },
-      {
-        "name": "Kafr Hamra",
-        "latitude": 36.365,
-        "longitude": 36.985
-      },
-      {
-        "name": "Anadan",
-        "latitude": 36.375,
-        "longitude": 37.015
-      },
-      {
-        "name": "Hreitan",
-        "latitude": 36.36,
-        "longitude": 36.995
-      },
-      {
-        "name": "Hayyan",
-        "latitude": 36.35,
-        "longitude": 37.01
-      },
-      {
-        "name": "Kafr Naha",
-        "latitude": 36.365,
-        "longitude": 36.975
-      },
-      {
-        "name": "Kafr Naseh",
-        "latitude": 36.355,
-        "longitude": 36.965
-      },
-      {
-        "name": "Kafr Hamam",
-        "latitude": 36.37,
-        "longitude": 36.965
-      },
-      {
-        "name": "Kafr Karmin",
-        "latitude": 36.375,
-        "longitude": 36.96
-      },
-      {
-        "name": "Kafr Nabil",
-        "latitude": 36.365,
-        "longitude": 36.97
-      },
-      {
-        "name": "Kafr Sijna",
-        "latitude": 36.36,
-        "longitude": 36.98
-      }
-    ]
-  },
-  {
-    "name": "As-Suwayda",
-    "latitude": 32.7090,
-    "longitude": 36.5736,
-    "neighbors": [
-      {
-        "name": "Al-Ariqah",
-        "latitude": 32.8861,
-        "longitude": 36.4639
-      },
-      {
-        "name": "Al-Ghariyah",
-        "latitude": 32.3933,
-        "longitude": 36.6507
-      },
-      {
-        "name": "Malah",
-        "latitude": 32.55,
-        "longitude": 36.9
-      },
-      {
-        "name": "Al-Mushannaf",
-        "latitude": 32.7667,
-        "longitude": 36.7667
-      },
-      {
-        "name": "Al-Qurayya",
-        "latitude": 32.5434,
-        "longitude": 36.5978
-      },
-      {
-        "name": "As-Sawra as-Saghira",
-        "latitude": 33.0328,
-        "longitude": 36.5743
-      },
-      {
-        "name": "Shaqqa",
-        "latitude": 32.9167,
-        "longitude": 36.7
-      },
-      {
-        "name": "Al-Mazraa",
-        "latitude": 32.7833,
-        "longitude": 36.4833
-      }
-    ]
-  },
-  {
-    "name": "Quneitra",
-    "latitude": 33.1220,
-    "longitude": 35.8242,
+    "name": "الزهراء",
+    "latitude": 36.4756,
+    "longitude": 40.7123,
     "neighbors": []
+  },
+  {
+    "name": "القامشلي",
+    "latitude": 37.0522,
+    "longitude": 41.2317,
+    "neighbors": [
+      {
+        "name": "الوسطى",
+        "latitude": 37.0589,
+        "longitude": 41.2456
+      },
+      {
+        "name": "الشرقية",
+        "latitude": 37.0634,
+        "longitude": 41.2567
+      },
+      {
+        "name": "الغربية",
+        "latitude": 37.0456,
+        "longitude": 41.2234
+      },
+      {
+        "name": "الشمالية",
+        "latitude": 37.0723,
+        "longitude": 41.2678
+      },
+      {
+        "name": "الصناعية",
+        "latitude": 37.0345,
+        "longitude": 41.2089
+      }
+    ]
+  },
+  {
+    "name": "السويداء",
+    "latitude": 32.7094,
+    "longitude": 36.5694,
+    "neighbors": [
+      {
+        "name": "الثورة",
+        "latitude": 32.7156,
+        "longitude": 36.5756
+      },
+      {
+        "name": "الأندلس",
+        "latitude": 32.7034,
+        "longitude": 36.5634
+      },
+      {
+        "name": "الشهداء",
+        "latitude": 32.7123,
+        "longitude": 36.5723
+      },
+      {
+        "name": "الزهراء",
+        "latitude": 32.7089,
+        "longitude": 36.5689
+      },
+      {
+        "name": "الوحدة",
+        "latitude": 32.7067,
+        "longitude": 36.5667
+      },
+      {
+        "name": "المدينة القديمة",
+        "latitude": 32.7094,
+        "longitude": 36.5694
+      },
+      {
+        "name": "الحي الشرقي",
+        "latitude": 32.7178,
+        "longitude": 36.5789
+      },
+      {
+        "name": "الحي الغربي",
+        "latitude": 32.7012,
+        "longitude": 36.5612
+      },
+      {
+        "name": "صلخد",
+        "latitude": 32.4917,
+        "longitude": 36.7167
+      },
+      {
+        "name": "شهبا",
+        "latitude": 32.8500,
+        "longitude": 36.6167
+      },
+      {
+        "name": "قنوات",
+        "latitude": 32.7333,
+        "longitude": 36.7500
+      },
+      {
+        "name": "عرى",
+        "latitude": 32.6167,
+        "longitude": 36.4833
+      },
+      {
+        "name": "المزرعة",
+        "latitude": 32.8167,
+        "longitude": 36.4833
+      },
+      {
+        "name": "ملح",
+        "latitude": 32.6833,
+        "longitude": 36.8167
+      },
+      {
+        "name": "الكفر",
+        "latitude": 32.5833,
+        "longitude": 36.6500
+      },
+      {
+        "name": "عتيل",
+        "latitude": 32.8833,
+        "longitude": 36.7500
+      }
+    ]
+  },
+  {
+    "name": "القنيطرة",
+    "latitude": 33.1263,
+    "longitude": 35.8244,
+    "neighbors": [
+      {
+        "name": "الوحدة",
+        "latitude": 33.1334,
+        "longitude": 35.8334
+      },
+      {
+        "name": "الثورة",
+        "latitude": 33.1189,
+        "longitude": 35.8156
+      },
+      {
+        "name": "النصر",
+        "latitude": 33.1456,
+        "longitude": 35.8456
+      },
+      {
+        "name": "الشهداء",
+        "latitude": 33.1123,
+        "longitude": 35.8023
+      }
+    ]
+  },
+  {
+    "name": "الباب",
+    "latitude": 36.3709,
+    "longitude": 37.5151,
+    "neighbors": [
+      {
+        "name": "المدينة القديمة",
+        "latitude": 36.3709,
+        "longitude": 37.5151
+      },
+      {
+        "name": "الشرقية",
+        "latitude": 36.3756,
+        "longitude": 37.5234
+      },
+      {
+        "name": "الغربية",
+        "latitude": 36.3667,
+        "longitude": 37.5089
+      },
+      {
+        "name": "الشمالية",
+        "latitude": 36.3789,
+        "longitude": 37.5178
+      },
+      {
+        "name": "الجنوبية",
+        "latitude": 36.3634,
+        "longitude": 37.5123
+      },
+      {
+        "name": "الصناعية",
+        "latitude": 36.3612,
+        "longitude": 37.5067
+      },
+      {
+        "name": "تادف",
+        "latitude": 36.3567,
+        "longitude": 37.5234
+      },
+      {
+        "name": "الخفسة",
+        "latitude": 36.2789,
+        "longitude": 37.4567
+      },
+      {
+        "name": "بزاعة",
+        "latitude": 36.4123,
+        "longitude": 37.5789
+      },
+      {
+        "name": "قباسين",
+        "latitude": 36.4234,
+        "longitude": 37.6123
+      }
+    ]
+  },
+  {
+    "name": "منبج",
+    "latitude": 36.5281,
+    "longitude": 37.9553,
+    "neighbors": [
+      {
+        "name": "المدينة القديمة",
+        "latitude": 36.5281,
+        "longitude": 37.9553
+      },
+      {
+        "name": "الشرقية",
+        "latitude": 36.5334,
+        "longitude": 37.9634
+      },
+      {
+        "name": "الغربية",
+        "latitude": 36.5234,
+        "longitude": 37.9456
+      },
+      {
+        "name": "الشمالية",
+        "latitude": 36.5389,
+        "longitude": 37.9612
+      },
+      {
+        "name": "الجنوبية",
+        "latitude": 36.5178,
+        "longitude": 37.9489
+      },
+      {
+        "name": "الصناعية",
+        "latitude": 36.5123,
+        "longitude": 37.9423
+      },
+      {
+        "name": "الجرنية",
+        "latitude": 36.4567,
+        "longitude": 37.8234
+      },
+      {
+        "name": "الأرشاف",
+        "latitude": 36.3789,
+        "longitude": 37.7456
+      },
+      {
+        "name": "مسكنة",
+        "latitude": 36.0789,
+        "longitude": 38.0456
+      },
+      {
+        "name": "الثورة",
+        "latitude": 36.6234,
+        "longitude": 38.1234
+      }
+    ]
+  },
+  {
+    "name": "الرقة",
+    "latitude": 35.9500,
+    "longitude": 39.0167,
+    "neighbors": [
+      {
+        "name": "المدينة القديمة",
+        "latitude": 35.9500,
+        "longitude": 39.0167
+      },
+      {
+        "name": "الشرقية",
+        "latitude": 35.9567,
+        "longitude": 39.0234
+      },
+      {
+        "name": "الغربية",
+        "latitude": 35.9434,
+        "longitude": 39.0089
+      },
+      {
+        "name": "الشمالية",
+        "latitude": 35.9623,
+        "longitude": 39.0178
+      },
+      {
+        "name": "الجنوبية",
+        "latitude": 35.9378,
+        "longitude": 39.0156
+      },
+      {
+        "name": "الصناعية",
+        "latitude": 35.9345,
+        "longitude": 39.0123
+      },
+      {
+        "name": "الثورة",
+        "latitude": 35.9456,
+        "longitude": 39.0089
+      },
+      {
+        "name": "النهضة",
+        "latitude": 35.9512,
+        "longitude": 39.0201
+      },
+      {
+        "name": "الوحدة",
+        "latitude": 35.9489,
+        "longitude": 39.0145
+      },
+      {
+        "name": "تل أبيض",
+        "latitude": 36.6967,
+        "longitude": 38.9511
+      },
+      {
+        "name": "سلوك",
+        "latitude": 36.0167,
+        "longitude": 38.2833
+      },
+      {
+        "name": "الطبقة",
+        "latitude": 35.8381,
+        "longitude": 38.5489
+      },
+      {
+        "name": "الثورة",
+        "latitude": 35.8167,
+        "longitude": 38.3500
+      },
+      {
+        "name": "المنصورة",
+        "latitude": 36.0333,
+        "longitude": 38.8833
+      },
+      {
+        "name": "الكرامة",
+        "latitude": 35.7833,
+        "longitude": 39.2167
+      },
+      {
+        "name": "معدان",
+        "latitude": 35.4667,
+        "longitude": 40.0500
+      },
+      {
+        "name": "الصبخة",
+        "latitude": 35.6167,
+        "longitude": 39.8833
+      }
+    ]
+  },
+  {
+    "name": "دير الزور",
+    "latitude": 35.3444,
+    "longitude": 40.1467,
+    "neighbors": [
+      {
+        "name": "المدينة القديمة",
+        "latitude": 35.3444,
+        "longitude": 40.1467
+      },
+      {
+        "name": "الشرقية",
+        "latitude": 35.3512,
+        "longitude": 40.1534
+      },
+      {
+        "name": "الغربية",
+        "latitude": 35.3378,
+        "longitude": 40.1389
+      },
+      {
+        "name": "الشمالية",
+        "latitude": 35.3567,
+        "longitude": 40.1489
+      },
+      {
+        "name": "الجنوبية",
+        "latitude": 35.3323,
+        "longitude": 40.1445
+      },
+      {
+        "name": "الصناعية",
+        "latitude": 35.3289,
+        "longitude": 40.1412
+      },
+      {
+        "name": "الثورة",
+        "latitude": 35.3456,
+        "longitude": 40.1378
+      },
+      {
+        "name": "الميادين",
+        "latitude": 35.0167,
+        "longitude": 40.4500
+      },
+      {
+        "name": "البوكمال",
+        "latitude": 34.4500,
+        "longitude": 40.9167
+      },
+      {
+        "name": "الموحسن",
+        "latitude": 35.2833,
+        "longitude": 40.2833
+      },
+      {
+        "name": "الصالحية",
+        "latitude": 35.2167,
+        "longitude": 40.3167
+      },
+      {
+        "name": "الحطلة",
+        "latitude": 35.1500,
+        "longitude": 40.3833
+      }
+    ]
   }
 ];
+
+export default syrianCitiesArabic;
