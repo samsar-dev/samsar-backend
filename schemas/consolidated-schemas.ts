@@ -677,7 +677,7 @@ export const schemaMap: SchemaMap = {
   [PropertyType.VILLA]: villaFieldNames,
   [PropertyType.LAND]: landFieldNames,
   [PropertyType.COMMERCIAL]: allOfficesFields,
-  // [PropertyType.STORE]: storeFieldNames, // STORE not defined in PropertyType enum
+  [PropertyType.STORE]: storeFieldNames,
 };
 
 // No need for re-exports since all are already exported above

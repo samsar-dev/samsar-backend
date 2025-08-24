@@ -27,6 +27,7 @@ export enum PropertyType {
   VILLA = "VILLA",
   CONDO = "CONDO",
   COMMERCIAL = "COMMERCIAL",
+  STORE = "STORE",
   OTHER = "OTHER",
 }
 
