@@ -524,7 +524,10 @@ export default async function (fastify: FastifyInstance) {
           
           addIfNotEmpty(listingData, 'bedrooms', validatedData.bedrooms ? parseInt(validatedData.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
           addIfNotEmpty(listingData, 'bathrooms', validatedData.bathrooms ? parseInt(validatedData.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
-          addIfNotEmpty(listingData, 'totalArea', validatedData.totalArea ? parseFloat(validatedData.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
+          // Handle area field mapping (Flutter sends 'area', backend expects 'totalArea')
+          const areaValue = validatedData.area || validatedData.totalArea;
+          const detailsAreaValue = realEstateDetails.area || realEstateDetails.totalArea;
+          addIfNotEmpty(listingData, 'totalArea', areaValue ? parseFloat(areaValue) : (detailsAreaValue ? parseFloat(detailsAreaValue) : null));
           addIfNotEmpty(listingData, 'yearBuilt', validatedData.yearBuilt ? parseInt(validatedData.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
         }
