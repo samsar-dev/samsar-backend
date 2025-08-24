@@ -518,9 +518,23 @@ export default async function (fastify: FastifyInstance) {
             const isAccidentFree = accidentalValue === 'no' || accidentalValue === 'false';
             addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
           }
-        } else if (mainCategory === 'real_estate') {
+        } else if (mainCategory.toLowerCase() === 'real_estate' || mainCategory.toLowerCase() === 'realestate') {
           // Real estate-specific fields only
           const realEstateDetails = details?.realEstate || {};
+          
+          console.log('🏠 EXTRACTING REAL ESTATE FIELDS FROM REQUEST:');
+          console.log('  mainCategory:', mainCategory);
+          console.log('  Direct fields from Flutter:', {
+            bedrooms: validatedData.bedrooms,
+            bathrooms: validatedData.bathrooms,
+            area: validatedData.area,
+            totalArea: validatedData.totalArea,
+            yearBuilt: validatedData.yearBuilt,
+            furnishing: validatedData.furnishing,
+            sellerType: validatedData.sellerType,
+            condition: validatedData.condition,
+          });
+          console.log('  Nested details.realEstate:', realEstateDetails);
           
           addIfNotEmpty(listingData, 'bedrooms', validatedData.bedrooms ? parseInt(validatedData.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
           addIfNotEmpty(listingData, 'bathrooms', validatedData.bathrooms ? parseInt(validatedData.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
@@ -530,14 +544,30 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'totalArea', areaValue ? parseFloat(areaValue) : (detailsAreaValue ? parseFloat(detailsAreaValue) : null));
           addIfNotEmpty(listingData, 'yearBuilt', validatedData.yearBuilt ? parseInt(validatedData.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
+          
+          // Handle sellerType and condition mapping with proper enum conversion
+          if (validatedData.sellerType || realEstateDetails.sellerType) {
+            addIfNotEmpty(listingData, 'sellerType', (validatedData.sellerType || realEstateDetails.sellerType).toUpperCase());
+          }
+          
+          if (validatedData.condition || realEstateDetails.condition) {
+            addIfNotEmpty(listingData, 'condition', (validatedData.condition || realEstateDetails.condition).toUpperCase());
+          }
         }
 
-        // Log final vehicle fields for debugging
-        if (mainCategory === 'vehicles') {
-          console.log("\n📊 FINAL LISTING DATA BEFORE DB INSERT:");
+        // Log final fields for debugging
+        if (mainCategory.toLowerCase() === 'vehicles') {
+          console.log("\n📊 FINAL VEHICLE LISTING DATA BEFORE DB INSERT:");
           console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
           const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry'];
           vehicleFields.forEach(field => {
+            console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
+          });
+        } else if (mainCategory.toLowerCase() === 'real_estate' || mainCategory.toLowerCase() === 'realestate') {
+          console.log("\n📊 FINAL REAL ESTATE LISTING DATA BEFORE DB INSERT:");
+          console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
+          const realEstateFields = ['bedrooms', 'bathrooms', 'totalArea', 'yearBuilt', 'furnishing', 'sellerType', 'condition'];
+          realEstateFields.forEach(field => {
             console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
           });
         }
