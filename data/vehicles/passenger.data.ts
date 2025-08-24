@@ -1,24 +1,45 @@
 // Syrian Market Passenger Vehicles Makes and Models
 export const PASSENGER_VEHICLES_DATA = {
   makes: [
-    // European Brands (Popular in Syria)
+    // European Brands (Popular in Syria & Region)
     "BMW", "Mercedes-Benz", "Audi", "Volkswagen", "Peugeot", "Renault", "Fiat", "Opel", 
-    "Skoda", "SEAT", "Citroen", "Volvo", "Saab", "Alfa Romeo",
+    "Skoda", "SEAT", "Citroen", "Volvo", "Saab", "Alfa Romeo", "Maserati", "Ferrari",
+    "Lamborghini", "Porsche", "Bentley", "Rolls-Royce", "Aston Martin", "McLaren",
+    "Jaguar", "Land Rover", "MINI", "Smart", "DS", "Lancia",
     
     // Japanese Brands (Very Popular)
-    "Toyota", "Honda", "Nissan", "Mazda", "Mitsubishi", "Subaru", "Suzuki", "Lexus", "Infiniti", "Acura",
+    "Toyota", "Honda", "Nissan", "Mazda", "Mitsubishi", "Subaru", "Suzuki", "Lexus", 
+    "Infiniti", "Acura", "Isuzu", "Daihatsu",
     
     // American Brands
     "Ford", "Chevrolet", "Cadillac", "Buick", "GMC", "Chrysler", "Dodge", "Jeep",
+    "Lincoln", "Ram", "Tesla", "Rivian", "Lucid",
     
     // Korean Brands (Growing Market)
-    "Hyundai", "Kia", "Genesis",
+    "Hyundai", "Kia", "Genesis", "SsangYong", "Daewoo",
     
-    // Chinese Brands (Emerging Market)
+    // Chinese Brands (Emerging Market in Region)
     "Chery", "Geely", "BYD", "Great Wall", "Haval", "MG", "Changan", "JAC", "Brilliance",
+    "Dongfeng", "BAIC", "Maxus", "Lynk & Co", "Polestar", "NIO", "Xpeng", "Li Auto",
+    "GAC", "SAIC", "FAW", "Hongqi", "WEY", "Ora", "Tank", "Voyah", "Zeekr",
     
-    // Other Brands
-    "Lada", "Dacia", "Proton", "Perodua", "Others"
+    // Indian Brands (Regional Presence)
+    "Tata", "Mahindra", "Maruti Suzuki", "Force Motors",
+    
+    // Iranian Brands (Regional Market)
+    "Iran Khodro", "Saipa", "Pars Khodro", "Kerman Motor", "Bahman Group",
+    
+    // Turkish Brands (Regional Neighbor)
+    "Togg", "BMC", "Otokar", "Temsa",
+    
+    // Russian/Eastern European
+    "Lada", "UAZ", "GAZ", "Moskvich", "Aurus", "Dacia",
+    
+    // Malaysian Brands
+    "Proton", "Perodua",
+    
+    // Others
+    "Others"
   ],
   
   models: {
@@ -213,8 +234,142 @@ export const PASSENGER_VEHICLES_DATA = {
       "Camaro", "Corvette"
     ],
     
+    "Audi": [
+      // A Series
+      "A1", "A3", "A4", "A5", "A6", "A7", "A8",
+      
+      // Q Series (SUVs)
+      "Q2", "Q3", "Q4 e-tron", "Q5", "Q7", "Q8", "Q8 e-tron",
+      
+      // Sports Cars
+      "TT", "R8", "e-tron GT",
+      
+      // RS Models
+      "RS3", "RS4", "RS5", "RS6", "RS7", "RS Q3", "RS Q8"
+    ],
+    
+    "Mazda": [
+      "Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-30", "CX-5", "CX-9", "MX-5", "MX-30", "RX-8"
+    ],
+    
+    "Mitsubishi": [
+      "Mirage", "Lancer", "Galant", "Eclipse Cross", "Outlander", "Pajero", "ASX", "Montero", "L200"
+    ],
+    
+    "Subaru": [
+      "Impreza", "Legacy", "Outback", "Forester", "Ascent", "WRX", "BRZ", "XV"
+    ],
+    
+    "Suzuki": [
+      "Alto", "Swift", "Baleno", "Ciaz", "Vitara", "S-Cross", "Jimny", "Ertiga", "XL7", "Grand Vitara"
+    ],
+    
+    "Lexus": [
+      "IS", "ES", "GS", "LS", "UX", "NX", "RX", "GX", "LX", "LC", "RC", "LFA"
+    ],
+    
+    "Infiniti": [
+      "Q30", "Q50", "Q60", "Q70", "QX30", "QX50", "QX60", "QX80"
+    ],
+    
+    "Peugeot": [
+      "108", "208", "308", "508", "2008", "3008", "5008", "Partner", "Expert", "Boxer"
+    ],
+    
+    "Renault": [
+      "Clio", "Megane", "Talisman", "Captur", "Kadjar", "Koleos", "Duster", "Logan", "Sandero", "Scenic"
+    ],
+    
+    "Genesis": [
+      "G70", "G80", "G90", "GV60", "GV70", "GV80"
+    ],
+    
+    "SsangYong": [
+      "Tivoli", "Korando", "Rexton", "Musso", "Actyon", "Kyron"
+    ],
+    
+    "Tesla": [
+      "Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"
+    ],
+    
+    "Jeep": [
+      "Wrangler", "Grand Cherokee", "Cherokee", "Compass", "Renegade", "Gladiator", "Patriot", "Commander"
+    ],
+    
+    "Dodge": [
+      "Charger", "Challenger", "Durango", "Journey", "Grand Caravan", "Viper"
+    ],
+    
+    "Cadillac": [
+      "ATS", "CTS", "CT4", "CT5", "CT6", "XT4", "XT5", "XT6", "Escalade", "DeVille"
+    ],
+    
+    "Lincoln": [
+      "Continental", "MKZ", "MKC", "MKX", "Navigator", "Aviator", "Corsair"
+    ],
+    
+    "Chery": [
+      "QQ", "Arrizo 3", "Arrizo 5", "Arrizo 6", "Tiggo 2", "Tiggo 3", "Tiggo 4", "Tiggo 5", "Tiggo 7", "Tiggo 8"
+    ],
+    
+    "Geely": [
+      "Emgrand 7", "Emgrand X7", "Coolray", "Azkarra", "Okavango", "Atlas", "Boyue", "Xingyue"
+    ],
+    
+    "BYD": [
+      "F3", "G3", "S6", "S7", "Tang", "Song", "Qin", "Han", "Dolphin", "Atto 3", "Seal"
+    ],
+    
+    "Great Wall": [
+      "Wingle 5", "Wingle 6", "Wingle 7", "Poer", "Cannon", "Voleex C10", "Voleex C30", "Voleex C50"
+    ],
+    
+    "Haval": [
+      "H1", "H2", "H6", "H9", "F5", "F7", "Jolion", "Dargo", "Big Dog"
+    ],
+    
+    "MG": [
+      "3", "5", "6", "HS", "ZS", "RX5", "RX8", "Marvel R", "EZS"
+    ],
+    
+    "Tata": [
+      "Nano", "Indica", "Indigo", "Safari", "Sumo", "Nexon", "Harrier", "Altroz"
+    ],
+    
+    "Mahindra": [
+      "Scorpio", "XUV500", "XUV300", "Bolero", "Thar", "KUV100", "Marazzo"
+    ],
+    
+    "Iran Khodro": [
+      "Samand", "Runna", "Dena", "Tara", "Peugeot 206", "Peugeot 207", "Peugeot 405"
+    ],
+    
+    "Saipa": [
+      "Pride", "Tiba", "Quick", "Saina", "Shahin", "111"
+    ],
+    
+    "Lada": [
+      "Granta", "Vesta", "XRAY", "Largus", "4x4 Urban", "4x4 Bronto", "Niva", "Kalina", "Priora"
+    ],
+    
+    "UAZ": [
+      "Hunter", "Patriot", "Pickup", "452", "3909", "3962"
+    ],
+    
+    "Dacia": [
+      "Sandero", "Logan", "Duster", "Lodgy", "Dokker", "Spring"
+    ],
+    
+    "Proton": [
+      "Saga", "Persona", "Iriz", "Exora", "X50", "X70", "Perdana"
+    ],
+    
+    "Perodua": [
+      "Axia", "Bezza", "Myvi", "Alza", "Aruz", "Ativa"
+    ],
+    
     "Others": [
-      "Various Models", "Custom", "Modified", "Classic", "Vintage", "Import"
+      "Various Models", "Custom", "Modified", "Classic", "Vintage", "Import", "Kit Car", "Replica"
     ]
   }
 };

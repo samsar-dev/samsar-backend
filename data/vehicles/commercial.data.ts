@@ -1,27 +1,41 @@
 // Syrian Market Commercial Transport Makes and Models
 export const COMMERCIAL_TRANSPORT_DATA = {
   makes: [
-    // European Brands (Most Popular in Syria)
+    // European Brands (Most Popular in Syria & Region)
     "Mercedes-Benz", "Volvo", "Scania", "MAN", "Iveco", "DAF", "Renault", 
+    "Peugeot", "Citroen", "Fiat", "Volkswagen", "Opel",
     
     // Japanese Brands
-    "Isuzu", "Mitsubishi Fuso", "Hino", "UD Trucks",
+    "Isuzu", "Mitsubishi Fuso", "Hino", "UD Trucks", "Nissan", "Toyota", "Mazda",
     
     // American Brands
-    "Ford", "Freightliner", "Peterbilt", "Kenworth", "Mack",
+    "Ford", "Freightliner", "Peterbilt", "Kenworth", "Mack", "International", 
+    "Western Star", "Chevrolet", "GMC",
     
-    // Chinese Brands (Growing Market)
+    // Chinese Brands (Growing Market in Region)
     "Dongfeng", "Sinotruk", "Shacman", "FAW", "Foton", "JAC", "Beiben", 
-    "CAMC", "Dayun", "Chenglong", "JMC", "King Long", "Yutong",
+    "CAMC", "Dayun", "Chenglong", "JMC", "King Long", "Yutong", "Zhongtong",
+    "Golden Dragon", "Ankai", "BYD", "CRRC", "Sunlong", "Higer", "Youngman",
+    "XCMG", "Sany", "Zoomlion", "Liugong", "Lonking", "SDLG",
     
     // Korean Brands
-    "Hyundai", "Kia",
+    "Hyundai", "Kia", "Daewoo", "SsangYong",
     
     // Russian/Eastern European
-    "KAMAZ", "MAZ", "Ural", "GAZ",
+    "KAMAZ", "MAZ", "Ural", "GAZ", "ZIL", "KRAZ", "Tatra", "Praga",
     
-    // Other Brands
-    "Tata", "Ashok Leyland", "Mahindra", "Others"
+    // Indian Brands (Regional Presence)
+    "Tata", "Ashok Leyland", "Mahindra", "Eicher", "Force Motors", "SML Isuzu",
+    "Bharat Benz", "VE Commercial",
+    
+    // Iranian Brands (Regional Market)
+    "Iran Khodro", "Saipa", "Bahman Group", "Kerman Motor", "Pars Khodro",
+    
+    // Turkish Brands (Regional Neighbor)
+    "BMC", "Otokar", "Temsa", "Karsan", "Anadolu Isuzu", "Ford Otosan",
+    
+    // Others
+    "Others"
   ],
   
   models: {
@@ -172,8 +186,126 @@ export const COMMERCIAL_TRANSPORT_DATA = {
       "407", "709", "909", "1109", "1512", "1612", "1616", "2518", "3118", "3518", "4018", "4923"
     ],
     
+    "DAF": [
+      "LF 45", "LF 55", "CF 65", "CF 75", "CF 85", "XF 95", "XF 105", "XF 106"
+    ],
+    
+    "Renault": [
+      "Master", "Trafic", "Kangoo", "Midlum 220", "Midlum 270", "Premium 370", "Premium 420", "Premium 460",
+      "Kerax 320", "Kerax 370", "Kerax 420", "T High 440", "T High 480", "T High 520"
+    ],
+    
+    "UD Trucks": [
+      "Condor MK", "Condor PK", "Quon GK", "Quon GW", "Croner PK", "Croner MK"
+    ],
+    
+    "Freightliner": [
+      "Cascadia", "Columbia", "Century Class", "Argosy", "Business Class M2", "Coronado"
+    ],
+    
+    "Peterbilt": [
+      "379", "389", "567", "579", "587", "220", "320", "325", "348", "365", "367"
+    ],
+    
+    "Kenworth": [
+      "T680", "T880", "W900", "T800", "T370", "T270", "K370", "C500"
+    ],
+    
+    "Mack": [
+      "Anthem", "Granite", "Pinnacle", "TerraPro", "LR", "MRU", "Titan"
+    ],
+    
+    "International": [
+      "ProStar", "LoneStar", "PayStar", "WorkStar", "TranStar", "DuraStar", "CityStar"
+    ],
+    
+    "JAC": [
+      "N Series 45", "N Series 56", "N Series 80", "N Series 120", "K Series 350", "K Series 420"
+    ],
+    
+    "Beiben": [
+      "V3 280", "V3 336", "V3 380", "V3 420", "NG80 290", "NG80 336", "NG80 380"
+    ],
+    
+    "CAMC": [
+      "Star 280", "Star 336", "Star 380", "Star 420", "Hanma 290", "Hanma 340"
+    ],
+    
+    "Dayun": [
+      "CGC 180", "CGC 220", "CGC 280", "CGC 340", "N8V 350", "N8V 420"
+    ],
+    
+    "Chenglong": [
+      "H7 350", "H7 420", "H7 460", "H5 280", "H5 320", "M3 220", "M3 280"
+    ],
+    
+    "JMC": [
+      "Carrying 1.5T", "Carrying 3T", "Carrying 5T", "Vigus Pro", "Conquer"
+    ],
+    
+    "King Long": [
+      "XMQ6127", "XMQ6129", "XMQ6130", "XMQ6180", "XMQ6900", "XMQ6996"
+    ],
+    
+    "Yutong": [
+      "ZK6107", "ZK6109", "ZK6118", "ZK6122", "ZK6128", "ZK6180", "ZK6876", "ZK6888"
+    ],
+    
+    "Golden Dragon": [
+      "XML6102", "XML6103", "XML6112", "XML6122", "XML6127", "XML6807", "XML6857"
+    ],
+    
+    "BYD": [
+      "K7M", "K8M", "K9", "K11", "C6", "C8", "C9", "T3", "T5", "T7", "T8"
+    ],
+    
+    "Kia": [
+      "Bongo III", "K2500", "K2700", "K3000S", "K4000G", "Granbird"
+    ],
+    
+    "Daewoo": [
+      "Labo", "Damas", "Porter", "Novus", "Prima", "Magnus"
+    ],
+    
+    "MAZ": [
+      "4370", "5340", "5440", "6312", "6317", "6422", "6430", "6501"
+    ],
+    
+    "Ural": [
+      "4320", "5557", "6370", "6563", "43206", "55571", "63704"
+    ],
+    
+    "GAZ": [
+      "3302 Gazelle", "33104 Valdai", "3309", "53", "66", "3307", "3308"
+    ],
+    
+    "Ashok Leyland": [
+      "Dost", "Partner", "Boss", "Guru", "Captain", "Stallion", "Beaver", "Falcon"
+    ],
+    
+    "Eicher": [
+      "Pro 1049", "Pro 1055", "Pro 1059", "Pro 1080", "Pro 1110", "Pro 2049", "Pro 3009"
+    ],
+    
+    "Bharat Benz": [
+      "914R", "1014R", "1214R", "1414R", "1617R", "2523R", "2528C", "3528C"
+    ],
+    
+    "BMC": [
+      "Tugra 185", "Tugra 220", "Tugra 280", "Pro 522", "Pro 827", "Fatih 280"
+    ],
+    
+    "Otokar": [
+      "Tempo", "Vectio", "Kent", "Navigo", "Doruk", "Sultan", "Ulyso"
+    ],
+    
+    "Temsa": [
+      "Avenue", "Safari", "Tourmaline", "Maraton", "Prestij", "MD9", "LD12"
+    ],
+    
     "Others": [
-      "Custom Build", "Modified Vehicle", "Imported Model", "Vintage Truck", "Special Purpose Vehicle"
+      "Custom Build", "Modified Vehicle", "Imported Model", "Vintage Truck", 
+      "Special Purpose Vehicle", "Converted Bus", "Military Surplus"
     ]
   }
 };

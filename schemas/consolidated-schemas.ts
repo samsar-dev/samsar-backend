@@ -14,24 +14,27 @@ export const carEssentialFields = [
 ];
 
 export const carAdvancedFields = [
-  "bodyType",
-  "driveType",
+  'bodyType',
+  'driveType',
+  'fuelType',
+  'transmissionType',
+  'mileage',
+  'exteriorColor',
+  'previousOwners',
+  'accidental',
+  'serviceHistory',
+  'importStatus',
   "engineNumber",
   "serviceHistory",
   "accidental",
   "importStatus",
-  "registrationExpiry",
-  "warranty",
-  "engineSize",
   "doors",
   "seats",
   "airbags",
   "noOfAirbags",
-  "horsepower",
   "torque",
   "roofType",
   "customsCleared",
-  "warrantyPeriod",
   "serviceHistoryDetails",
   "additionalNotes",
   "navigationSystem",
@@ -103,18 +106,26 @@ export const allCarFields = [
 // Motorcycle Schema
 export const motorcycleEssentialFields = [
   "color",
+  "exteriorColor",
   "condition",
   "transmissionType",
   "mileage",
   "fuelType",
-  "engineSize",
-  "engineType",
   "previousOwners",
-  "registrationStatus",
-  "brakeSystem",
 ];
 
 export const motorcycleAdvancedFields = [
+  'bodyType',
+  'driveType',
+  'engineSize',
+  'fuelType',
+  'transmissionType',
+  'mileage',
+  'exteriorColor',
+  'previousOwners',
+  'accidental',
+  'serviceHistory',
+  'importStatus',
   // Performance & Technical
   "powerOutput",
   "torque",
@@ -169,6 +180,16 @@ export const passengersEssentialFields = [
 ];
 
 export const passengersAdvancedFields = [
+  'bodyType',
+  'driveType',
+  'fuelType',
+  'transmissionType',
+  'mileage',
+  'exteriorColor',
+  'previousOwners',
+  'accidental',
+  'serviceHistory',
+  'importStatus',
   "driveType",
   "engineNumber",
   "serviceHistory",
@@ -436,36 +457,15 @@ export const apartmentEssentialFields = [
 ];
 
 export const apartmentAdvancedFields = [
-  // Building Features
-  "buildingAmenities",
-  "elevatorAccess",
-  "balcony",
-  "view",
+  "bedrooms",
+  "bathrooms",
+  "floor",
+  "balconies",
+  "parking",
+  "furnishing",
   "orientation",
-  
-  // Interior Features
-  "flooringTypes",
-  "windowFeatures",
-  "kitchenFeatures",
-  "bathroomFeatures",
-  "storageFeatures",
-  
-  // HVAC & Utilities
-  "heating",
-  "cooling",
-  "utilities",
-  "energyRating",
-  
-  // Security & Access
-  "securityFeatures",
-  "accessControl",
-  "concierge",
-  
-  // Community Features
-  "communityFeatures",
-  "petPolicy",
-  "furnished",
-  "appliances",
+  "view",
+  "additionalNotes",
 ];
 
 export const apartmentFieldNames = [
@@ -536,24 +536,11 @@ export const landEssentialFields = [
 ];
 
 export const landAdvancedFields = [
-  // Development Potential
-  "buildingPermits",
-  "developmentRestrictions",
-  "futureZoning",
-  "subdivisionPotential",
-  
-  // Natural Features
-  "waterFeatures",
-  "treeCoverage",
-  "soilType",
-  "drainage",
-  "environmentalFactors",
-  
-  // Infrastructure
+  "plotSize",
+  "zoning",
   "roadAccess",
-  "utilityAvailability",
-  "internetAccess",
-  "publicTransport",
+  "utilities",
+  "additionalNotes",
 ];
 
 export const landFieldNames = [
@@ -573,12 +560,14 @@ export const officesEssentialFields = [
 ];
 
 export const officesAdvancedFields = [
-  // Building Features
-  "buildingClass",
-  "elevatorAccess",
-  "loadingDock",
-  "ceilingHeight",
-  "windowsToWallRatio",
+  "officeType",
+  "floorArea",
+  "meetingRooms",
+  "floor",
+  "parking",
+  "furnishing",
+  "hvac",
+  "additionalNotes",
   
   // Office Layout
   "openPlan",

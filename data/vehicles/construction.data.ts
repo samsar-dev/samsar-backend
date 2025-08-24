@@ -3,23 +3,45 @@ export const CONSTRUCTION_VEHICLES_DATA = {
   makes: [
     // Major International Brands
     "Caterpillar", "Komatsu", "Volvo", "Liebherr", "JCB", "Case", "New Holland", 
-    "Hitachi", "Kobelco", "Doosan", "Hyundai", "Bobcat", "Takeuchi",
+    "Hitachi", "Kobelco", "Doosan", "Hyundai", "Bobcat", "Takeuchi", "Kubota",
     
-    // Chinese Brands (Growing Market in Syria)
+    // Chinese Brands (Growing Market in Syria & Region)
     "XCMG", "Sany", "Zoomlion", "LiuGong", "Lonking", "SDLG", "Shantui", 
-    "Changlin", "Yuchai", "Sunward", "Lingong", "Chenggong",
+    "Changlin", "Yuchai", "Sunward", "Lingong", "Chenggong", "XGMA", "Degong",
+    "Yanmar", "Sumitomo", "Furukawa", "Tadano", "Kato", "Kobelco Cranes",
+    "Zoomlion Heavy", "CREC", "CCCC", "Pengpu", "Yutong Heavy", "CIMC",
     
     // European Brands
     "Terex", "Atlas", "Wirtgen", "Bomag", "Hamm", "Dynapac", "Ammann",
+    "Manitou", "Merlo", "Dieci", "Faresin", "Wacker Neuson", "Kramer",
+    "Schaeff", "O&K", "Fuchs", "Sennebogen", "Poclain", "Mecalac",
+    
+    // American Brands
+    "John Deere", "Gradall", "Link-Belt", "Manitowoc", "Grove", "National Crane",
+    "Ingersoll Rand", "CompAir", "Atlas Copco", "Chicago Pneumatic",
     
     // Japanese Brands
-    "Kubota", "Yanmar", "Sumitomo", "Furukawa", "Tadano",
+    "Yanmar", "Sumitomo", "Furukawa", "Tadano", "Kato", "Kobelco Cranes",
+    "IHI", "Airman", "Hanix", "Wacker Neuson", "Messersi",
     
     // Korean Brands
-    "Daewoo", "Samsung",
+    "Daewoo", "Samsung", "Volvo CE Korea", "Doosan Infracore", "Hyundai CE",
     
-    // Other Brands
-    "Mahindra", "BEML", "ACE", "JCB India", "Others"
+    // Indian Brands (Regional Presence)
+    "Mahindra", "BEML", "ACE", "JCB India", "Tata Hitachi", "L&T-Komatsu",
+    "Escorts", "Action Construction", "AJAX Fiori", "Schwing Stetter",
+    
+    // Iranian Brands (Regional Market)
+    "Iran Khodro Diesel", "Saipa Diesel", "Mapna Group", "Foolad Technique",
+    
+    // Turkish Brands (Regional Neighbor)
+    "Hidromek", "Erkunt", "Anadolu Motor", "Hattat", "Tumosan",
+    
+    // Russian/Eastern European
+    "Chetra", "Amkodor", "BelAZ", "Uralmash", "Rostselmash", "Altec",
+    
+    // Others
+    "Others"
   ],
   
   models: {
@@ -201,8 +223,135 @@ export const CONSTRUCTION_VEHICLES_DATA = {
       "E10", "E17", "E20", "E26", "E32", "E35", "E42", "E45", "E50", "E55", "E60", "E85"
     ],
     
+    "New Holland": [
+      // Excavators
+      "E18C", "E26C", "E30C", "E35C", "E50C", "E55BX", "E80MSR", "E135C", "E145C", "E175C", "E215C", "E245C", "E305C",
+      
+      // Wheel Loaders
+      "W50C", "W60C", "W70C", "W80C", "W110C", "W130C", "W170C", "W190C"
+    ],
+    
+    "Kobelco": [
+      // Excavators
+      "SK17SR", "SK25SR", "SK30SR", "SK35SR", "SK55SRX", "SK75SR", "SK135SR", "SK140SR", "SK200SR", "SK210LC", "SK250LC", "SK330LC", "SK350LC", "SK480LC"
+    ],
+    
+    "Takeuchi": [
+      // Mini Excavators
+      "TB108", "TB125", "TB135", "TB145", "TB153FR", "TB175", "TB180FR", "TB190", "TB216", "TB230", "TB240", "TB250", "TB260", "TB290"
+    ],
+    
+    "Kubota": [
+      // Mini Excavators
+      "KX018", "KX027", "KX033", "KX040", "KX057", "KX080", "KX121", "KX161", "KX191", "U17", "U25", "U35", "U48", "U55"
+    ],
+    
+    "Lonking": [
+      // Wheel Loaders
+      "LG833", "LG835", "LG842", "LG853", "LG855", "LG862", "LG876", "LG890", "LG895", "LG8128",
+      
+      // Excavators
+      "LG6060", "LG6075", "LG6135", "LG6150", "LG6210", "LG6225", "LG6235", "LG6300"
+    ],
+    
+    "SDLG": [
+      // Wheel Loaders
+      "LG918", "LG933", "LG936", "LG946", "LG953", "LG956", "LG958", "LG968", "LG978",
+      
+      // Excavators
+      "E6135F", "E6150F", "E6210F", "E6225F", "E6300F", "E6360F"
+    ],
+    
+    "Shantui": [
+      // Bulldozers
+      "SD13", "SD16", "SD22", "SD23", "SD32", "SD42", "SD52", "SD90",
+      
+      // Motor Graders
+      "SG14", "SG16", "SG18", "SG21", "SG24"
+    ],
+    
+    "Changlin": [
+      // Wheel Loaders
+      "937H", "946H", "953N", "956H", "958H", "967H", "968H", "976H", "988H"
+    ],
+    
+    "Yuchai": [
+      // Excavators
+      "YC13", "YC18", "YC35", "YC55", "YC85", "YC135", "YC150", "YC210", "YC230", "YC260", "YC360"
+    ],
+    
+    "Sunward": [
+      // Excavators
+      "SWE17", "SWE25", "SWE35", "SWE50", "SWE60", "SWE80", "SWE150", "SWE210", "SWE230"
+    ],
+    
+    "Terex": [
+      // Excavators
+      "TC16", "TC20", "TC25", "TC29", "TC35", "TC37", "TC48", "TC55", "TC60", "TC75", "TC125", "TC210",
+      
+      // Cranes
+      "RT230", "RT345", "RT555", "RT665", "RT780", "AC40", "AC55", "AC100", "AC140", "AC200"
+    ],
+    
+    "Atlas": [
+      // Excavators
+      "160W", "180W", "190W", "200MH", "210W", "220W", "240LC", "260LC", "300LC", "350LC"
+    ],
+    
+    "Wirtgen": [
+      // Road Construction
+      "W35DC", "W50DC", "W100F", "W120F", "W150", "W200", "W210", "2100DC", "2200SM"
+    ],
+    
+    "Bomag": [
+      // Compactors
+      "BW90AD", "BW100AD", "BW120AD", "BW138AD", "BW145D", "BW161AD", "BW177D", "BW211D", "BW213D", "BW219D"
+    ],
+    
+    "Hamm": [
+      // Compactors
+      "3307", "3410", "3411", "3412", "3414", "3518", "3520", "3625", "DV70", "DV90"
+    ],
+    
+    "John Deere": [
+      // Excavators
+      "17G", "26G", "30G", "35G", "50G", "60G", "75G", "85G", "135G", "160G", "210G", "245G", "300G", "350G",
+      
+      // Wheel Loaders
+      "244L", "324L", "344L", "444L", "524L", "544L", "624L", "644L", "724L", "824L", "944L"
+    ],
+    
+    "Manitou": [
+      // Telehandlers
+      "MLT625", "MLT735", "MLT741", "MLT845", "MLT960", "MLT1040", "MRT1432", "MRT1840", "MRT2150"
+    ],
+    
+    "Hidromek": [
+      // Backhoe Loaders
+      "HMK102B", "HMK102S", "HMK62SS", "HMK102", "HMK200LC", "HMK220LC", "HMK300LC"
+    ],
+    
+    "Tata Hitachi": [
+      // Excavators
+      "EX70", "EX100", "EX110", "EX200", "EX210", "EX350", "ZAXIS70", "ZAXIS110", "ZAXIS200"
+    ],
+    
+    "L&T-Komatsu": [
+      // Excavators
+      "PC71", "PC130", "PC200", "PC210", "PC300", "PC400",
+      
+      // Wheel Loaders
+      "WA200", "WA270", "WA380", "WA430", "WA470"
+    ],
+    
+    "BelAZ": [
+      // Mining Trucks
+      "7540", "7555", "75131", "75135", "75306", "75310", "75600", "75710"
+    ],
+    
     "Others": [
-      "Custom Build", "Modified Equipment", "Imported Model", "Vintage Equipment", "Special Purpose Machine"
+      "Custom Build", "Modified Equipment", "Imported Model", "Vintage Equipment", 
+      "Special Purpose Machine", "Refurbished Unit", "Military Surplus"
     ]
   }
 };

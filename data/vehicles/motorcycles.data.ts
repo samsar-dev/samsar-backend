@@ -1,21 +1,39 @@
 // Syrian Market Motorcycle Makes and Models
 export const MOTORCYCLES_DATA = {
   makes: [
-    // Japanese Brands (Most Popular in Syria)
+    // Japanese Brands (Most Popular in Syria & Region)
     "Honda", "Yamaha", "Suzuki", "Kawasaki", "Ducati",
     
     // European Brands
     "BMW", "KTM", "Triumph", "Aprilia", "Moto Guzzi", "Husqvarna", "Beta",
+    "MV Agusta", "Bimota", "Gas Gas", "Sherco", "TM Racing", "Husaberg",
     
     // American Brands
-    "Harley-Davidson", "Indian", "Victory",
+    "Harley-Davidson", "Indian", "Victory", "Zero", "Buell", "Erik Buell Racing",
     
-    // Chinese Brands (Growing Market)
+    // Chinese Brands (Growing Market in Region)
     "Zongshen", "Lifan", "Loncin", "Jianshe", "Qingqi", "Benelli", "CF Moto",
-    "Sym", "Kymco", "PGO",
+    "Sym", "Kymco", "PGO", "Keeway", "Hyosung", "Daelim", "Sinnis",
+    "Lexmoto", "WK Bikes", "Rieju", "Mondial", "Orcal", "Voge", "QJ Motor",
+    "Haojue", "Jincheng", "Shineray", "Skygo", "Wuyang", "Zontes",
     
-    // Other Brands
-    "Royal Enfield", "Bajaj", "TVS", "Hero", "Vespa", "Piaggio", "Others"
+    // Indian Brands (Regional Presence)
+    "Royal Enfield", "Bajaj", "TVS", "Hero", "Mahindra", "LML", "Kinetic",
+    
+    // Italian Scooter Brands
+    "Vespa", "Piaggio", "Gilera", "Derbi", "Peugeot Scooters",
+    
+    // Iranian Brands (Regional Market)
+    "Pars Khodro", "Modiran", "Dayang", "Kaveh", "Pishro",
+    
+    // Turkish Brands (Regional Neighbor)
+    "Mondial", "Motosiklet", "Kanuni", "Arora",
+    
+    // Korean Brands
+    "Hyosung", "Daelim", "SYM",
+    
+    // Others
+    "Others"
   ],
   
   models: {
@@ -189,8 +207,92 @@ export const MOTORCYCLES_DATA = {
       "Primavera 150", "Sprint 150", "GTS 300", "Elettrica"
     ],
     
+    "Triumph": [
+      "Street Triple", "Speed Triple", "Daytona 675", "Bonneville T100", "Bonneville T120",
+      "Scrambler 900", "Thruxton", "Tiger 800", "Tiger 900", "Tiger 1200",
+      "Rocket 3", "Thunderbird", "America", "Speedmaster"
+    ],
+    
+    "Aprilia": [
+      "RS 125", "RS 250", "RS 660", "RSV4", "Tuono V4", "Shiver 900",
+      "Dorsoduro 900", "Caponord 1200", "Mana 850"
+    ],
+    
+    "Moto Guzzi": [
+      "V7 Stone", "V7 Special", "V9 Bobber", "V9 Roamer", "V85 TT",
+      "Griso 1200", "California 1400", "Audace", "Eldorado"
+    ],
+    
+    "Indian": [
+      "Scout", "Scout Sixty", "Chief", "Chief Dark Horse", "Chieftain",
+      "Roadmaster", "Springfield", "FTR 1200"
+    ],
+    
+    "Zero": [
+      "SR/F", "SR/S", "S", "DS", "DSR", "FX", "FXS"
+    ],
+    
+    "Hyosung": [
+      "GT125R", "GT250R", "GT650R", "GV250", "GV650", "ST7"
+    ],
+    
+    "Daelim": [
+      "Daystar 125", "Daystar 250", "VJF 125", "VJF 250", "S3 250"
+    ],
+    
+    "Keeway": [
+      "RKV 125", "RKV 200", "Superlight 125", "Superlight 200", "TX 125", "TX 200"
+    ],
+    
+    "Loncin": [
+      "LX125", "LX150", "LX200", "LX250", "GP150", "GP200"
+    ],
+    
+    "Jianshe": [
+      "JS125", "JS150", "JS200", "Puma 125", "Puma 200"
+    ],
+    
+    "Qingqi": [
+      "QM125", "QM150", "QM200", "Sport 125", "Sport 200"
+    ],
+    
+    "TVS": [
+      "Apache RTR 160", "Apache RTR 200", "Apache RR 310", "Jupiter", "Star City",
+      "Radeon", "Sport", "XL100"
+    ],
+    
+    "Hero": [
+      "Splendor Plus", "HF Deluxe", "Passion Pro", "Glamour", "Xtreme 160R",
+      "Xpulse 200", "Karizma", "CBZ"
+    ],
+    
+    "Piaggio": [
+      "Liberty 125", "Liberty 150", "Beverly 300", "MP3 300", "X7 125", "X8 125"
+    ],
+    
+    "Gilera": [
+      "Runner 125", "Runner 180", "Nexus 125", "Nexus 250", "GP 800"
+    ],
+    
+    "Peugeot Scooters": [
+      "Kisbee 50", "Django 125", "Django 150", "Metropolis 400", "Satelis 125"
+    ],
+    
+    "Voge": [
+      "300R", "300AC", "500R", "500DS", "650DS"
+    ],
+    
+    "QJ Motor": [
+      "SRK 250", "SRK 400", "SRV 300", "SRT 500"
+    ],
+    
+    "Zontes": [
+      "125G1", "155U", "250T", "310R", "310T", "350T"
+    ],
+    
     "Others": [
-      "Custom Build", "Modified Bike", "Classic Motorcycle", "Electric Bike", "Imported Model"
+      "Custom Build", "Modified Bike", "Classic Motorcycle", "Electric Bike", 
+      "Imported Model", "Kit Bike", "Replica", "Vintage Restoration"
     ]
   }
 };
