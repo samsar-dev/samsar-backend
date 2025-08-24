@@ -477,7 +477,7 @@ export default async function (fastify: FastifyInstance) {
           addIfNotEmpty(listingData, 'exteriorColor', validatedData.exteriorColor || validatedData.color || vehicleDetails.exteriorColor || vehicleDetails.color);
           const horsepowerValue = validatedData.horsepower ? parseInt(validatedData.horsepower) : (vehicleDetails.horsepower ? parseInt(vehicleDetails.horsepower) : null);
           addIfNotEmpty(listingData, 'horsepower', horsepowerValue);
-          addIfNotEmpty(listingData, 'registrationExpiry', validatedData.registrationExpiry || vehicleDetails.registrationExpiry);
+          // registrationExpiry moved to JSON details only
           // previousOwners should only be in details JSON, not as top-level field
           // registrationStatus should only be in details JSON, not as top-level field
           // warranty should only be in details JSON, not as top-level field
@@ -486,6 +486,7 @@ export default async function (fastify: FastifyInstance) {
           
           // driveType should only be in details JSON, not as top-level field
           // parkingSensor should only be in details JSON, not as top-level field
+          // doors and seatingCapacity moved to JSON details only
           
           const engineSizeValue = validatedData.engineSize ? parseFloat(validatedData.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
           addIfNotEmpty(listingData, 'engineSize', engineSizeValue);
@@ -538,10 +539,7 @@ export default async function (fastify: FastifyInstance) {
           
           addIfNotEmpty(listingData, 'bedrooms', validatedData.bedrooms ? parseInt(validatedData.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
           addIfNotEmpty(listingData, 'bathrooms', validatedData.bathrooms ? parseInt(validatedData.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
-          // Handle area field mapping (Flutter sends 'area', backend expects 'totalArea')
-          const areaValue = validatedData.area || validatedData.totalArea;
-          const detailsAreaValue = realEstateDetails.area || realEstateDetails.totalArea;
-          addIfNotEmpty(listingData, 'totalArea', areaValue ? parseFloat(areaValue) : (detailsAreaValue ? parseFloat(detailsAreaValue) : null));
+          addIfNotEmpty(listingData, 'totalArea', validatedData.totalArea ? parseFloat(validatedData.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
           addIfNotEmpty(listingData, 'yearBuilt', validatedData.yearBuilt ? parseInt(validatedData.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
           
@@ -559,7 +557,7 @@ export default async function (fastify: FastifyInstance) {
         if (mainCategory.toLowerCase() === 'vehicles') {
           console.log("\n📊 FINAL VEHICLE LISTING DATA BEFORE DB INSERT:");
           console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
-          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower', 'registrationExpiry'];
+          const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower'];
           vehicleFields.forEach(field => {
             console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
           });

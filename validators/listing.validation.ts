@@ -441,7 +441,6 @@ export interface OfficeDetails {
   floor?: number;
   parking?: string;
   officeType?: string;
-  meetingRooms?: number;
   zoning?: string;
   roadAccess?: boolean;
   condition?: string;

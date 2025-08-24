@@ -126,8 +126,6 @@ model Listing {
   engineSize        Float?
   mileage           Int?
   exteriorColor     String?
-  doors             Int?
-  seatingCapacity   Int?
   horsepower        Int?
   accidental        String?
   registrationExpiry String?
@@ -139,7 +137,6 @@ model Listing {
   furnishing        String?
   floor             Int?
   totalFloors       Int?
-  parking           String?
   attributes        Attribute[]
   conversations     Conversation[]     @relation("ListingConversations")
   favorites         Favorite[]

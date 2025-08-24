@@ -124,13 +124,12 @@ export async function validateListingCreate(
     const vehicleFields = [
       'make', 'model', 'year', 'condition', 'sellerType', 'fuelType', 
       'transmission', 'transmissionType', 'bodyType', 'engineSize', 
-      'mileage', 'exteriorColor', 'color', 'accidental', 'horsepower', 
-      'registrationExpiry'
+      'mileage', 'exteriorColor', 'color', 'accidental', 'horsepower'
     ];
     
     const realEstateFields = [
       'bedrooms', 'bathrooms', 'totalArea', 'yearBuilt', 'furnishing', 
-      'floor', 'totalFloors', 'parking'
+      'sellerType', 'condition'
     ];
     
     // Add vehicle fields to normalized data if they exist in the request body

@@ -55,8 +55,6 @@ interface ListingResponse {
   engineSize?: number;
   mileage?: number;
   exteriorColor?: string;
-  doors?: number;
-  seatingCapacity?: number;
   horsepower?: number;
   // Real estate fields
   bedrooms?: number;
@@ -66,7 +64,7 @@ interface ListingResponse {
   furnishing?: string;
   floor?: number;
   totalFloors?: number;
-  parking?: string;
+  // parking moved to JSON details only
   createdAt: Date;
   updatedAt: Date;
   userId: string;
@@ -173,8 +171,6 @@ const formatListingResponse = (
     engineSize: listing.engineSize || undefined,
     mileage: listing.mileage || undefined,
     exteriorColor: listing.exteriorColor || undefined,
-    doors: listing.doors || undefined,
-    seatingCapacity: listing.seatingCapacity || undefined,
     horsepower: listing.horsepower || undefined,
     // Real estate fields
     bedrooms: listing.bedrooms || undefined,
@@ -184,7 +180,7 @@ const formatListingResponse = (
     furnishing: listing.furnishing || undefined,
     floor: listing.floor || undefined,
     totalFloors: listing.totalFloors || undefined,
-    parking: listing.parking || undefined,
+    // parking moved to JSON details only
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
     userId: listing.userId,
@@ -409,7 +405,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         addIfNotEmpty(listingData, 'furnishing', requestBody.furnishing || realEstateDetails.furnishing);
         addIfNotEmpty(listingData, 'floor', requestBody.floor ? parseInt(requestBody.floor) : (realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null));
         addIfNotEmpty(listingData, 'totalFloors', requestBody.totalFloors ? parseInt(requestBody.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
-        addIfNotEmpty(listingData, 'parking', requestBody.parking || realEstateDetails.parking);
+        // parking moved to JSON details only
         
         console.log("🔧 Real estate fields extracted for real_estate category");
       }
@@ -957,7 +953,7 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
           furnishing: realEstateDetails.furnishing || null,
           floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
           totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
-          parking: realEstateDetails.parking || null,
+          // parking moved to JSON details only
         } : {}),
         details: parsedDetails, // Keep full details for backward compatibility
         attributes: attributes
