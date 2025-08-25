@@ -33,30 +33,23 @@ export enum PropertyType {
 
 // 🌟 Vehicle Details
 export enum FuelType {
-  GASOLINE = "GASOLINE",
-  DIESEL = "DIESEL",
-  ELECTRIC = "ELECTRIC",
+  BENZIN = "BENZIN",
+  DIESEL = "DIESEL", 
   HYBRID = "HYBRID",
-  PLUGIN_HYBRID = "PLUGIN_HYBRID",
-  LPG = "LPG",
-  CNG = "CNG",
-  OTHER = "OTHER",
+  ELECTRIC = "ELECTRIC",
+  GASOLINE = "GASOLINE",
+  OTHER = "OTHER"
 }
 
 export enum TransmissionType {
   AUTOMATIC = "AUTOMATIC",
-  MANUAL = "MANUAL",
-  AUTOMATIC_MANUAL = "AUTOMATIC_MANUAL",
-  OTHER = "OTHER"
+  MANUAL = "MANUAL"
 }
 
 export enum Condition {
   NEW = "NEW",
-  LIKE_NEW = "LIKE_NEW",
-  EXCELLENT = "EXCELLENT",
-  GOOD = "GOOD",
-  FAIR = "FAIR",
-  POOR = "POOR",
+  USED = "USED", 
+  DAMAGED = "DAMAGED",
   NOT_WORKING = "NOT_WORKING"
 }
 

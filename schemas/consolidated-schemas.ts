@@ -41,32 +41,21 @@ export const carAdvancedFields = [
 ];
 
 export const carFeatureFields = [
-  // Safety features
+  // Safety features (actually matter for buying decisions)
   "abs",
   "tractionControl",
   "laneAssist",
   "blindSpotMonitor",
   "cruiseControl",
   
-  // Parking & Camera
+  // Parking & Camera (valuable features)
   "parkingSensors",
   "parkingSensor",
   "backupCamera",
   "rearCamera",
   "camera360",
   
-  // Lighting
-  "ledHeadlights",
-  "fogLights",
-  
-  // Connectivity
-  "bluetooth",
-  "appleCarplay",
-  "androidAuto",
-  "wirelessCharging",
-  "usbPorts",
-  
-  // Comfort
+  // Comfort (factory-installed, hard to retrofit)
   "sunroof",
   "panoramicRoof",
   "heatedSeats",
@@ -74,11 +63,7 @@ export const carFeatureFields = [
   "leatherSeats",
   "electricSeats",
   
-  // Security & Convenience
-  "centralLocking",
-  "powerSteering",
-  "immobilizer",
-  "alarmSystem",
+  // Wheels (visible differentiator)
   "alloyWheels",
 ];
 
@@ -212,30 +197,17 @@ export const passengersAdvancedFields = [
 ];
 
 export const passengersSafetyFields = [
-  // Safety Features
+  // Safety Features (actually matter for buying decisions)
   "abs",
   "airbags",
-  "stabilityControl",
-  "tractionControl",
   "frontAirbags",
   "sideAirbags",
   "curtainAirbags",
   
-  // Comfort Features
-  "powerSteering",
-  "powerWindows",
-  "centralLocking",
-  "cruiseControl",
-  "heatedSeats",
+  // Comfort Features (factory-installed, hard to retrofit)
   "leatherSeats",
   "sunroof",
-  
-  // Technology Features
-  "navigationSystem",
-  "bluetooth",
-  "usbPorts",
   "reverseCamera",
-  "parkingSensors",
 ];
 
 export const allPassengersFields = [
@@ -280,22 +252,20 @@ export const constructionsAdvancedFields = [
 ];
 
 export const constructionsSafetyFields = [
-  // Cab Features
-  "airConditioning",
-  "heater",
-  "radioSystem",
-  "workLights",
-  
-  // Safety Features
+  // Safety Features (critical for operation)
   "rolloverProtection",
-  "fallingObjectProtection",
   "emergencyStop",
   "backupCamera",
-  "proximityAlarms",
-  "backupAlarm",
   
-  // Technology Features
-  "gpsTracking",
+  // Core functionality (affects performance and capability)
+  "hydraulicSystem",
+  "attachments",
+  "quickAttach",
+  "rubberTracks",
+  "enclosedCab",
+  
+  // Documentation (affects value and trust)
+  "serviceRecords",
 ];
 
 export const allConstructionsFields = [
@@ -341,39 +311,18 @@ export const commercialsAdvancedFields = [
 ];
 
 export const commercialsSafetyFields = [
-  // Operational Features
+  // Cargo functionality (affects commercial capability)
   "refrigeration",
-  "liftGate",
-  "sleepingCab",
-  "airConditioning",
-  "powerSteering",
+  "hydraulicLift",
+  "loadingRamp",
+  "cargoBarrier",
   
-  // Brake Systems
+  // Safety Features (critical for commercial operation)
   "abs",
-  "airBrakes",
-  "hydraulicBrakes",
+  "backupCamera",
   
-  // Cargo Access
-  "sideAccess",
-  "rearAccess",
-  "topAccess",
-  
-  // Technology Features
-  "gpsTracking",
-  "fleetManagement",
-  "reverseCamera",
-  "dashCamera",
-  "bluetoothConnectivity",
-  
-  // Safety Features
-  "stabilityControl",
-  "tractionControl",
-  "rolloverProtection",
-  "collisionAvoidance",
-  "blindSpotMonitoring",
-  
-  // Certification
-  "inspectionCertificate",
+  // Documentation (legal requirement)
+  "commercialLicense",
 ];
 
 export const allCommercialsFields = [

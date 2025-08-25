@@ -17,7 +17,6 @@
         "model": "Corolla",
         "year": 2018,
         "mileage": 45000,
-        "fuelType": "Petrol",
         "transmissionType": "Automatic",
         "color": "White",
         "condition": "NEW",

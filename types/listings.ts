@@ -178,8 +178,7 @@ export interface VehicleFeatures {
   deadAngleAssistant?: boolean;
   trafficSignRecognition?: boolean;
   burglarAlarmSystem?: boolean;
-  immobilizer?: boolean;
-  centralLocking?: boolean;
+
 
   // Camera Features
   rearCamera?: boolean;
@@ -361,8 +360,6 @@ export interface BaseVehicleDetails {
   deadAngleAssistant?: boolean;
   trafficSignRecognition?: boolean;
   burglarAlarmSystem?: boolean;
-  immobilizer?: boolean;
-  centralLocking?: boolean;
   frontAirbags?: boolean;
   sideAirbags?: boolean;
   curtainAirbags?: boolean;

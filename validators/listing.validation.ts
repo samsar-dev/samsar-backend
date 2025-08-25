@@ -85,11 +85,6 @@ export interface CarDetails {
   sunroof?: boolean;
   panoramicRoof?: boolean;
   navigationSystem?: boolean;
-  bluetooth?: boolean;
-  appleCarplay?: boolean;
-  androidAuto?: boolean;
-  wirelessCharging?: boolean;
-  usbPorts?: boolean;
   cruiseControl?: boolean;
   parkingSensors?: boolean;
   parkingSensor?: boolean;
@@ -101,16 +96,10 @@ export interface CarDetails {
   leatherSeats?: boolean;
   electricSeats?: boolean;
   alloyWheels?: boolean;
-  centralLocking?: boolean;
-  powerSteering?: boolean;
-  immobilizer?: boolean;
-  alarmSystem?: boolean;
   abs?: boolean;
   tractionControl?: boolean;
   laneAssist?: boolean;
   blindSpotMonitor?: boolean;
-  ledHeadlights?: boolean;
-  fogLights?: boolean;
 }
 
 export interface MotorcycleDetails {
@@ -168,16 +157,11 @@ export interface PassengersDetails {
   abs?: boolean;
   stabilityControl?: boolean;
   tractionControl?: boolean;
-  powerSteering?: boolean;
-  powerWindows?: boolean;
-  centralLocking?: boolean;
   cruiseControl?: boolean;
   heatedSeats?: boolean;
   leatherSeats?: boolean;
   sunroof?: boolean;
   navigationSystem?: boolean;
-  bluetooth?: boolean;
-  usbPorts?: number;
   reverseCamera?: boolean;
   parkingSensors?: boolean;
 }
@@ -268,7 +252,6 @@ export interface CommercialsDetails {
   fleetManagement?: boolean;
   reverseCamera?: boolean;
   dashCamera?: boolean;
-  bluetoothConnectivity?: boolean;
   stabilityControl?: boolean;
   tractionControl?: boolean;
   rolloverProtection?: boolean;
@@ -514,11 +497,7 @@ export const validateCarData = (data: any): string[] => {
   }
 
   if (data.transmissionType) {
-    const validTransmissionTypes = [
-      ...Object.values(TransmissionType),
-      'continuouslyVariable'
-    ];
-    if (!validTransmissionTypes.includes(data.transmissionType)) {
+    if (!Object.values(TransmissionType).includes(data.transmissionType)) {
       errors.push(`Invalid transmission type. Must be one of: ${Object.values(TransmissionType).join(', ')}`);
     }
   }
@@ -568,9 +547,6 @@ export const mapCarData = (data: any): Partial<CarDetails> => {
   const features = new Set(data.selectedFeatures || []);
   
   const mapTransmissionType = (frontendType: string): string | undefined => {
-    if (frontendType === 'continuouslyVariable') {
-      return 'continuouslyVariable';
-    }
     return frontendType;
   };
 
@@ -607,11 +583,6 @@ export const mapCarData = (data: any): Partial<CarDetails> => {
     sunroof: features.has('sunroof'),
     panoramicRoof: features.has('panoramic_roof'),
     navigationSystem: features.has('navigation_system'),
-    bluetooth: features.has('bluetooth'),
-    appleCarplay: features.has('apple_carplay'),
-    androidAuto: features.has('android_auto'),
-    wirelessCharging: features.has('wireless_charging'),
-    usbPorts: features.has('usb_ports'),
     cruiseControl: features.has('cruise_control'),
     parkingSensors: features.has('parking_sensors') || features.has('parking_sensor'),
     parkingSensor: features.has('parking_sensor'),
@@ -623,16 +594,10 @@ export const mapCarData = (data: any): Partial<CarDetails> => {
     leatherSeats: features.has('leather_seats'),
     electricSeats: features.has('electric_seats'),
     alloyWheels: features.has('alloy_wheels'),
-    centralLocking: features.has('central_locking'),
-    powerSteering: features.has('power_steering'),
-    immobilizer: features.has('immobilizer'),
-    alarmSystem: features.has('alarm_system'),
     abs: features.has('abs'),
     tractionControl: features.has('traction_control'),
     laneAssist: features.has('lane_assist'),
     blindSpotMonitor: features.has('blind_spot_monitor'),
-    ledHeadlights: features.has('led_headlights'),
-    fogLights: features.has('fog_lights'),
   };
 };
 
