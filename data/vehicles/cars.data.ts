@@ -52,39 +52,58 @@ export const CARS_DATA = {
     "BMW": [
       "1 Series", "2 Series", "3 Series", "4 Series", "5 Series", "6 Series", "7 Series", "8 Series",
       "X1", "X2", "X3", "X4", "X5", "X6", "X7", "Z4", "i3", "i4", "i7", "i8", "iX", "iX1", "iX3",
-      "M2", "M3", "M4", "M5", "M8", "X3 M", "X4 M", "X5 M", "X6 M"
+      "M2", "M3", "M4", "M5", "M8", "X3 M", "X4 M", "X5 M", "X6 M", "Z3", "Z8",
+      "2 Series Active Tourer", "2 Series Gran Tourer", "3 Series GT", "5 Series GT",
+      "6 Series Gran Coupe", "X1 sDrive", "X1 xDrive", "X5 sDrive", "X5 xDrive",
+      "320i", "325i", "330i", "335i", "520i", "525i", "530i", "535i", "740i", "750i"
     ],
     
     "Mercedes-Benz": [
       "A-Class", "B-Class", "C-Class", "CLA", "CLS", "E-Class", "S-Class", "G-Class",
       "GLA", "GLB", "GLC", "GLE", "GLS", "SL", "SLK", "AMG GT", "EQA", "EQB", "EQC", "EQE", "EQS",
-      "C63 AMG", "E63 AMG", "S63 AMG", "G63 AMG", "GLE63 AMG"
+      "C63 AMG", "E63 AMG", "S63 AMG", "G63 AMG", "GLE63 AMG", "SLR", "SLS", "CLK", "CL",
+      "ML", "GL", "GLK", "R-Class", "V-Class", "Viano", "Vito", "Sprinter", "Metris",
+      "C180", "C200", "C220", "C250", "C300", "E200", "E220", "E250", "E300", "E350",
+      "S320", "S350", "S400", "S500", "S600", "G350", "G500", "G550", "AMG C43", "AMG E43"
     ],
     
     "Toyota": [
       "Yaris", "Corolla", "Camry", "Avalon", "Prius", "RAV4", "Highlander", "4Runner", 
       "Land Cruiser", "Prado", "Hilux", "Fortuner", "C-HR", "Venza", "Sienna", "Alphard",
-      "Crown", "Mark X", "Supra", "86"
+      "Crown", "Mark X", "Supra", "86", "Vitz", "Auris", "Avensis", "Verso", "Previa",
+      "Sequoia", "Tundra", "Tacoma", "FJ Cruiser", "Matrix", "Terios", "Rush", "Innova",
+      "Hiace", "Coaster", "Dyna", "Carina", "Cressida", "Starlet", "Echo", "Celica"
     ],
     
     "Honda": [
       "Civic", "Accord", "City", "Jazz", "Fit", "CR-V", "HR-V", "Pilot", "Passport",
-      "Ridgeline", "Odyssey", "Insight", "Clarity", "NSX", "S2000", "Type R"
+      "Ridgeline", "Odyssey", "Insight", "Clarity", "NSX", "S2000", "Type R", "Prelude",
+      "Integra", "Legend", "Stream", "FR-V", "Element", "Crosstour", "Del Sol",
+      "CRX", "Beat", "Logo", "Shuttle", "Stepwgn", "Freed", "Vezel", "Grace"
     ],
     
     "Nissan": [
       "Sentra", "Altima", "Maxima", "Versa", "Micra", "Juke", "Qashqai", "X-Trail", 
-      "Murano", "Pathfinder", "Armada", "Patrol", "Navara", "Leaf", "Ariya", "GT-R", "370Z"
+      "Murano", "Pathfinder", "Armada", "Patrol", "Navara", "Leaf", "Ariya", "GT-R", "370Z",
+      "Sunny", "Tiida", "Note", "Primera", "Almera", "Bluebird", "Cefiro", "Teana",
+      "Kicks", "Rogue", "Quest", "Titan", "Frontier", "Xterra", "Cube", "Livina",
+      "Serena", "Elgrand", "Urvan", "Cabstar", "Atlas", "350Z", "240SX", "Skyline"
     ],
     
     "Hyundai": [
       "i10", "i20", "i30", "Elantra", "Sonata", "Azera", "Genesis", "Kona", "Tucson", 
-      "Santa Fe", "Palisade", "Creta", "Venue", "Ioniq", "Ioniq 5", "Ioniq 6", "Veloster N"
+      "Santa Fe", "Palisade", "Creta", "Venue", "Ioniq", "Ioniq 5", "Ioniq 6", "Veloster N",
+      "Accent", "Verna", "Solaris", "Getz", "Matrix", "Coupe", "Tiburon", "Veloster",
+      "ix35", "ix55", "Veracruz", "Entourage", "H-1", "Porter", "County", "Universe",
+      "Grand i10", "i40", "Grandeur", "Equus", "Centennial", "Nexo", "Bayon"
     ],
     
     "Kia": [
       "Picanto", "Rio", "Cerato", "Forte", "Optima", "K5", "Stinger", "Soul", "Seltos", 
-      "Sportage", "Sorento", "Telluride", "Carnival", "EV6", "EV9", "Niro"
+      "Sportage", "Sorento", "Telluride", "Carnival", "EV6", "EV9", "Niro", "Pride",
+      "Spectra", "Magentis", "Opirus", "Amanti", "Sedona", "Rondo", "Carens", "Venga",
+      "Ceed", "ProCeed", "XCeed", "Stonic", "Xceed", "K3", "K7", "K9", "Mohave",
+      "Borrego", "Cadenza", "Quoris", "Ray", "Morning", "Bongo", "Pregio", "Frontier"
     ],
     
     "Volkswagen": [
@@ -122,16 +141,25 @@ export const CARS_DATA = {
     
     "Chery": [
       "QQ", "Arrizo 3", "Arrizo 5", "Arrizo 6", "Tiggo 2", "Tiggo 3", "Tiggo 4", 
-      "Tiggo 5", "Tiggo 7", "Tiggo 8", "Exeed TXL", "Exeed VX"
+      "Tiggo 5", "Tiggo 7", "Tiggo 8", "Exeed TXL", "Exeed VX", "A1", "A3", "A5",
+      "E3", "E5", "Fulwin", "Oriental Son", "Eastar", "Very", "Cowin", "Riich",
+      "Tiggo 3X", "Tiggo 5X", "Tiggo 7 Pro", "Tiggo 8 Pro", "Arrizo 7", "Arrizo GX",
+      "Exeed LX", "Exeed TX", "Ant", "eQ1", "eQ5", "Big Ant"
     ],
     
     "Geely": [
       "Emgrand 7", "Emgrand X7", "Coolray", "Azkarra", "Okavango", "Atlas", "Boyue", 
-      "Xingyue", "Geometry A", "Geometry C"
+      "Xingyue", "Geometry A", "Geometry C", "EC7", "GC7", "LC", "MK", "CK", "FC",
+      "Vision", "Panda", "King Kong", "Free Cruiser", "Cross", "GX7", "SX11",
+      "Emgrand GT", "Emgrand GS", "Emgrand GL", "Tugella", "Preface", "Xinrui",
+      "Geometry E", "Geometry M6", "Galaxy", "Starray", "Monjaro", "Zeekr 001"
     ],
     
     "BYD": [
-      "F3", "G3", "S6", "S7", "Tang", "Song", "Qin", "Han", "Dolphin", "Atto 3", "Seal"
+      "F3", "G3", "S6", "S7", "Tang", "Song", "Qin", "Han", "Dolphin", "Atto 3", "Seal",
+      "F0", "F3R", "F6", "G6", "L3", "M6", "S8", "Flyer", "e6", "K9", "T3",
+      "Song Plus", "Song Pro", "Tang EV", "Qin Plus", "Qin Pro", "Han EV", "Han DM",
+      "Yuan", "Yuan Plus", "Destroyer 05", "Frigate 07", "Seal U", "Song L", "Leopard 5"
     ],
     
     "Great Wall": [
@@ -315,36 +343,42 @@ export const CARS_DATA = {
       "300", "400", "500", "600", "700", "800"
     ],
     
-    "Tata": [
-      "Nano", "Indica", "Indigo", "Safari", "Sumo", "Nexon", "Harrier", "Altroz"
-    ],
-    
-    "Mahindra": [
-      "Scorpio", "XUV500", "XUV300", "Bolero", "Thar", "KUV100", "Marazzo"
-    ],
-    
-    "Iran Khodro": [
-      "Samand", "Runna", "Dena", "Tara", "Peugeot 206", "Peugeot 207", "Peugeot 405"
-    ],
-    
-    "Saipa": [
-      "Pride", "Tiba", "Quick", "Saina", "Shahin", "111"
-    ],
     
     "UAZ": [
       "Hunter", "Patriot", "Pickup", "452", "3909", "3962"
     ],
     
     "Proton": [
-      "Saga", "Persona", "Iriz", "Exora", "X50", "X70", "Perdana"
+      "Saga", "Persona", "Preve", "Suprima S", "Iriz", "Exora", "X50", "X70", "X90",
+      "Wira", "Satria", "Perdana", "Waja", "Gen-2", "Savvy", "Arena", "Juara"
     ],
     
     "Perodua": [
-      "Axia", "Bezza", "Myvi", "Alza", "Aruz", "Ativa"
+      "Myvi", "Axia", "Bezza", "Aruz", "Alza", "Viva", "Kancil", "Kelisa", "Kenari",
+      "Rusa", "Kembara", "Nautica", "Ativa"
     ],
     
-    "Others": [
-      "Custom Model", "Imported Model", "Classic Car", "Modified Vehicle", "Kit Car", "Replica"
-    ]
+    "Tata": [
+      "Indica", "Indigo", "Manza", "Zest", "Tigor", "Tiago", "Altroz", "Nexon", "Harrier",
+      "Safari", "Hexa", "Aria", "Sumo", "Grande", "Nano", "Bolt", "Vista", "Punch"
+    ],
+    
+    "Mahindra": [
+      "Scorpio", "XUV500", "XUV300", "XUV700", "Thar", "Bolero", "TUV300", "KUV100",
+      "Marazzo", "Xylo", "Quanto", "Verito", "Logan", "Renault Logan", "e2o", "eKUV100"
+    ],
+    
+    "Iran Khodro": [
+      "Samand", "Runna", "Dena", "Tara", "Soren", "Peugeot 405", "Peugeot 206", "Peugeot 207",
+      "Peugeot Pars", "Peugeot RD", "Xantia", "Paykan", "Hillman Hunter"
+    ],
+    
+    "Saipa": [
+      "Pride", "Tiba", "Saina", "Quick", "Shahin", "Nasim", "Xo", "Rio", "Kia Cerato",
+      "Citroen C3", "Citroen Xsara", "Renault Tondar", "MVM X22", "MVM X33", "MVM 110",
+      "MVM 315", "MVM 530", "MVM X55"
+    ],
+
+    "Others": []
   }
 };

@@ -682,7 +682,6 @@ export const mapMotorcycleData = (data: any): Partial<MotorcycleDetails> => {
     abs: features.has('abs'),
     windshield: features.has('windshield'),
     saddlebags: features.has('saddlebags'),
-    crashBars: features.has('crash_bars'),
     heatedGrips: features.has('heated_grips'),
     quickShifter: features.has('quick_shifter'),
     tractionControl: features.has('traction_control'),
