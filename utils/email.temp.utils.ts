@@ -3,7 +3,8 @@ import prisma from "../src/lib/prismaClient.js";
 import nodemailer from "nodemailer";
 import { boolean } from "zod";
 
-const transporter = nodemailer.createTransport({
+// Primary Gmail SMTP transporter
+const gmailTransporter = nodemailer.createTransport({
   secure: true,
   host: "smtp.gmail.com",
   port: 465,
@@ -11,11 +12,54 @@ const transporter = nodemailer.createTransport({
     user: "daryannabo16@gmail.com",
     pass: "pgqzjkpisuyzrnzd",
   },
-  // Add connection timeout and retry settings
-  connectionTimeout: 60000, // 60 seconds
-  greetingTimeout: 30000,   // 30 seconds
-  socketTimeout: 60000,     // 60 seconds
+  connectionTimeout: 30000, // Reduced for faster failover
+  greetingTimeout: 15000,
+  socketTimeout: 30000,
 });
+
+// Fallback Gmail SMTP with TLS (for Railway compatibility)
+const gmailTlsTransporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // Use TLS
+  auth: {
+    user: "daryannabo16@gmail.com",
+    pass: "pgqzjkpisuyzrnzd",
+  },
+  connectionTimeout: 30000,
+  greetingTimeout: 15000,
+  socketTimeout: 30000,
+  tls: {
+    rejectUnauthorized: false // For Railway compatibility
+  }
+});
+
+// Array of transporters to try in order
+const transporters = [gmailTransporter, gmailTlsTransporter];
+
+// Test transporter connectivity
+const testTransporter = async (transporter: any, name: string): Promise<boolean> => {
+  try {
+    await transporter.verify();
+    console.log(`✅ ${name} transporter verified successfully`);
+    return true;
+  } catch (error: any) {
+    console.error(`❌ ${name} transporter verification failed:`, error.message);
+    return false;
+  }
+};
+
+// Initialize and test all transporters
+const initializeTransporters = async () => {
+  console.log('🔧 Testing email transporters...');
+  for (let i = 0; i < transporters.length; i++) {
+    const name = i === 0 ? 'Gmail SSL' : 'Gmail TLS';
+    await testTransporter(transporters[i], name);
+  }
+};
+
+// Initialize transporters on module load
+initializeTransporters().catch(console.error);
 
 export const generateVerificationToken = (): string => {
   return randomBytes(32).toString("hex");
@@ -56,43 +100,97 @@ export const createVerificationToken = async (
   return { token, code };
 };
 
+// Robust email sending with fallback transporters
+const sendEmailWithFallback = async (mailOptions: any): Promise<any> => {
+  let lastError: any;
+  
+  for (let i = 0; i < transporters.length; i++) {
+    const transporter = transporters[i];
+    const transporterName = i === 0 ? 'Gmail SSL' : 'Gmail TLS';
+    
+    try {
+      console.log(`🔄 Attempting to send email via ${transporterName}...`);
+      const result = await transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent successfully via ${transporterName}`);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ ${transporterName} failed:`, error.message);
+      lastError = error;
+      
+      // If this isn't the last transporter, continue to next one
+      if (i < transporters.length - 1) {
+        console.log(`🔄 Trying next transporter...`);
+        continue;
+      }
+    }
+  }
+  
+  // If all transporters failed, throw the last error
+  throw lastError;
+};
+
 export const sendVerificationEmail = async (
   email: string,
   tokenInfo: { token: string; code: string },
 ): Promise<boolean> => {
   try {
-    console.log(`Attempting to send verification email to: ${email}`);
-    console.log(`Verification code: ${tokenInfo.code}`);
+    console.log(`📧 Sending verification email to: ${email}`);
+    console.log(`🔑 Verification code: ${tokenInfo.code}`);
 
     const htmlContent = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
-                <h2 style="color: #333; text-align: center;">Verify Your Email Address</h2>
-                <p>Thank you for signing up! Please use the verification code below to complete your registration:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                <div style="font-size: 32px; letter-spacing: 8px; font-weight: bold; background-color: #f5f5f5; padding: 15px; border-radius: 4px; display: inline-block;">${tokenInfo.code}</div>
-                </div>
-                <p>This verification code will expire in 24 hours.</p>
-                <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;">
-                <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Samsar App. All rights reserved.</p>
-            </div>
-            `;
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #4C14CC; margin: 0; font-size: 28px;">Samsar</h1>
+          <h2 style="color: #333; margin: 10px 0 0 0; font-size: 24px;">Verify Your Email Address</h2>
+        </div>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0;">
+          <p style="margin: 0; font-size: 16px; color: #333;">Thank you for signing up! Please use the verification code below to complete your registration:</p>
+        </div>
+        
+        <div style="text-align: center; margin: 40px 0;">
+          <div style="font-size: 36px; letter-spacing: 6px; font-weight: bold; background-color: #4C14CC; color: white; padding: 20px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            ${tokenInfo.code}
+          </div>
+        </div>
+        
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 20px 0;">
+          <p style="margin: 0; color: #856404; font-size: 14px;">
+            ⏰ <strong>Important:</strong> This verification code will expire in 24 hours.
+          </p>
+        </div>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea;">
+          <p style="color: #666; font-size: 14px; margin: 0;">
+            If you didn't create an account with Samsar, you can safely ignore this email.
+          </p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eaeaea;">
+          <p style="color: #999; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} Samsar App. All rights reserved.
+          </p>
+        </div>
+      </div>
+    `;
 
-    // Add await to properly wait for email sending
-    await transporter.sendMail({
-      from: "daryannabo16@gmail.com", // Use authenticated sender
+    const mailOptions = {
+      from: '"Samsar Team" <daryannabo16@gmail.com>',
       to: email,
-      subject: "Samsar - Verify Your Email Address",
+      subject: "🔐 Verify Your Samsar Account",
       html: htmlContent,
-      text: `Your verification code is: ${tokenInfo.code}\n\nEnter this code to verify your email address.\n\nThis code will expire in 24 hours.`,
-    });
+      text: `Welcome to Samsar!\n\nYour verification code is: ${tokenInfo.code}\n\nEnter this code to verify your email address and complete your registration.\n\nThis code will expire in 24 hours.\n\nIf you didn't create an account, you can safely ignore this email.\n\n-- The Samsar Team`,
+    };
 
-    console.log(`Verification email sent successfully to: ${email}`);
+    const result = await sendEmailWithFallback(mailOptions);
+    
+    console.log(`✅ Verification email sent successfully to: ${email}`);
+    console.log(`📨 Message ID: ${result.messageId}`);
     return true;
-  } catch (error) {
-    console.error(
-      `Error in sending email verification code with nodemailer:`,
-      error,
-    );
+    
+  } catch (error: any) {
+    console.error(`❌ All email transporters failed for ${email}:`, error.message);
+    console.error(`🔍 Error details:`, error);
     return false;
   }
 };
@@ -118,12 +216,14 @@ export const sendUserLoginEmail = async (userDetails: {
       </div>
     `;
 
-    await transporter.sendMail({
-      from: "no-reply@samsar.com",
+    const mailOptions = {
+      from: '"Samsar Team" <daryannabo16@gmail.com>',
       to: userDetails.email,
       subject: "New Login Detected",
       html: htmlContent,
-    });
+    };
+
+    await sendEmailWithFallback(mailOptions);
 
     return true;
   } catch (error) {
@@ -176,12 +276,14 @@ export const sendNewMessageNotificationEmail = async (
       </div>
     `;
 
-    await transporter.sendMail({
-      from: "no-reply@samsar.com",
+    const mailOptions = {
+      from: '"Samsar Team" <daryannabo16@gmail.com>',
       to: recipientEmail,
       subject: "You've got a new message on Samsar!",
       html: htmlContent,
-    });
+    };
+
+    await sendEmailWithFallback(mailOptions);
 
     return true;
   } catch (error) {
