@@ -162,6 +162,12 @@ const formatListingResponse = (listing: any): ListingWithRelations | null => {
     exteriorColor: listing.exteriorColor,
     sellerType: listing.sellerType,
     accidental: listing.accidental,
+    // Real Estate fields as individual properties
+    totalArea: listing.totalArea,
+    yearBuilt: listing.yearBuilt,
+    furnishing: listing.furnishing,
+    floor: listing.floor,
+    totalFloors: listing.totalFloors,
     seller: listing.user
       ? {
           id: listing.user.id,

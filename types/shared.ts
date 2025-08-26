@@ -156,6 +156,12 @@ export interface ListingBase {
   exteriorColor?: string;
   sellerType?: string;
   accidental?: string;
+  // Real Estate fields as individual properties
+  totalArea?: number;
+  yearBuilt?: number;
+  furnishing?: string;
+  floor?: number;
+  totalFloors?: number;
 }
 
 // Listing with relations
