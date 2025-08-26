@@ -312,10 +312,24 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
+      // Debug logging for real estate fields
+      console.log("🔍 [DEBUG] Request body keys:", Object.keys(requestBody));
+      console.log("🔍 [DEBUG] Parsed details:", JSON.stringify(parsedDetails, null, 2));
+      console.log("🔍 [DEBUG] Real estate details:", JSON.stringify(realEstateDetails, null, 2));
+      console.log("🔍 [DEBUG] Root level real estate fields:");
+      console.log("  - totalArea:", requestBody.totalArea);
+      console.log("  - yearBuilt:", requestBody.yearBuilt);
+      console.log("  - furnishing:", requestBody.furnishing);
+      console.log("  - floor:", requestBody.floor);
+      console.log("  - totalFloors:", requestBody.totalFloors);
+      
       // Helper function to only include non-empty values
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
         if (value !== null && value !== undefined && value !== "" && value !== 0) {
+          console.log(`🔧 [DEBUG] Adding ${key}: ${value} to listing data`);
           obj[key] = value;
+        } else {
+          console.log(`🚫 [DEBUG] Skipping ${key}: ${value} (empty/null/undefined/0)`);
         }
       };
       
