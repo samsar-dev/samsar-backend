@@ -40,27 +40,44 @@ const gmailTlsTransporter = nodemailer.createTransport({
   maxConnections: 3,
 });
 
-// Alternative SMTP provider as last resort (you can add SendGrid SMTP here)
-const alternativeTransporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 25, // Try port 25 as last resort
+// SendGrid SMTP transporter (Railway-friendly)
+const sendGridTransporter = nodemailer.createTransport({
+  host: "smtp.sendgrid.net",
+  port: 587,
   secure: false,
   auth: {
-    user: "daryannabo16@gmail.com",
-    pass: "pgqzjkpisuyzrnzd",
+    user: "apikey", // SendGrid always uses 'apikey' as username
+    pass: process.env.SENDGRID_API_KEY || "your-sendgrid-api-key-here",
   },
-  connectionTimeout: 15000,
-  greetingTimeout: 8000,
-  socketTimeout: 15000,
-  ignoreTLS: false,
-  requireTLS: false,
+  connectionTimeout: 20000,
+  greetingTimeout: 10000,
+  socketTimeout: 20000,
+  requireTLS: true,
   tls: {
     rejectUnauthorized: false
   }
 });
 
-// Array of transporters to try in order (including alternative as last resort)
-const transporters = [gmailTransporter, gmailTlsTransporter, alternativeTransporter];
+// Outlook/Hotmail SMTP as backup (often works when Gmail is blocked)
+const outlookTransporter = nodemailer.createTransport({
+  host: "smtp-mail.outlook.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "daryannabo16@outlook.com", // You'll need to create this
+    pass: "your-outlook-password", // App password
+  },
+  connectionTimeout: 20000,
+  greetingTimeout: 10000,
+  socketTimeout: 20000,
+  requireTLS: true,
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+// Array of transporters to try in order (Railway-optimized priority)
+const transporters = [sendGridTransporter, outlookTransporter, gmailTransporter, gmailTlsTransporter];
 
 // Test transporter connectivity
 const testTransporter = async (transporter: any, name: string): Promise<boolean> => {
@@ -77,7 +94,7 @@ const testTransporter = async (transporter: any, name: string): Promise<boolean>
 // Initialize and test all transporters
 const initializeTransporters = async () => {
   console.log('🔧 Testing email transporters...');
-  const transporterNames = ['Gmail Service', 'Gmail TLS', 'Gmail Port 25'];
+  const transporterNames = ['SendGrid SMTP', 'Outlook SMTP', 'Gmail Service', 'Gmail TLS'];
   for (let i = 0; i < transporters.length; i++) {
     await testTransporter(transporters[i], transporterNames[i]);
   }
@@ -127,7 +144,7 @@ export const createVerificationToken = async (
 
 // Robust email sending with multiple nodemailer transporters and retry logic
 const sendEmailWithFallback = async (mailOptions: any): Promise<any> => {
-  const transporterNames = ['Gmail Service', 'Gmail TLS', 'Gmail Port 25'];
+  const transporterNames = ['SendGrid SMTP', 'Outlook SMTP', 'Gmail Service', 'Gmail TLS'];
   let lastError: any;
   
   for (let i = 0; i < transporters.length; i++) {
