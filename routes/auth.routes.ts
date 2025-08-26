@@ -11,7 +11,6 @@ import {
   sendPasswordChangeVerification,
   changePasswordWithVerification,
 } from "../controllers/auth.controller.js";
-import { resendVerification } from "../controllers/resend-verification.controller.js";
 import {
   sendEmailChangeVerification,
   changeEmailWithVerification,
@@ -402,7 +401,53 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        await resendVerification(request, reply);
+        const { email } = request.body as { email: string };
+
+        // Find user by email
+        const user = await prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (!user) {
+          return reply.code(404).send({
+            success: false,
+            error: {
+              code: "USER_NOT_FOUND",
+              message: "User not found",
+            },
+          });
+        }
+
+        // Check if user is already verified
+        if (user.emailVerified) {
+          return reply.code(400).send({
+            success: false,
+            error: {
+              code: "ALREADY_VERIFIED",
+              message: "Email is already verified",
+            },
+          });
+        }
+
+        // Generate new verification token and code
+        const { createVerificationToken, sendVerificationEmail } = await import("../utils/email.temp.utils.js");
+        const verificationInfo = await createVerificationToken(user.id);
+        const emailSent = await sendVerificationEmail(user.email, verificationInfo);
+
+        if (!emailSent) {
+          return reply.code(500).send({
+            success: false,
+            error: {
+              code: "EMAIL_SEND_FAILED",
+              message: "Failed to send verification email",
+            },
+          });
+        }
+
+        return reply.code(200).send({
+          success: true,
+          message: "Verification email sent successfully",
+        });
       } catch (error: any) {
         reply.code(500).send({
           success: false,

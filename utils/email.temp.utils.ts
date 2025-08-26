@@ -3,39 +3,64 @@ import prisma from "../src/lib/prismaClient.js";
 import nodemailer from "nodemailer";
 import { boolean } from "zod";
 
-// Primary Gmail SMTP transporter
+// Primary Gmail SMTP transporter with Railway optimizations
 const gmailTransporter = nodemailer.createTransport({
-  secure: true,
-  host: "smtp.gmail.com",
-  port: 465,
+  service: 'gmail', // Use service instead of manual host/port
   auth: {
     user: "daryannabo16@gmail.com",
     pass: "pgqzjkpisuyzrnzd",
   },
-  connectionTimeout: 30000, // Reduced for faster failover
-  greetingTimeout: 15000,
-  socketTimeout: 30000,
+  connectionTimeout: 20000, // Shorter timeout for faster failover
+  greetingTimeout: 10000,
+  socketTimeout: 20000,
+  pool: true, // Use connection pooling
+  maxConnections: 5,
+  maxMessages: 100,
 });
 
-// Fallback Gmail SMTP with TLS (for Railway compatibility)
+// Fallback Gmail SMTP with explicit TLS settings for Railway
 const gmailTlsTransporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
-  secure: false, // Use TLS
+  secure: false,
   auth: {
     user: "daryannabo16@gmail.com",
     pass: "pgqzjkpisuyzrnzd",
   },
-  connectionTimeout: 30000,
-  greetingTimeout: 15000,
-  socketTimeout: 30000,
+  connectionTimeout: 20000,
+  greetingTimeout: 10000,
+  socketTimeout: 20000,
+  requireTLS: true,
   tls: {
-    rejectUnauthorized: false // For Railway compatibility
+    rejectUnauthorized: false,
+    ciphers: 'SSLv3',
+    minVersion: 'TLSv1'
+  },
+  pool: true,
+  maxConnections: 3,
+});
+
+// Alternative SMTP provider as last resort (you can add SendGrid SMTP here)
+const alternativeTransporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 25, // Try port 25 as last resort
+  secure: false,
+  auth: {
+    user: "daryannabo16@gmail.com",
+    pass: "pgqzjkpisuyzrnzd",
+  },
+  connectionTimeout: 15000,
+  greetingTimeout: 8000,
+  socketTimeout: 15000,
+  ignoreTLS: false,
+  requireTLS: false,
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
-// Array of transporters to try in order
-const transporters = [gmailTransporter, gmailTlsTransporter];
+// Array of transporters to try in order (including alternative as last resort)
+const transporters = [gmailTransporter, gmailTlsTransporter, alternativeTransporter];
 
 // Test transporter connectivity
 const testTransporter = async (transporter: any, name: string): Promise<boolean> => {
@@ -52,9 +77,9 @@ const testTransporter = async (transporter: any, name: string): Promise<boolean>
 // Initialize and test all transporters
 const initializeTransporters = async () => {
   console.log('🔧 Testing email transporters...');
+  const transporterNames = ['Gmail Service', 'Gmail TLS', 'Gmail Port 25'];
   for (let i = 0; i < transporters.length; i++) {
-    const name = i === 0 ? 'Gmail SSL' : 'Gmail TLS';
-    await testTransporter(transporters[i], name);
+    await testTransporter(transporters[i], transporterNames[i]);
   }
 };
 
@@ -100,28 +125,46 @@ export const createVerificationToken = async (
   return { token, code };
 };
 
-// Robust email sending with fallback transporters
+// Robust email sending with multiple nodemailer transporters and retry logic
 const sendEmailWithFallback = async (mailOptions: any): Promise<any> => {
+  const transporterNames = ['Gmail Service', 'Gmail TLS', 'Gmail Port 25'];
   let lastError: any;
   
   for (let i = 0; i < transporters.length; i++) {
     const transporter = transporters[i];
-    const transporterName = i === 0 ? 'Gmail SSL' : 'Gmail TLS';
+    const transporterName = transporterNames[i];
     
-    try {
-      console.log(`🔄 Attempting to send email via ${transporterName}...`);
-      const result = await transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent successfully via ${transporterName}`);
-      return result;
-    } catch (error: any) {
-      console.error(`❌ ${transporterName} failed:`, error.message);
-      lastError = error;
-      
-      // If this isn't the last transporter, continue to next one
-      if (i < transporters.length - 1) {
-        console.log(`🔄 Trying next transporter...`);
-        continue;
+    // Retry each transporter up to 2 times
+    for (let retry = 0; retry < 2; retry++) {
+      try {
+        const retryText = retry > 0 ? ` (retry ${retry})` : '';
+        console.log(`🔄 Attempting to send email via ${transporterName}${retryText}...`);
+        
+        const result = await transporter.sendMail(mailOptions);
+        console.log(`✅ Email sent successfully via ${transporterName}${retryText}`);
+        console.log(`📨 Message ID: ${result.messageId}`);
+        return result;
+        
+      } catch (error: any) {
+        console.error(`❌ ${transporterName}${retry > 0 ? ` (retry ${retry})` : ''} failed:`, error.message);
+        lastError = error;
+        
+        // If it's a connection timeout, wait a bit before retry
+        if (error.code === 'ETIMEDOUT' && retry < 1) {
+          console.log(`⏳ Waiting 2 seconds before retry...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        
+        // Break out of retry loop for this transporter
+        break;
       }
+    }
+    
+    // If this isn't the last transporter, try the next one
+    if (i < transporters.length - 1) {
+      console.log(`🔄 Trying next transporter...`);
+      continue;
     }
   }
   
@@ -232,6 +275,68 @@ export const sendUserLoginEmail = async (userDetails: {
   }
 };
 
+export const verifyEmail = async (
+  token: string,
+  code?: string,
+): Promise<boolean> => {
+  try {
+    // Find user with verification token or code
+    let user: any = null;
+
+    if (code) {
+      // Try to verify with code
+      const users = await prisma.user.findMany({
+        where: {
+          // @ts-ignore - verificationCode exists in the Prisma schema
+          verificationCode: code,
+          verificationTokenExpires: {
+            gt: new Date(),
+          },
+        },
+        take: 1,
+      });
+      user = users.length > 0 ? users[0] : null;
+    } else {
+      // Verify with token
+      const users = await prisma.user.findMany({
+        where: {
+          verificationToken: token,
+          verificationTokenExpires: {
+            gt: new Date(),
+          },
+        },
+        take: 1,
+      });
+      user = users.length > 0 ? users[0] : null;
+    }
+
+    if (!user) {
+      return false;
+    }
+
+    // Update user as verified and change account status from PENDING to ACTIVE
+    const now = new Date();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        lastVerifiedAt: now,
+        verificationToken: null,
+        // @ts-ignore - verificationCode exists in the Prisma schema
+        verificationCode: null,
+        verificationTokenExpires: null,
+        // @ts-ignore - accountStatus exists in the Prisma schema
+        accountStatus: "ACTIVE",
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    return false;
+  }
+};
+
 export const sendNewMessageNotificationEmail = async (
   recipientEmail: string,
   params: {
@@ -270,7 +375,7 @@ export const sendNewMessageNotificationEmail = async (
             ">Check Message</a>
           </div>
 
-          <p style="color: #888;">If you’re not expecting this, you can ignore this email.</p>
+          <p style="color: #888;">If you're not expecting this, you can ignore this email.</p>
           <p style="margin-top: 40px;">– The Samsar Team</p>
         </div>
       </div>

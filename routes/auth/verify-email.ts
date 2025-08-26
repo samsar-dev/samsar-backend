@@ -1,9 +1,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import {
-  verifyEmail,
   createVerificationToken,
   sendVerificationEmail,
-} from "../../utils/email.utils";
+  verifyEmail,
+} from "../../utils/email.temp.utils";
 import prisma from "../../src/lib/prismaClient";
 
 // Extended User type with verification fields
@@ -22,9 +22,6 @@ interface VerifyEmailParams {
   token: string;
 }
 
-interface ResendVerificationParams {
-  email: string;
-}
 
 interface VerifyEmailWithCodeParams {
   code: string;
@@ -149,7 +146,7 @@ export default async function (fastify: FastifyInstance) {
   );
 
   // Resend verification email endpoint
-  fastify.post<{ Body: ResendVerificationParams }>(
+  fastify.post<{ Body: { email: string } }>(
     "/resend-verification",
     async (request, reply) => {
       try {
