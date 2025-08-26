@@ -98,7 +98,7 @@ model View {
 }
 
 model Listing {
-  id                String             @id @default(cuid())
+  id                String             @id
   title             String
   description       String?
   price             Float
