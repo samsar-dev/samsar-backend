@@ -436,7 +436,10 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
 
       // Create listing
       const listing = await tx.listing.create({
-        data: listingData,
+        data: {
+          ...listingData,
+          id: listingId, // Ensure ID is explicitly set
+        },
         include: {
           user: {
             select: {
