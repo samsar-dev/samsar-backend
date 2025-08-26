@@ -318,29 +318,15 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
-      // Debug logging for real estate fields (reduced)
-      // console.log("🔍 [DEBUG] Request body keys:", Object.keys(requestBody));
-      // console.log("🔍 [DEBUG] Parsed details:", JSON.stringify(parsedDetails, null, 2));
-      // console.log("🔍 [DEBUG] Real estate details:", JSON.stringify(realEstateDetails, null, 2));
-      // console.log("🔍 [DEBUG] Root level real estate fields:");
-      // console.log("  - totalArea:", requestBody.totalArea);
-      // console.log("  - yearBuilt:", requestBody.yearBuilt);
-      // console.log("  - furnishing:", requestBody.furnishing);
-      // console.log("  - floor:", requestBody.floor);
-      // console.log("  - totalFloors:", requestBody.totalFloors);
+      // Debug logging for real estate fields (minimal)
+      if (requestBody.floor || requestBody.totalFloors) {
+        console.log("Floor data:", { floor: requestBody.floor, totalFloors: requestBody.totalFloors });
+      }
       
       // Helper function to only include non-empty values
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
-        // Special handling for floor fields - allow 0 values
-        if (key === 'floor' || key === 'totalFloors') {
-          if (value !== null && value !== undefined && value !== "") {
-            obj[key] = value;
-          }
-        } else {
-          // For other fields, exclude 0
-          if (value !== null && value !== undefined && value !== "" && value !== 0) {
-            obj[key] = value;
-          }
+        if (value !== null && value !== undefined && value !== "") {
+          obj[key] = value;
         }
       };
       
@@ -432,8 +418,16 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         addIfNotEmpty(listingData, 'totalArea', requestBody.totalArea ? parseFloat(requestBody.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
         addIfNotEmpty(listingData, 'yearBuilt', requestBody.yearBuilt ? parseInt(requestBody.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
         addIfNotEmpty(listingData, 'furnishing', requestBody.furnishing || realEstateDetails.furnishing);
-        addIfNotEmpty(listingData, 'floor', requestBody.floor ? parseInt(requestBody.floor) : (realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null));
-        addIfNotEmpty(listingData, 'totalFloors', requestBody.totalFloors ? parseInt(requestBody.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
+        // Floor fields - handle string to number conversion properly
+        const floorValue = requestBody.floor || realEstateDetails.floor;
+        const totalFloorsValue = requestBody.totalFloors || realEstateDetails.totalFloors;
+        
+        if (floorValue !== null && floorValue !== undefined && floorValue !== "") {
+          listingData.floor = parseInt(String(floorValue));
+        }
+        if (totalFloorsValue !== null && totalFloorsValue !== undefined && totalFloorsValue !== "") {
+          listingData.totalFloors = parseInt(String(totalFloorsValue));
+        }
         // parking moved to JSON details only
         
         // console.log("🔧 Real estate fields extracted for real_estate category");
