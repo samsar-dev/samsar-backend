@@ -329,14 +329,25 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       console.log("  - floor:", requestBody.floor);
       console.log("  - totalFloors:", requestBody.totalFloors);
       
-      // Helper function to only include non-empty values
+      // Helper function to only include non-empty values (but allow 0 for floor numbers)
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
-        if (value !== null && value !== undefined && value !== "" && value !== 0) {
-          console.log(`🔧 [DEBUG] Adding ${key}: ${value} to listing data`);
-          obj[key] = value;
-        } else {
-          console.log(`🚫 [DEBUG] Skipping ${key}: ${value} (empty/null/undefined/0)`);
+        if (value !== null && value !== undefined && value !== "") {
+          // Special handling for floor - allow 0 and negative values
+          if (key === 'floor' || key === 'totalFloors') {
+            if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
+              console.log(`🔧 [DEBUG] Adding ${key}: ${value} to listing data`);
+              obj[key] = value;
+              return;
+            }
+          }
+          // For other fields, exclude 0 but allow everything else
+          else if (value !== 0) {
+            console.log(`🔧 [DEBUG] Adding ${key}: ${value} to listing data`);
+            obj[key] = value;
+            return;
+          }
         }
+        console.log(`🚫 [DEBUG] Skipping ${key}: ${value} (empty/null/undefined/invalid)`);
       };
       
       // Generate user-friendly listing ID
