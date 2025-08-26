@@ -318,36 +318,30 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
-      // Debug logging for real estate fields
-      console.log("🔍 [DEBUG] Request body keys:", Object.keys(requestBody));
-      console.log("🔍 [DEBUG] Parsed details:", JSON.stringify(parsedDetails, null, 2));
-      console.log("🔍 [DEBUG] Real estate details:", JSON.stringify(realEstateDetails, null, 2));
-      console.log("🔍 [DEBUG] Root level real estate fields:");
-      console.log("  - totalArea:", requestBody.totalArea);
-      console.log("  - yearBuilt:", requestBody.yearBuilt);
-      console.log("  - furnishing:", requestBody.furnishing);
-      console.log("  - floor:", requestBody.floor);
-      console.log("  - totalFloors:", requestBody.totalFloors);
+      // Debug logging for real estate fields (reduced)
+      // console.log("🔍 [DEBUG] Request body keys:", Object.keys(requestBody));
+      // console.log("🔍 [DEBUG] Parsed details:", JSON.stringify(parsedDetails, null, 2));
+      // console.log("🔍 [DEBUG] Real estate details:", JSON.stringify(realEstateDetails, null, 2));
+      // console.log("🔍 [DEBUG] Root level real estate fields:");
+      // console.log("  - totalArea:", requestBody.totalArea);
+      // console.log("  - yearBuilt:", requestBody.yearBuilt);
+      // console.log("  - furnishing:", requestBody.furnishing);
+      // console.log("  - floor:", requestBody.floor);
+      // console.log("  - totalFloors:", requestBody.totalFloors);
       
-      // Helper function to only include non-empty values (but allow 0 for floor numbers)
+      // Helper function to only include non-empty values
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
-        if (value !== null && value !== undefined && value !== "") {
-          // Special handling for floor - allow 0 and negative values
-          if (key === 'floor' || key === 'totalFloors') {
-            if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
-              console.log(`🔧 [DEBUG] Adding ${key}: ${value} to listing data`);
-              obj[key] = value;
-              return;
-            }
-          }
-          // For other fields, exclude 0 but allow everything else
-          else if (value !== 0) {
-            console.log(`🔧 [DEBUG] Adding ${key}: ${value} to listing data`);
+        // Special handling for floor fields - allow 0 values
+        if (key === 'floor' || key === 'totalFloors') {
+          if (value !== null && value !== undefined && value !== "") {
             obj[key] = value;
-            return;
+          }
+        } else {
+          // For other fields, exclude 0
+          if (value !== null && value !== undefined && value !== "" && value !== 0) {
+            obj[key] = value;
           }
         }
-        console.log(`🚫 [DEBUG] Skipping ${key}: ${value} (empty/null/undefined/invalid)`);
       };
       
       // Generate user-friendly listing ID
@@ -430,7 +424,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
         }
         
-        console.log("🔧 Vehicle fields extracted for vehicles category");
+        // console.log("🔧 Vehicle fields extracted for vehicles category");
       } else if (mainCategory.toLowerCase() === 'real_estate') {
         // Real estate-specific fields only
         addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
@@ -442,7 +436,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         addIfNotEmpty(listingData, 'totalFloors', requestBody.totalFloors ? parseInt(requestBody.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
         // parking moved to JSON details only
         
-        console.log("🔧 Real estate fields extracted for real_estate category");
+        // console.log("🔧 Real estate fields extracted for real_estate category");
       }
 
       // Create listing
@@ -507,7 +501,7 @@ const CACHE_TTL = 60 * 1000; // 60 seconds cache TTL
 
 export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    console.log("Request query:", req.query);
+    // console.log("Request query:", req.query);
 
     // Create a cache key from the request query parameters
     const cacheKey = JSON.stringify(req.query);
@@ -521,20 +515,20 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
       // If the client sent an ETag that matches our cached ETag and the cache isn't expired
       if (ifNoneMatch === cachedResponse.etag && !isExpired) {
         // Return 304 Not Modified to tell the client to use its cached version
-        console.log("Cache hit with matching ETag, returning 304");
+        // console.log("Cache hit with matching ETag, returning 304");
         return res.code(304).send();
       }
 
       // If cache is still valid but client didn't send matching ETag
       if (!isExpired) {
-        console.log("Cache hit, returning cached data");
+        // console.log("Cache hit, returning cached data");
         res.header("ETag", cachedResponse.etag);
         res.header("Cache-Control", "private, max-age=60"); // Tell client to cache for 60 seconds
         return res.send(cachedResponse.data);
       }
 
       // Cache expired, will fetch new data
-      console.log("Cache expired, fetching new data");
+      // console.log("Cache expired, fetching new data");
     }
 
     const query = req.query as {
@@ -595,12 +589,12 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
       prisma.listing.count({ where }),
     ]);
 
-    console.log("Found listings:", listings.length);
+    // console.log("Found listings:", listings.length);
     const formattedListings = listings.map((listing) =>
       formatListingResponse(listing as ListingWithRelations),
     );
 
-    console.log("Formatted listings:", formattedListings.length);
+    // console.log("Formatted listings:", formattedListings.length);
 
     // Prepare response data
     const responseData = {
