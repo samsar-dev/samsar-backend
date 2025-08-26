@@ -6,16 +6,10 @@ import {
 } from "@prisma/client";
 import prisma from "../src/lib/prismaClient.js";
 import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
-import { AuthRequest, MultipartAuthRequest } from "../types/auth.js";
-import {
-  ListingDetails,
-  RealEstateDetails,
-  VehicleDetails,
-} from "../types/shared.js";
-import { ListingIdGenerator } from "../utils/listing-id-generator.js";
 import { FastifyRequest, FastifyReply } from "fastify";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
+ 
 
 // Extend Fastify request with custom properties
 declare module "fastify" {
@@ -339,12 +333,8 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         }
       };
       
-      // Generate user-friendly listing ID
-      const listingId = await ListingIdGenerator.generateUniqueListingId();
-      
       // Create listing data with individual columns
       const listingData: Prisma.ListingCreateInput = {
-        id: listingId,
         title,
         description,
         price: listingPrice,
@@ -368,7 +358,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           create:
             req.processedImages?.map((img, index) => ({
               storageProvider: 'CLOUDFLARE',
-              storageKey: `listings/${listingId}/${Date.now()}_${index}.jpg`,
+              storageKey: `listings/${userId}/${Date.now()}_${index}.jpg`,
               url: img.url,
               order: img.order,
               isCover: index === 0,
@@ -436,10 +426,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
 
       // Create listing
       const listing = await tx.listing.create({
-        data: {
-          ...listingData,
-          id: listingId, // Ensure ID is explicitly set
-        },
+        data: listingData,
         include: {
           user: {
             select: {
