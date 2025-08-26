@@ -368,7 +368,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           create:
             req.processedImages?.map((img, index) => ({
               storageProvider: 'CLOUDFLARE',
-              storageKey: `listings/${userId}/${Date.now()}_${index}.jpg`,
+              storageKey: `listings/${listingId}/${Date.now()}_${index}.jpg`,
               url: img.url,
               order: img.order,
               isCover: index === 0,
