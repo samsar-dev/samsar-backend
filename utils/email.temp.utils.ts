@@ -9,8 +9,12 @@ const transporter = nodemailer.createTransport({
   port: 465,
   auth: {
     user: "daryannabo16@gmail.com",
-    pass: "pgqzjkpisuyzrnzd", //yet to be provided
+    pass: "pgqzjkpisuyzrnzd",
   },
+  // Add connection timeout and retry settings
+  connectionTimeout: 60000, // 60 seconds
+  greetingTimeout: 30000,   // 30 seconds
+  socketTimeout: 60000,     // 60 seconds
 });
 
 export const generateVerificationToken = (): string => {
@@ -57,6 +61,9 @@ export const sendVerificationEmail = async (
   tokenInfo: { token: string; code: string },
 ): Promise<boolean> => {
   try {
+    console.log(`Attempting to send verification email to: ${email}`);
+    console.log(`Verification code: ${tokenInfo.code}`);
+
     const htmlContent = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
                 <h2 style="color: #333; text-align: center;">Verify Your Email Address</h2>
@@ -64,20 +71,27 @@ export const sendVerificationEmail = async (
                 <div style="text-align: center; margin: 30px 0;">
                 <div style="font-size: 32px; letter-spacing: 8px; font-weight: bold; background-color: #f5f5f5; padding: 15px; border-radius: 4px; display: inline-block;">${tokenInfo.code}</div>
                 </div>
+                <p>This verification code will expire in 24 hours.</p>
+                <hr style="border: none; border-top: 1px solid #eaeaea; margin: 20px 0;">
+                <p style="color: #777; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} Samsar App. All rights reserved.</p>
             </div>
             `;
 
-    transporter.sendMail({
-      from: "no-reply@samsar.com",
+    // Add await to properly wait for email sending
+    await transporter.sendMail({
+      from: "daryannabo16@gmail.com", // Use authenticated sender
       to: email,
-      subject: "Samsar verification email",
+      subject: "Samsar - Verify Your Email Address",
       html: htmlContent,
+      text: `Your verification code is: ${tokenInfo.code}\n\nEnter this code to verify your email address.\n\nThis code will expire in 24 hours.`,
     });
 
+    console.log(`Verification email sent successfully to: ${email}`);
     return true;
   } catch (error) {
-    console.log(
-      `Error in sending email verification code with nodemailer and error is: ${error}`,
+    console.error(
+      `Error in sending email verification code with nodemailer:`,
+      error,
     );
     return false;
   }
