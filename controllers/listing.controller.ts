@@ -9,6 +9,7 @@ import { uploadToR2, deleteFromR2 } from "../config/cloudflareR2.js";
 import { FastifyRequest, FastifyReply } from "fastify";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
+import { generateListingId } from "../utils/idGenerator.utils.js";
  
 
 // Extend Fastify request with custom properties
@@ -307,6 +308,32 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     // Start transaction
     const result = await prismaClient.$transaction(async (tx) => {
+      // Generate unique 10-digit listing ID
+      let listingId: string;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      do {
+        listingId = generateListingId();
+        attempts++;
+        
+        // Check if ID already exists
+        const existingListing = await tx.listing.findUnique({
+          where: { id: listingId },
+          select: { id: true }
+        });
+        
+        if (!existingListing) {
+          break; // ID is unique, we can use it
+        }
+        
+        if (attempts >= maxAttempts) {
+          throw new Error("Failed to generate unique listing ID after multiple attempts");
+        }
+      } while (attempts < maxAttempts);
+      
+      console.log(`🔧 Generated unique listing ID: ${listingId} (attempts: ${attempts})`);
+      
       // Extract individual fields from request body (Flutter sends them as separate fields)
       const requestBody = req.body as any;
       const vehicleDetails = parsedDetails?.vehicles || {};
@@ -335,6 +362,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       
       // Create listing data with individual columns
       const listingData: Prisma.ListingCreateInput = {
+        id: listingId, // Use our generated 10-digit ID
         title,
         description,
         price: listingPrice,
@@ -358,7 +386,7 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           create:
             req.processedImages?.map((img, index) => ({
               storageProvider: 'CLOUDFLARE',
-              storageKey: `listings/${userId}/${Date.now()}_${index}.jpg`,
+              storageKey: `listings/${listingId}/${Date.now()}_${index}.jpg`,
               url: img.url,
               order: img.order,
               isCover: index === 0,

@@ -23,6 +23,7 @@ import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType, ListingCategory } from "../types/enums.js";
 import { ErrorHandler, ValidationError, ResponseHelpers } from "../utils/error.handler.js";
 import { addListingImages } from "../controllers/listing.controller.js";
+import { generateListingId } from "../utils/idGenerator.utils.js";
 
 interface ListingQuery {
   mainCategory?: string;
@@ -436,8 +437,35 @@ export default async function (fastify: FastifyInstance) {
           }
         };
 
+        // Generate unique 10-digit listing ID
+        let listingId: string;
+        let attempts = 0;
+        const maxAttempts = 10;
+        
+        do {
+          listingId = generateListingId();
+          attempts++;
+          
+          // Check if ID already exists
+          const existingListing = await prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true }
+          });
+          
+          if (!existingListing) {
+            break; // ID is unique, we can use it
+          }
+          
+          if (attempts >= maxAttempts) {
+            throw new Error("Failed to generate unique listing ID after multiple attempts");
+          }
+        } while (attempts < maxAttempts);
+        
+        console.log(`🔧 Generated unique listing ID: ${listingId} (attempts: ${attempts})`);
+
         // Prepare data for database insertion - only include basic fields
         const listingData: any = {
+          id: listingId, // Use our generated 10-digit ID
           title,
           description,
           price,
@@ -453,7 +481,7 @@ export default async function (fastify: FastifyInstance) {
           // Add images if any were uploaded
           images: imageUrls.length > 0 ? {
             create: imageUrls.map((url, index) => {
-              const storageKey = `listings/${user.id}/${Date.now()}_${index}.jpg`;
+              const storageKey = `listings/${listingId}/${Date.now()}_${index}.jpg`;
               return {
                 storageProvider: 'CLOUDFLARE',
                 storageKey,
