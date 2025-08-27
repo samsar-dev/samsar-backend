@@ -75,8 +75,8 @@ const sendEmailWithMailerSend = async (emailData: {
   try {
     console.log(`📧 Sending email via MailerSend to: ${emailData.to}`);
 
-    // Use verified sender email for trial account
-    const sentFrom = new Sender("samsarhq0@gmail.com", "Samsar Team");
+    // Use MailerSend trial domain for sending - replace with your actual trial domain from dashboard
+    const sentFrom = new Sender("noreply@test-51ndgwvnoxdlzqx8.mlsender.net", "Samsar Team");
     const recipients = [new Recipient(emailData.to, "User")];
 
     const emailParams = new EmailParams()

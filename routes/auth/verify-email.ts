@@ -145,7 +145,7 @@ export default async function (fastify: FastifyInstance) {
     },
   );
 
-  // Resend verification email endpoint
+  // Resend verification email endpoint (MailerSend)
   fastify.post<{ Body: { email: string } }>(
     "/resend-verification",
     async (request, reply) => {

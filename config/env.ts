@@ -18,8 +18,8 @@ const envSchema = z.object({
   BCRYPT_SALT_ROUNDS: z.string().default("12"),
   CORS_ORIGIN: z.string().default("*"),
   // Email configuration
-  RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().default("noreply@samsar.app"),
+  MAILERSEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default("noreply@samsardeal.com"),
 });
 
 const envParse = envSchema.safeParse(process.env);
@@ -52,8 +52,8 @@ export const env = {
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
 
   // Email
-  RESEND_API_KEY: process.env.RESEND_API_KEY,
-  EMAIL_FROM: process.env.EMAIL_FROM || "noreply@samsar.app",
+  MAILERSEND_API_KEY: process.env.MAILERSEND_API_KEY,
+  EMAIL_FROM: process.env.EMAIL_FROM || "noreply@samsardeal.com",
 
   // Cloudflare
   CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
