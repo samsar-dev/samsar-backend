@@ -58,7 +58,7 @@ export const sendPasswordChangeEmail = async (
     console.log(`📧 Sending password change email to ${email} using MailerSend`);
 
     // Use verified sender email for trial account
-    const sentFrom = new Sender("daryannabo16@gmail.com", "Samsar Team");
+    const sentFrom = new Sender("samsarhq0@gmail.com", "Samsar Team");
     const recipients = [new Recipient(email, "User")];
 
     const emailParams = new EmailParams()

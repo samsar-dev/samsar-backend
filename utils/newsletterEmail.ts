@@ -31,7 +31,7 @@ export const sendEmail = async (options: EmailOptions) => {
     console.log(`📧 Sending email via MailerSend to: ${options.to}`);
 
     // Use verified sender email for trial account
-    const sentFrom = new Sender("daryannabo16@gmail.com", "Samsar App");
+    const sentFrom = new Sender("samsarhq0@gmail.com", "Samsar App");
     const recipients = [new Recipient(options.to, "User")];
 
     const emailParams = new EmailParams()
