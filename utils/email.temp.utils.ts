@@ -75,7 +75,8 @@ const sendEmailWithMailerSend = async (emailData: {
   try {
     console.log(`📧 Sending email via MailerSend to: ${emailData.to}`);
 
-    const sentFrom = new Sender("noreply@samsar.app", "Samsar Team");
+    // Use verified sender email for trial account
+    const sentFrom = new Sender("daryannabo16@gmail.com", "Samsar Team");
     const recipients = [new Recipient(emailData.to, "User")];
 
     const emailParams = new EmailParams()
