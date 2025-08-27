@@ -1,5 +1,20 @@
-import nodemailer from "nodemailer";
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 import { config } from "../config/config.js";
+
+// Initialize MailerSend client
+const mailerSend = new MailerSend({
+  apiKey: process.env.MAILERSEND_API_KEY || "",
+});
+
+// Check if MailerSend is ready
+const isMailerSendReady = () => {
+  if (process.env.MAILERSEND_API_KEY) {
+    return true;
+  } else {
+    console.error('❌ MAILERSEND_API_KEY not found in environment variables');
+    return false;
+  }
+};
 
 /**
  * Sends a password change verification email to the user
@@ -11,19 +26,12 @@ export const sendPasswordChangeEmail = async (
   email: string,
   code: string,
 ): Promise<boolean> => {
+  if (!isMailerSendReady()) {
+    throw new Error('MailerSend is not properly configured. Please check MAILERSEND_API_KEY environment variable.');
+  }
+
   try {
     console.log("Password change verification code:", code);
-
-    // Create nodemailer transporter using Gmail SMTP
-    const transporter = nodemailer.createTransport({
-      secure: true,
-      host: "smtp.gmail.com",
-      port: 465,
-      auth: {
-        user: "daryannabo16@gmail.com",
-        pass: "pgqzjkpisuyzrnzd",
-      },
-    });
 
     // Create HTML email content with verification code
     const htmlContent = `
@@ -47,21 +55,24 @@ export const sendPasswordChangeEmail = async (
       return false;
     }
 
-    console.log(`Sending password change email to ${email} using nodemailer`);
+    console.log(`📧 Sending password change email to ${email} using MailerSend`);
 
-    // Send email using nodemailer
-    await transporter.sendMail({
-      from: "daryannabo16@gmail.com",
-      to: email,
-      subject: "Password Change Verification",
-      html: htmlContent,
-      text: `Your password change verification code is: ${code}\n\nEnter this code on the password change page to verify your identity.\n\nThis code will expire in 24 hours.`,
-    });
+    const sentFrom = new Sender("noreply@samsar.app", "Samsar Team");
+    const recipients = [new Recipient(email, "User")];
 
-    console.log("Password change email sent successfully to:", email);
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setSubject("Password Change Verification")
+      .setHtml(htmlContent)
+      .setText(`Your password change verification code is: ${code}\n\nEnter this code on the password change page to verify your identity.\n\nThis code will expire in 24 hours.`);
+
+    await mailerSend.email.send(emailParams);
+
+    console.log("✅ Password change email sent successfully to:", email);
     return true;
   } catch (error) {
-    console.error("Error sending password change email:", error);
+    console.error("❌ Error sending password change email:", error);
     return false;
   }
 };

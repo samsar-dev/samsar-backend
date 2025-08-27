@@ -47,6 +47,7 @@
     "form-data": "^4.0.4",
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
+    "mailersend": "^2.6.0",
     "multi-part": "^4.0.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0",

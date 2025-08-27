@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 
 interface EmailOptions {
   to: string;
@@ -7,37 +7,46 @@ interface EmailOptions {
   html?: string;
 }
 
-// Create a reusable transporter object using Gmail SMTP
-const transporter = nodemailer.createTransport({
-  secure: true,
-  host: "smtp.gmail.com",
-  port: 465,
-  auth: {
-    user: "daryannabo16@gmail.com",
-    pass: "pgqzjkpisuyzrnzd",
-  },
+// Initialize MailerSend client
+const mailerSend = new MailerSend({
+  apiKey: process.env.MAILERSEND_API_KEY || "",
 });
 
-export const sendEmail = async (options: EmailOptions) => {
-  const from = '"Samsar App" <noreply@samsar.app>';
+// Check if MailerSend is ready
+const isMailerSendReady = () => {
+  if (process.env.MAILERSEND_API_KEY) {
+    return true;
+  } else {
+    console.error('❌ MAILERSEND_API_KEY not found in environment variables');
+    return false;
+  }
+};
 
-  const mailOptions = {
-    from,
-    to: options.to,
-    subject: options.subject,
-    text: options.text,
-    html: options.html,
-  };
+export const sendEmail = async (options: EmailOptions) => {
+  if (!isMailerSendReady()) {
+    throw new Error('MailerSend is not properly configured. Please check MAILERSEND_API_KEY environment variable.');
+  }
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    console.log(`📧 Sending email via MailerSend to: ${options.to}`);
 
+    const sentFrom = new Sender("noreply@samsar.app", "Samsar App");
+    const recipients = [new Recipient(options.to, "User")];
+
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setSubject(options.subject)
+      .setHtml(options.html || '')
+      .setText(options.text || options.html?.replace(/<[^>]*>/g, '') || '');
+
+    const result = await mailerSend.email.send(emailParams);
+    
     if (process.env.NODE_ENV === "development") {
-      console.log("Message sent: %s", info.messageId);
-      console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+      console.log("Message sent: %s", result.body?.message_id || 'N/A');
     }
 
-    return info;
+    return result;
   } catch (error) {
     console.error("Error sending email:", error);
     throw new Error("Failed to send email");
@@ -66,8 +75,7 @@ export const sendNewsletterEmail = async (
     console.log("Newsletter email sent:", {
       to,
       subject,
-      messageId: info.messageId,
-      previewUrl: nodemailer.getTestMessageUrl(info),
+      messageId: info.body?.message_id || 'N/A',
     });
     return info;
   } catch (error) {

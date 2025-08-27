@@ -1,107 +1,26 @@
 import { randomBytes } from "crypto";
 import prisma from "../src/lib/prismaClient.js";
-import nodemailer from "nodemailer";
-import { boolean } from "zod";
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 
-// Primary Gmail SMTP transporter with Railway optimizations
-const gmailTransporter = nodemailer.createTransport({
-  service: 'gmail', // Use service instead of manual host/port
-  auth: {
-    user: "daryannabo16@gmail.com",
-    pass: "pgqzjkpisuyzrnzd",
-  },
-  connectionTimeout: 20000, // Shorter timeout for faster failover
-  greetingTimeout: 10000,
-  socketTimeout: 20000,
-  pool: true, // Use connection pooling
-  maxConnections: 5,
-  maxMessages: 100,
+// Initialize MailerSend client
+const mailerSend = new MailerSend({
+  apiKey: process.env.MAILERSEND_API_KEY || "",
 });
 
-// Fallback Gmail SMTP with explicit TLS settings for Railway
-const gmailTlsTransporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "daryannabo16@gmail.com",
-    pass: "pgqzjkpisuyzrnzd",
-  },
-  connectionTimeout: 20000,
-  greetingTimeout: 10000,
-  socketTimeout: 20000,
-  requireTLS: true,
-  tls: {
-    rejectUnauthorized: false,
-    ciphers: 'SSLv3',
-    minVersion: 'TLSv1'
-  },
-  pool: true,
-  maxConnections: 3,
-});
-
-// SendGrid SMTP transporter (Railway-friendly)
-const sendGridTransporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "apikey", // SendGrid always uses 'apikey' as username
-    pass: process.env.SENDGRID_API_KEY || "your-sendgrid-api-key-here",
-  },
-  connectionTimeout: 20000,
-  greetingTimeout: 10000,
-  socketTimeout: 20000,
-  requireTLS: true,
-  tls: {
-    rejectUnauthorized: false
-  }
-});
-
-// Outlook/Hotmail SMTP as backup (often works when Gmail is blocked)
-const outlookTransporter = nodemailer.createTransport({
-  host: "smtp-mail.outlook.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "daryannabo16@outlook.com", // You'll need to create this
-    pass: "your-outlook-password", // App password
-  },
-  connectionTimeout: 20000,
-  greetingTimeout: 10000,
-  socketTimeout: 20000,
-  requireTLS: true,
-  tls: {
-    rejectUnauthorized: false
-  }
-});
-
-// Array of transporters to try in order (Railway-optimized priority)
-const transporters = [sendGridTransporter, outlookTransporter, gmailTransporter, gmailTlsTransporter];
-
-// Test transporter connectivity
-const testTransporter = async (transporter: any, name: string): Promise<boolean> => {
-  try {
-    await transporter.verify();
-    console.log(`✅ ${name} transporter verified successfully`);
+// Initialize MailerSend on module load
+const initializeMailerSend = () => {
+  if (process.env.MAILERSEND_API_KEY) {
+    console.log('✅ MailerSend initialized successfully');
     return true;
-  } catch (error: any) {
-    console.error(`❌ ${name} transporter verification failed:`, error.message);
+  } else {
+    console.error('❌ MAILERSEND_API_KEY not found in environment variables');
+    console.log('📝 Please set MAILERSEND_API_KEY in your Railway environment variables');
     return false;
   }
 };
 
-// Initialize and test all transporters
-const initializeTransporters = async () => {
-  console.log('🔧 Testing email transporters...');
-  const transporterNames = ['SendGrid SMTP', 'Outlook SMTP', 'Gmail Service', 'Gmail TLS'];
-  for (let i = 0; i < transporters.length; i++) {
-    await testTransporter(transporters[i], transporterNames[i]);
-  }
-};
-
-// Initialize transporters on module load
-initializeTransporters().catch(console.error);
+// Initialize on startup
+const isMailerSendReady = initializeMailerSend();
 
 export const generateVerificationToken = (): string => {
   return randomBytes(32).toString("hex");
@@ -142,51 +61,40 @@ export const createVerificationToken = async (
   return { token, code };
 };
 
-// Robust email sending with multiple nodemailer transporters and retry logic
-const sendEmailWithFallback = async (mailOptions: any): Promise<any> => {
-  const transporterNames = ['SendGrid SMTP', 'Outlook SMTP', 'Gmail Service', 'Gmail TLS'];
-  let lastError: any;
-  
-  for (let i = 0; i < transporters.length; i++) {
-    const transporter = transporters[i];
-    const transporterName = transporterNames[i];
-    
-    // Retry each transporter up to 2 times
-    for (let retry = 0; retry < 2; retry++) {
-      try {
-        const retryText = retry > 0 ? ` (retry ${retry})` : '';
-        console.log(`🔄 Attempting to send email via ${transporterName}${retryText}...`);
-        
-        const result = await transporter.sendMail(mailOptions);
-        console.log(`✅ Email sent successfully via ${transporterName}${retryText}`);
-        console.log(`📨 Message ID: ${result.messageId}`);
-        return result;
-        
-      } catch (error: any) {
-        console.error(`❌ ${transporterName}${retry > 0 ? ` (retry ${retry})` : ''} failed:`, error.message);
-        lastError = error;
-        
-        // If it's a connection timeout, wait a bit before retry
-        if (error.code === 'ETIMEDOUT' && retry < 1) {
-          console.log(`⏳ Waiting 2 seconds before retry...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          continue;
-        }
-        
-        // Break out of retry loop for this transporter
-        break;
-      }
-    }
-    
-    // If this isn't the last transporter, try the next one
-    if (i < transporters.length - 1) {
-      console.log(`🔄 Trying next transporter...`);
-      continue;
-    }
+// Send email using MailerSend API
+const sendEmailWithMailerSend = async (emailData: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<any> => {
+  if (!isMailerSendReady) {
+    throw new Error('MailerSend is not properly configured. Please check MAILERSEND_API_KEY environment variable.');
   }
-  
-  // If all transporters failed, throw the last error
-  throw lastError;
+
+  try {
+    console.log(`📧 Sending email via MailerSend to: ${emailData.to}`);
+
+    const sentFrom = new Sender("noreply@samsar.app", "Samsar Team");
+    const recipients = [new Recipient(emailData.to, "User")];
+
+    const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setSubject(emailData.subject)
+      .setHtml(emailData.html)
+      .setText(emailData.text || emailData.html.replace(/<[^>]*>/g, ''));
+
+    const result = await mailerSend.email.send(emailParams);
+    
+    console.log(`✅ Email sent successfully via MailerSend`);
+    console.log(`📨 Message ID: ${result.body?.message_id || 'N/A'}`);
+    
+    return result;
+  } catch (error: any) {
+    console.error(`❌ MailerSend failed:`, error.message);
+    throw error;
+  }
 };
 
 export const sendVerificationEmail = async (
@@ -234,22 +142,20 @@ export const sendVerificationEmail = async (
       </div>
     `;
 
-    const mailOptions = {
-      from: '"Samsar Team" <daryannabo16@gmail.com>',
+    const textContent = `Welcome to Samsar!\n\nYour verification code is: ${tokenInfo.code}\n\nEnter this code to verify your email address and complete your registration.\n\nThis code will expire in 24 hours.\n\nIf you didn't create an account, you can safely ignore this email.\n\n-- The Samsar Team`;
+
+    await sendEmailWithMailerSend({
       to: email,
       subject: "🔐 Verify Your Samsar Account",
       html: htmlContent,
-      text: `Welcome to Samsar!\n\nYour verification code is: ${tokenInfo.code}\n\nEnter this code to verify your email address and complete your registration.\n\nThis code will expire in 24 hours.\n\nIf you didn't create an account, you can safely ignore this email.\n\n-- The Samsar Team`,
-    };
-
-    const result = await sendEmailWithFallback(mailOptions);
+      text: textContent,
+    });
     
     console.log(`✅ Verification email sent successfully to: ${email}`);
-    console.log(`📨 Message ID: ${result.messageId}`);
     return true;
     
   } catch (error: any) {
-    console.error(`❌ All email transporters failed for ${email}:`, error.message);
+    console.error(`❌ MailerSend failed for ${email}:`, error.message);
     console.error(`🔍 Error details:`, error);
     return false;
   }
@@ -276,14 +182,11 @@ export const sendUserLoginEmail = async (userDetails: {
       </div>
     `;
 
-    const mailOptions = {
-      from: '"Samsar Team" <daryannabo16@gmail.com>',
+    await sendEmailWithMailerSend({
       to: userDetails.email,
       subject: "New Login Detected",
       html: htmlContent,
-    };
-
-    await sendEmailWithFallback(mailOptions);
+    });
 
     return true;
   } catch (error) {
@@ -398,14 +301,11 @@ export const sendNewMessageNotificationEmail = async (
       </div>
     `;
 
-    const mailOptions = {
-      from: '"Samsar Team" <daryannabo16@gmail.com>',
+    await sendEmailWithMailerSend({
       to: recipientEmail,
       subject: "You've got a new message on Samsar!",
       html: htmlContent,
-    };
-
-    await sendEmailWithFallback(mailOptions);
+    });
 
     return true;
   } catch (error) {
