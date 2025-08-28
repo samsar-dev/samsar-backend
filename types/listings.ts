@@ -60,6 +60,7 @@ export interface HouseDetails {
   totalArea: number;
   bedrooms: number;
   bathrooms: number;
+  totalRooms?: number;
   yearBuilt: number;
   livingArea: number;
   halfBathrooms: number;
@@ -80,6 +81,7 @@ export interface ApartmentDetails {
   totalArea: number;
   bedrooms: number;
   bathrooms: number;
+  totalRooms?: number;
   floorLevel: number;
   yearBuilt: number;
   totalFloors?: number;
