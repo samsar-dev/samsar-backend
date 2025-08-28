@@ -337,6 +337,7 @@ export interface HouseDetails {
   yearBuilt?: number;
   bedrooms?: number;
   bathrooms?: number;
+  totalRooms?: number;
   accessibility?: string;
   appliances?: string;
   basementFeatures?: string;
@@ -385,6 +386,7 @@ export interface ApartmentDetails {
   yearBuilt?: number;
   bedrooms?: number;
   bathrooms?: number;
+  totalRooms?: number;
   livingArea?: number;
   hoaFeatures?: string;
   communityFeatures?: string;
