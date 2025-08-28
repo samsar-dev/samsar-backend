@@ -246,8 +246,8 @@ await fastify.register(import("@fastify/etag"), {
 // CORS - Allow all origins for testing
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'https://samsar.app',
-  'https://www.samsar.app',
+  'https://samsardeal.com',
+  'https://www.samsardeal.com',
   'https://samsar-frontend.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',

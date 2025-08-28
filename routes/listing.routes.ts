@@ -694,7 +694,7 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
-  // Get saved listings
+  // Get saved listings (for backward compatibility)
   fastify.get(
     "/save",
     handleAuthRoute(
@@ -732,6 +732,200 @@ export default async function (fastify: FastifyInstance) {
             status: 200,
           });
         } catch (error) {
+          return reply.code(500).send({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+            status: 500,
+          });
+        }
+      }
+    )
+  );
+
+  // Get favorites (Flutter endpoint)
+  fastify.get(
+    "/favorites",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const userId = validateUser(req);
+          const savedListings = await prisma.favorite.findMany({
+            where: {
+              userId,
+            },
+            include: {
+              listing: {
+                include: {
+                  images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      username: true,
+                      profilePicture: true,
+                    },
+                  },
+                  favorites: true,
+                },
+              },
+            },
+          });
+
+          const formattedListings = savedListings.map((favorite) =>
+            formatListingResponse(favorite.listing)
+          );
+
+          return reply.send({
+            success: true,
+            data: { favorites: formattedListings },
+            status: 200,
+          });
+        } catch (error) {
+          return reply.code(500).send({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+            status: 500,
+          });
+        }
+      }
+    )
+  );
+
+  // Add listing to favorites
+  fastify.post<{ Params: { listingId: string } }>(
+    "/saved/:listingId",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const userId = validateUser(req);
+          const { listingId } = req.params as { listingId: string };
+
+          // Check if listing exists
+          const listing = await prisma.listing.findUnique({
+            where: { id: listingId },
+            select: { id: true, title: true },
+          });
+
+          if (!listing) {
+            return reply.code(404).send({
+              success: false,
+              error: "Listing not found",
+              status: 404,
+            });
+          }
+
+          // Check if already favorited
+          const existingFavorite = await prisma.favorite.findUnique({
+            where: {
+              userId_listingId: {
+                userId,
+                listingId,
+              },
+            },
+          });
+
+          if (existingFavorite) {
+            return reply.code(409).send({
+              success: false,
+              error: "Listing already in favorites",
+              status: 409,
+            });
+          }
+
+          // Add to favorites
+          const favorite = await prisma.favorite.create({
+            data: {
+              userId,
+              listingId,
+            },
+            include: {
+              listing: {
+                include: {
+                  images: true,
+                  user: {
+                    select: {
+                      id: true,
+                      username: true,
+                      profilePicture: true,
+                    },
+                  },
+                },
+              },
+            },
+          });
+
+          return reply.send({
+            success: true,
+            data: {
+              id: favorite.id,
+              listing: formatListingResponse(favorite.listing),
+            },
+            status: 200,
+          });
+        } catch (error) {
+          console.error("Error adding to favorites:", error);
+          return reply.code(500).send({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "An unknown error occurred",
+            status: 500,
+          });
+        }
+      }
+    )
+  );
+
+  // Remove listing from favorites
+  fastify.delete<{ Params: { listingId: string } }>(
+    "/saved/:listingId",
+    handleAuthRoute(
+      async (req: AuthRequest, reply: FastifyReply): Promise<void> => {
+        try {
+          const userId = validateUser(req);
+          const { listingId } = req.params as { listingId: string };
+
+          // Check if favorite exists
+          const existingFavorite = await prisma.favorite.findUnique({
+            where: {
+              userId_listingId: {
+                userId,
+                listingId,
+              },
+            },
+          });
+
+          if (!existingFavorite) {
+            return reply.code(404).send({
+              success: false,
+              error: "Favorite not found",
+              status: 404,
+            });
+          }
+
+          // Remove from favorites
+          await prisma.favorite.delete({
+            where: {
+              userId_listingId: {
+                userId,
+                listingId,
+              },
+            },
+          });
+
+          return reply.send({
+            success: true,
+            message: "Listing removed from favorites",
+            status: 200,
+          });
+        } catch (error) {
+          console.error("Error removing from favorites:", error);
           return reply.code(500).send({
             success: false,
             error:

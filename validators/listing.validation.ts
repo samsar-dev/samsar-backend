@@ -450,7 +450,6 @@ export interface VillaDetails {
   view?: string;
   orientation?: string;
   buildingAge?: number;
-  maintenanceFee?: string;
   energyRating?: string;
   yearBuilt?: number;
 }
