@@ -69,6 +69,8 @@ model User {
   newsletterSubscribed     Boolean?       @default(true)
   loginNotifications       Boolean        @default(false)
   privateProfile           Boolean        @default(false)
+  fcmToken                 String?
+  fcmTokenUpdatedAt        DateTime?
   favorites                Favorite[]
   listings                 Listing[]      @relation("UserListings")
   receivedMessages         Message[]      @relation("ReceivedMessages")

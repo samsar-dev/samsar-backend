@@ -350,6 +350,7 @@ import uploadRoutes from "./routes/uploads.js";
 import userRoutes from "./routes/user.routes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
 import reportRoutes from "./routes/report.routes.js";
+import fcmRoutes from "./routes/fcm.routes.js";
 import { NewMessageData } from "./types/socket.js";
 import { PriceChangeData } from "./types/socket.js";
 
@@ -375,6 +376,9 @@ await fastify.register(notificationRoutes, { prefix: "/api/notifications" });
 await fastify.register(adminRoutes, { prefix: "/api/admin" });
 await fastify.register(newsletterRoutes, { prefix: "/api/admin/newsletter" });
 await fastify.register(reportRoutes, { prefix: "/api/reports" });
+
+// Register FCM routes
+await fastify.register(fcmRoutes, { prefix: "/api/fcm" });
 
 // Register location routes
 import locationRoutes from "./routes/location.routes.js";

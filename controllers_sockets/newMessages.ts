@@ -9,6 +9,7 @@ import {
 } from "../types/socket.js";
 import { Prisma } from "@prisma/client";
 import { sendNewMessageNotificationEmail } from "../utils/email.temp.utils.js";
+import { firebaseNotificationService } from "../services/firebase-admin.service.js";
 
 export const newMessages = async ({
   content,
@@ -59,7 +60,7 @@ export const newMessagesHeplerFun = async ({
     createdAt,
   });
   if (await isMessageAllow(recipientId)) return;
-  let messagRresult: MessageWithSenderAndRecipient | null = null;
+  let messagRresult: any = null;
   let notificationResult: NotificationWithSenderAndRecipient | null = null;
   try {
     messagRresult = await prisma.message.create({
@@ -71,8 +72,22 @@ export const newMessagesHeplerFun = async ({
         createdAt: createdAt,
       },
       include: {
-        sender: true,
-        recipient: true,
+        sender: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            profilePicture: true,
+            fcmToken: true,
+          },
+        },
       },
     });
     notificationResult = await prisma.notification.create({
@@ -89,12 +104,36 @@ export const newMessagesHeplerFun = async ({
       },
     });
 
-    if (messagRresult)
+    if (messagRresult) {
+      // Send email notification
       sendNewMessageNotificationEmail(messagRresult.recipient.email, {
         senderName: messagRresult.sender.username,
         recipientName: messagRresult.recipient.username,
         conversationId: messagRresult.conversationId,
       });
+
+      // Send push notification if recipient has FCM token
+      if (messagRresult.recipient.fcmToken) {
+        try {
+          await firebaseNotificationService.sendMessageNotification(
+            messagRresult.recipient.fcmToken,
+            {
+              title: `💬 ${messagRresult.sender.username}`,
+              body: content.length > 50 ? content.substring(0, 50) + "..." : content,
+              senderId: messagRresult.senderId,
+              senderName: messagRresult.sender.username,
+              conversationId: messagRresult.conversationId,
+              messageId: messagRresult.id,
+            }
+          );
+          console.log(`✅ Push notification sent to ${messagRresult.recipient.username}`);
+        } catch (error) {
+          console.error("❌ Failed to send push notification:", error);
+        }
+      } else {
+        console.log(`📱 No FCM token for user ${messagRresult.recipient.username}`);
+      }
+    }
     console.log("Message created:", messagRresult);
     console.log("Notification created:>>>>>>>>>>>>", notificationResult);
   } catch (error) {

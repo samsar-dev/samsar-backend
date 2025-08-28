@@ -1,8 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
-import { config } from "../config/config";
-import { UserPayload } from "../types/auth";
-import { SESSION_COOKIE_NAME, REFRESH_COOKIE_NAME } from "./session.middleware";
+import { config } from "../config/config.js";
+import { UserPayload } from "../types/auth.js";
+import { SESSION_COOKIE_NAME, REFRESH_COOKIE_NAME } from "./session.middleware.js";
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
