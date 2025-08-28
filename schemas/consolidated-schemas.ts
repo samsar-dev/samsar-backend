@@ -345,6 +345,11 @@ export const houseEssentialFields = [
 ];
 
 export const houseAdvancedFields = [
+  // Basic Room Info
+  "bedrooms",
+  "bathrooms", 
+  "totalRooms",
+
   // HVAC & Energy
   "heating",
   "cooling",
@@ -408,6 +413,7 @@ export const apartmentEssentialFields = [
 export const apartmentAdvancedFields = [
   "bedrooms",
   "bathrooms",
+  "totalRooms",
   "floor",
   "balconies",
   "parking",
@@ -435,6 +441,11 @@ export const villaEssentialFields = [
 ];
 
 export const villaAdvancedFields = [
+  // Basic Room Info
+  "bedrooms",
+  "bathrooms",
+  "totalRooms",
+
   // Luxury Features
   "poolFeatures",
   "gardenFeatures",

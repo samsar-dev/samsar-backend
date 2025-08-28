@@ -132,6 +132,7 @@ model Listing {
   // Real estate specific fields
   bedrooms          Int?
   bathrooms         Int?
+  totalRooms        Int?
   totalArea         Float?
   yearBuilt         Int?
   furnishing        String?
