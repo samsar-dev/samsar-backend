@@ -1,4 +1,4 @@
-import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
+import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys, SendSmtpEmail } from '@getbrevo/brevo';
 
 interface EmailOptions {
   to: string;
@@ -7,44 +7,39 @@ interface EmailOptions {
   html?: string;
 }
 
-// Initialize MailerSend client
-const mailerSend = new MailerSend({
-  apiKey: process.env.MAILERSEND_API_KEY || "",
-});
+// Initialize Brevo client
+const apiInstance = new TransactionalEmailsApi();
+apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
-// Check if MailerSend is ready
-const isMailerSendReady = () => {
-  if (process.env.MAILERSEND_API_KEY) {
+// Check if Brevo is ready
+const isBrevoReady = () => {
+  if (process.env.BREVO_API_KEY) {
     return true;
   } else {
-    console.error('❌ MAILERSEND_API_KEY not found in environment variables');
+    console.error('❌ BREVO_API_KEY not found in environment variables');
     return false;
   }
 };
 
 export const sendEmail = async (options: EmailOptions) => {
-  if (!isMailerSendReady()) {
-    throw new Error('MailerSend is not properly configured. Please check MAILERSEND_API_KEY environment variable.');
+  if (!isBrevoReady()) {
+    throw new Error('Brevo is not properly configured. Please check BREVO_API_KEY environment variable.');
   }
 
   try {
-    console.log(`📧 Sending email via MailerSend to: ${options.to}`);
+    console.log(`📧 Sending email via Brevo to: ${options.to}`);
 
-    // Use MailerSend trial domain for sending
-    const sentFrom = new Sender("noreply@test-51ndgwvnoxdlzqx8.mlsender.net", "Samsar App");
-    const recipients = [new Recipient(options.to, "User")];
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.subject = options.subject;
+    sendSmtpEmail.htmlContent = options.html || '';
+    sendSmtpEmail.textContent = options.text || options.html?.replace(/<[^>]*>/g, '') || '';
+    sendSmtpEmail.sender = { name: "Samsar App", email: "noreply@samsar.app" };
+    sendSmtpEmail.to = [{ email: options.to, name: "User" }];
 
-    const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo(recipients)
-      .setSubject(options.subject)
-      .setHtml(options.html || '')
-      .setText(options.text || options.html?.replace(/<[^>]*>/g, '') || '');
-
-    const result = await mailerSend.email.send(emailParams);
+    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
     
     if (process.env.NODE_ENV === "development") {
-      console.log("Message sent: %s", result.body?.message_id || 'N/A');
+      console.log("Message sent: %s", result.body?.messageId || 'N/A');
     }
 
     return result;
@@ -76,7 +71,7 @@ export const sendNewsletterEmail = async (
     console.log("Newsletter email sent:", {
       to,
       subject,
-      messageId: info.body?.message_id || 'N/A',
+      messageId: info.body?.messageId || 'N/A',
     });
     return info;
   } catch (error) {

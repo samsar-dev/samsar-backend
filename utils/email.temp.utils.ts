@@ -1,26 +1,25 @@
 import { randomBytes } from "crypto";
 import prisma from "../src/lib/prismaClient.js";
-import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
+import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys, SendSmtpEmail } from '@getbrevo/brevo';
 
-// Initialize MailerSend client
-const mailerSend = new MailerSend({
-  apiKey: process.env.MAILERSEND_API_KEY || "",
-});
+// Initialize Brevo client
+const apiInstance = new TransactionalEmailsApi();
+apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
-// Initialize MailerSend on module load
-const initializeMailerSend = () => {
-  if (process.env.MAILERSEND_API_KEY) {
-    console.log('✅ MailerSend initialized successfully');
+// Initialize Brevo on module load
+const initializeBrevo = () => {
+  if (process.env.BREVO_API_KEY) {
+    console.log('✅ Brevo initialized successfully');
     return true;
   } else {
-    console.error('❌ MAILERSEND_API_KEY not found in environment variables');
-    console.log('📝 Please set MAILERSEND_API_KEY in your Railway environment variables');
+    console.error('❌ BREVO_API_KEY not found in environment variables');
+    console.log('📝 Please set BREVO_API_KEY in your Railway environment variables');
     return false;
   }
 };
 
 // Initialize on startup
-const isMailerSendReady = initializeMailerSend();
+const isBrevoReady = initializeBrevo();
 
 export const generateVerificationToken = (): string => {
   return randomBytes(32).toString("hex");
@@ -61,39 +60,35 @@ export const createVerificationToken = async (
   return { token, code };
 };
 
-// Send email using MailerSend API
-const sendEmailWithMailerSend = async (emailData: {
+// Send email using Brevo API
+const sendEmailWithBrevo = async (emailData: {
   to: string;
   subject: string;
   html: string;
   text?: string;
 }): Promise<any> => {
-  if (!isMailerSendReady) {
-    throw new Error('MailerSend is not properly configured. Please check MAILERSEND_API_KEY environment variable.');
+  if (!isBrevoReady) {
+    throw new Error('Brevo is not properly configured. Please check BREVO_API_KEY environment variable.');
   }
 
   try {
-    console.log(`📧 Sending email via MailerSend to: ${emailData.to}`);
+    console.log(`📧 Sending email via Brevo to: ${emailData.to}`);
 
-    // Use MailerSend trial domain for sending - replace with your actual trial domain from dashboard
-    const sentFrom = new Sender("noreply@test-51ndgwvnoxdlzqx8.mlsender.net", "Samsar Team");
-    const recipients = [new Recipient(emailData.to, "User")];
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.subject = emailData.subject;
+    sendSmtpEmail.htmlContent = emailData.html;
+    sendSmtpEmail.textContent = emailData.text || emailData.html.replace(/<[^>]*>/g, '');
+    sendSmtpEmail.sender = { name: "Samsar Team", email: "noreply@samsar.app" };
+    sendSmtpEmail.to = [{ email: emailData.to, name: "User" }];
 
-    const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo(recipients)
-      .setSubject(emailData.subject)
-      .setHtml(emailData.html)
-      .setText(emailData.text || emailData.html.replace(/<[^>]*>/g, ''));
-
-    const result = await mailerSend.email.send(emailParams);
+    const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
     
-    console.log(`✅ Email sent successfully via MailerSend`);
-    console.log(`📨 Message ID: ${result.body?.message_id || 'N/A'}`);
+    console.log(`✅ Email sent successfully via Brevo`);
+    console.log(`📨 Message ID: ${result.body?.messageId || 'N/A'}`);
     
     return result;
   } catch (error: any) {
-    console.error(`❌ MailerSend failed:`, error.message);
+    console.error(`❌ Brevo failed:`, error.message);
     throw error;
   }
 };
@@ -145,7 +140,7 @@ export const sendVerificationEmail = async (
 
     const textContent = `Welcome to Samsar!\n\nYour verification code is: ${tokenInfo.code}\n\nEnter this code to verify your email address and complete your registration.\n\nThis code will expire in 24 hours.\n\nIf you didn't create an account, you can safely ignore this email.\n\n-- The Samsar Team`;
 
-    await sendEmailWithMailerSend({
+    await sendEmailWithBrevo({
       to: email,
       subject: "🔐 Verify Your Samsar Account",
       html: htmlContent,
@@ -156,7 +151,7 @@ export const sendVerificationEmail = async (
     return true;
     
   } catch (error: any) {
-    console.error(`❌ MailerSend failed for ${email}:`, error.message);
+    console.error(`❌ Brevo failed for ${email}:`, error.message);
     console.error(`🔍 Error details:`, error);
     return false;
   }
@@ -183,7 +178,7 @@ export const sendUserLoginEmail = async (userDetails: {
       </div>
     `;
 
-    await sendEmailWithMailerSend({
+    await sendEmailWithBrevo({
       to: userDetails.email,
       subject: "New Login Detected",
       html: htmlContent,
@@ -302,7 +297,7 @@ export const sendNewMessageNotificationEmail = async (
       </div>
     `;
 
-    await sendEmailWithMailerSend({
+    await sendEmailWithBrevo({
       to: recipientEmail,
       subject: "You've got a new message on Samsar!",
       html: htmlContent,

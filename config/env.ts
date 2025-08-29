@@ -18,7 +18,7 @@ const envSchema = z.object({
   BCRYPT_SALT_ROUNDS: z.string().default("12"),
   CORS_ORIGIN: z.string().default("*"),
   // Email configuration
-  MAILERSEND_API_KEY: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default("noreply@samsardeal.com"),
 });
 
@@ -52,7 +52,7 @@ export const env = {
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
 
   // Email
-  MAILERSEND_API_KEY: process.env.MAILERSEND_API_KEY,
+  BREVO_API_KEY: process.env.BREVO_API_KEY,
   EMAIL_FROM: process.env.EMAIL_FROM || "noreply@samsardeal.com",
 
   // Cloudflare
