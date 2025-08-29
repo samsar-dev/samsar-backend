@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 interface UserWithListings {
   id: string;
-  role: "FREE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
+  role: "PRIVATE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
   maxListings: number | null;
   listingRestriction: string | null;
 }

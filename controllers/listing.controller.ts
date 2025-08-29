@@ -72,6 +72,10 @@ interface ListingResponse {
     id: string;
     username: string;
     profilePicture?: string;
+    role: string;
+    allowMessaging: boolean;
+    privateProfile: boolean;
+    phone?: string;
   };
   images: Array<{
     id: string;
@@ -109,6 +113,10 @@ type ListingWithRelations = Prisma.ListingGetPayload<{
         id: true;
         username: true;
         profilePicture: true;
+        role: true;
+        allowMessaging: true;
+        privateProfile: true;
+        phone: true;
       };
     };
     images: true;
@@ -187,6 +195,9 @@ const formatListingResponse = (
       id: listing.user.id,
       username: listing.user.username,
       profilePicture: listing.user.profilePicture || undefined,
+      role: listing.user.role,
+      allowMessaging: listing.user.allowMessaging,
+      privateProfile: listing.user.privateProfile,
     },
     images: listing.images.map((img) => ({
       id: img.id,
@@ -442,6 +453,10 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
               id: true,
               username: true,
               profilePicture: true,
+              role: true,
+              allowMessaging: true,
+              privateProfile: true,
+              phone: true,
             },
           },
           images: true,
@@ -565,6 +580,10 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
               id: true,
               username: true,
               profilePicture: true,
+              role: true,
+              allowMessaging: true,
+              privateProfile: true,
+              phone: true,
             },
           },
           images: true,
@@ -628,6 +647,10 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
             id: true,
             username: true,
             profilePicture: true,
+            role: true,
+            allowMessaging: true,
+            privateProfile: true,
+            phone: true,
           },
         },
         images: true,
@@ -694,6 +717,10 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
             id: true,
             username: true,
             profilePicture: true,
+            role: true,
+            allowMessaging: true,
+            privateProfile: true,
+            phone: true,
           },
         },
         images: true,
@@ -962,6 +989,10 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
             id: true,
             username: true,
             profilePicture: true,
+            role: true,
+            allowMessaging: true,
+            privateProfile: true,
+            phone: true,
           },
         },
         images: true,
@@ -1077,6 +1108,10 @@ export const toggleSaveListing = async (
             id: true,
             username: true,
             profilePicture: true,
+            role: true,
+            allowMessaging: true,
+            privateProfile: true,
+            phone: true,
           },
         },
         images: {
@@ -1141,6 +1176,10 @@ export const toggleSaveListing = async (
             id: true,
             username: true,
             profilePicture: true,
+            role: true,
+            allowMessaging: true,
+            privateProfile: true,
+            phone: true,
           },
         },
         images: true,

@@ -38,7 +38,7 @@ model User {
   location                 String?
   createdAt                DateTime       @default(now())
   updatedAt                DateTime       @updatedAt
-  role                     UserRole       @default(FREE_USER)
+  role                     UserRole       @default(PRIVATE_USER)
   preferences              Json?
   city                     String?
   dateOfBirth              String?
@@ -341,7 +341,7 @@ enum ReportReason {
 }
 
 enum UserRole {
-  FREE_USER
+  PRIVATE_USER
   PREMIUM_USER
   BUSINESS_USER
   ADMIN

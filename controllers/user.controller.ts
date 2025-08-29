@@ -770,7 +770,7 @@ export const updateUserRoleAdmin = async (
   const { role } = request.body;
 
   const allowedRoles = [
-    "FREE_USER",
+    "PRIVATE_USER",
     "PREMIUM_USER",
     "BUSINESS_USER",
     "ADMIN",

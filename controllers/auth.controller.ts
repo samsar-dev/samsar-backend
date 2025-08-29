@@ -23,7 +23,7 @@ interface JWTUser {
   sub: string;
   email?: string;
   username?: string;
-  role?: "FREE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
+  role?: "PRIVATE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
   type: "access" | "refresh";
   iat: number;
   exp: number;
@@ -39,7 +39,7 @@ const generateTokens = (user: {
   id: string;
   email: string;
   username: string;
-  role: "FREE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
+  role: "PRIVATE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
 }): AuthTokens => {
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
@@ -299,7 +299,7 @@ export const register = async (
         username: email.split("@")[0], // Use email prefix as default username
         password: hashedPassword,
         name,
-        role: "FREE_USER",
+        role: "PRIVATE_USER",
         emailVerified: false,
         // Add account status to indicate pending verification
         // @ts-ignore - accountStatus exists in the Prisma schema
@@ -423,7 +423,7 @@ interface UserWithSecurity {
   email: string;
   username: string;
   password: string;
-  role: "FREE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
+  role: "PRIVATE_USER" | "PREMIUM_USER" | "BUSINESS_USER" | "ADMIN" | "MODERATOR";
   createdAt: Date;
   updatedAt: Date;
   name?: string | null;
