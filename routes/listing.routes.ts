@@ -1111,6 +1111,257 @@ export default async function (fastify: FastifyInstance) {
     )
   );
 
+  // Edit/Update listing (authenticated - only owner can edit) - PATCH for partial updates
+  fastify.patch<{ Params: { id: string }; Body: Partial<ListingUpdateRequest> }>(
+    "/:id",
+    {
+      onRequest: authenticate,
+      preHandler: [processImagesMiddleware, validateListingUpdate],
+    },
+    async (request, reply) => {
+      try {
+        console.log("🔧 PATCH LISTING ROUTE STARTED");
+        const req = request as ListingUpdateRequest;
+        const user = req.user;
+        const listingId = (req.params as { id: string }).id;
+        
+        if (!user) {
+          return ResponseHelpers.unauthorized(reply, "User not found");
+        }
+
+        // Check if listing exists and belongs to user
+        const existingListing = await prisma.listing.findUnique({
+          where: { id: listingId },
+          include: { images: true },
+        });
+
+        if (!existingListing) {
+          return ResponseHelpers.notFound(reply, "Listing");
+        }
+
+        if (existingListing.userId !== user.id) {
+          return reply.code(403).send({
+            success: false,
+            error: "You can only edit your own listings",
+            status: 403,
+          });
+        }
+
+        // Use validated and normalized data
+        const validatedData = req.validatedData;
+        if (!validatedData) {
+          return ResponseHelpers.badRequest(reply, "Validation data missing");
+        }
+
+        console.log("🔧 PATCH - Fields to update:", Object.keys(validatedData));
+
+        // Helper function to add only changed/provided values
+        const addIfProvided = (obj: any, key: string, value: any) => {
+          if (value !== undefined && value !== null && value !== '') {
+            if (typeof value === 'string') {
+              const trimmed = value.trim();
+              if (trimmed !== '') {
+                obj[key] = trimmed;
+              }
+            } else if (typeof value === 'number' && !isNaN(value)) {
+              obj[key] = value;
+            } else if (typeof value === 'boolean') {
+              obj[key] = value;
+            } else if (value !== null && value !== undefined && typeof value !== 'object') {
+              obj[key] = value;
+            }
+          }
+        };
+
+        // Build update data object with only provided fields
+        const updateData: any = {
+          updatedAt: new Date(),
+        };
+
+        // Basic fields - only update if provided
+        addIfProvided(updateData, 'title', validatedData.title);
+        addIfProvided(updateData, 'description', validatedData.description);
+        addIfProvided(updateData, 'price', validatedData.price);
+        addIfProvided(updateData, 'location', validatedData.location);
+        addIfProvided(updateData, 'latitude', parseNumeric(validatedData.latitude));
+        addIfProvided(updateData, 'longitude', parseNumeric(validatedData.longitude));
+        addIfProvided(updateData, 'listingAction', validatedData.listingAction);
+
+        // Handle details JSON merge (preserve existing, update provided)
+        if (validatedData.details) {
+          const existingDetails = (existingListing.details as any) || {};
+          updateData.details = {
+            ...existingDetails,
+            ...validatedData.details,
+          };
+        }
+
+        // Category-specific field updates
+        const mainCategory = validatedData.mainCategory || existingListing.mainCategory;
+        
+        if (mainCategory?.toLowerCase() === 'vehicles') {
+          // Vehicle-specific fields - only update if provided
+          addIfProvided(updateData, 'make', validatedData.make);
+          addIfProvided(updateData, 'model', validatedData.model);
+          
+          if (validatedData.year) {
+            addIfProvided(updateData, 'year', parseInt(validatedData.year));
+          }
+          
+          addIfProvided(updateData, 'bodyType', validatedData.bodyType);
+          
+          if (validatedData.mileage) {
+            addIfProvided(updateData, 'mileage', parseInt(validatedData.mileage));
+          }
+          
+          addIfProvided(updateData, 'exteriorColor', validatedData.exteriorColor || validatedData.color);
+          
+          if (validatedData.horsepower) {
+            addIfProvided(updateData, 'horsepower', parseInt(validatedData.horsepower));
+          }
+
+          if (validatedData.engineSize) {
+            addIfProvided(updateData, 'engineSize', parseFloat(validatedData.engineSize));
+          }
+          
+          // Handle enum fields with uppercase conversion - only if provided
+          if (validatedData.fuelType) {
+            addIfProvided(updateData, 'fuelType', validatedData.fuelType.toUpperCase());
+          }
+          
+          if (validatedData.transmission || validatedData.transmissionType) {
+            const transmissionValue = validatedData.transmission || validatedData.transmissionType;
+            addIfProvided(updateData, 'transmission', transmissionValue.toUpperCase());
+          }
+          
+          if (validatedData.sellerType) {
+            addIfProvided(updateData, 'sellerType', validatedData.sellerType.toUpperCase());
+          }
+          
+          if (validatedData.condition) {
+            addIfProvided(updateData, 'condition', validatedData.condition.toUpperCase());
+          }
+          
+          // Handle accidental status mapping - only if provided
+          if (validatedData.accidental !== undefined) {
+            const accidentalValue = String(validatedData.accidental).toLowerCase();
+            const isAccidentFree = accidentalValue === 'no' || accidentalValue === 'false';
+            addIfProvided(updateData, 'accidental', isAccidentFree ? 'NO' : 'YES');
+          }
+          
+        } else if (mainCategory?.toLowerCase() === 'real_estate' || mainCategory?.toLowerCase() === 'realestate') {
+          // Real estate-specific fields - only update if provided
+          if (validatedData.bedrooms) {
+            addIfProvided(updateData, 'bedrooms', parseInt(validatedData.bedrooms));
+          }
+          if (validatedData.bathrooms) {
+            addIfProvided(updateData, 'bathrooms', parseInt(validatedData.bathrooms));
+          }
+          if (validatedData.totalArea) {
+            addIfProvided(updateData, 'totalArea', parseFloat(validatedData.totalArea));
+          }
+          if (validatedData.yearBuilt) {
+            addIfProvided(updateData, 'yearBuilt', parseInt(validatedData.yearBuilt));
+          }
+          addIfProvided(updateData, 'furnishing', validatedData.furnishing);
+          
+          // Handle enum fields - only if provided
+          if (validatedData.sellerType) {
+            addIfProvided(updateData, 'sellerType', validatedData.sellerType.toUpperCase());
+          }
+          if (validatedData.condition) {
+            addIfProvided(updateData, 'condition', validatedData.condition.toUpperCase());
+          }
+        }
+
+        // Handle image updates if new images were uploaded
+        const imageUrls = req.processedImages?.map((img) => img.url) || [];
+        if (imageUrls.length > 0) {
+          console.log(`🖼️ Updating ${imageUrls.length} images for listing ${listingId}`);
+          
+          updateData.images = {
+            deleteMany: {}, // Remove existing images
+            create: imageUrls.map((url, index) => {
+              const storageKey = `listings/${listingId}/${Date.now()}_${index}.jpg`;
+              return {
+                storageProvider: 'CLOUDFLARE',
+                storageKey,
+                url,
+                altText: updateData.title || existingListing.title || 'Listing image',
+                order: index,
+                isCover: index === 0,
+                status: 'VALID',
+                lastChecked: new Date(),
+              };
+            })
+          };
+        }
+
+        console.log("🔧 PATCH - Final update data keys:", Object.keys(updateData));
+
+        // Perform the partial update
+        const updatedListing = await prisma.listing.update({
+          where: { id: listingId },
+          data: updateData,
+          include: {
+            images: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+                profilePicture: true,
+                allowMessaging: true,
+                privateProfile: true,
+              },
+            },
+            favorites: true,
+          },
+        });
+
+        console.log("✅ PATCH - Listing updated successfully");
+
+        // Move images from temp folder if new images were uploaded
+        if (imageUrls.length > 0) {
+          const { moveListingImagesFromTemp } = await import("../config/cloudflareR2.js");
+          const moveResult = await moveListingImagesFromTemp(user.id!, updatedListing.id);
+          
+          if (moveResult.success && moveResult.movedImages.length > 0) {
+            console.log(`✅ Moved ${moveResult.movedImages.length} images for updated listing ${updatedListing.id}`);
+            
+            // Update listing with proper image URLs
+            await prisma.listing.update({
+              where: { id: updatedListing.id },
+              data: {
+                images: {
+                  deleteMany: {},
+                  create: moveResult.movedImages.map((url, index) => ({
+                    url,
+                    storageProvider: 'CLOUDFLARE',
+                    storageKey: url.split('/').slice(-4).join('/'),
+                    order: index,
+                  }))
+                }
+              }
+            });
+          }
+        }
+
+        const formattedListing = formatListingResponse(updatedListing);
+        return reply.code(200).send({
+          success: true,
+          data: formattedListing,
+          message: "Listing updated successfully",
+          status: 200,
+          timestamp: new Date().toISOString(),
+        });
+
+      } catch (error) {
+        console.error("Error updating listing:", error);
+        return ErrorHandler.sendError(reply, error as Error, request.url);
+      }
+    }
+  );
+
   // Delete listing (authenticated - only owner can delete)
   fastify.delete<{ Params: { id: string } }>(
     "/:id",
