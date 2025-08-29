@@ -337,7 +337,6 @@ export const allCommercialsFields = [
 export const houseEssentialFields = [
   "condition",
   "livingArea",
-  "halfBathrooms",
   "stories",
   "parking",
   "parkingSpaces",
@@ -347,8 +346,6 @@ export const houseEssentialFields = [
 export const houseAdvancedFields = [
   // Basic Room Info
   "bedrooms",
-  "bathrooms", 
-  "totalRooms",
 
   // HVAC & Energy
   "heating",
@@ -363,7 +360,6 @@ export const houseAdvancedFields = [
   "flooringTypes",
   "windowFeatures",
   "kitchenFeatures",
-  "bathroomFeatures",
 
   // Exterior & Structure
   "roofType",
@@ -403,7 +399,6 @@ export const houseFieldNames = [
 export const apartmentEssentialFields = [
   "condition",
   "livingArea",
-  "halfBathrooms",
   "floor",
   "totalFloors",
   "parking",
@@ -412,11 +407,7 @@ export const apartmentEssentialFields = [
 
 export const apartmentAdvancedFields = [
   "bedrooms",
-  "bathrooms",
-  "totalRooms",
-  "floor",
   "balconies",
-  "parking",
   "furnishing",
   "orientation",
   "view",
@@ -432,7 +423,6 @@ export const apartmentFieldNames = [
 export const villaEssentialFields = [
   "condition",
   "livingArea",
-  "halfBathrooms",
   "stories",
   "parking",
   "parkingSpaces",
@@ -443,8 +433,6 @@ export const villaEssentialFields = [
 export const villaAdvancedFields = [
   // Basic Room Info
   "bedrooms",
-  "bathrooms",
-  "totalRooms",
 
   // Luxury Features
   "poolFeatures",

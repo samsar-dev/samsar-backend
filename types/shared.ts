@@ -97,7 +97,6 @@ export interface RealEstateDetails {
   size?: string;
   yearBuilt?: number;
   bedrooms?: number;
-  bathrooms?: number;
   condition?: string;
   features?: string[];
   floor?: number;

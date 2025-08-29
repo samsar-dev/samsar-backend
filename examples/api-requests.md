@@ -128,7 +128,6 @@ Content-Type: multipart/form-data
       "size": "120 sqm",
       "yearBuilt": 2018,
       "bedrooms": 3,
-      "bathrooms": 2,
       "condition": "Excellent",
       "floor": 5,
       "totalFloors": 8,

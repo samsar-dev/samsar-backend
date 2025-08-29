@@ -73,7 +73,6 @@ export interface SingleListingResponse {
     size?: string;
     yearBuilt?: string;
     bedrooms?: string;
-    bathrooms?: string;
     condition?: string;
     listingId: string;
   } | null;

@@ -336,8 +336,6 @@ export interface HouseDetails {
   totalArea?: number;
   yearBuilt?: number;
   bedrooms?: number;
-  bathrooms?: number;
-  totalRooms?: number;
   accessibility?: string;
   appliances?: string;
   basementFeatures?: string;
@@ -385,8 +383,6 @@ export interface ApartmentDetails {
   totalArea?: number;
   yearBuilt?: number;
   bedrooms?: number;
-  bathrooms?: number;
-  totalRooms?: number;
   livingArea?: number;
   hoaFeatures?: string;
   communityFeatures?: string;
@@ -438,7 +434,6 @@ export interface OfficeDetails {
 export interface VillaDetails {
   propertyType: string;
   bedrooms?: number;
-  bathrooms?: number;
   totalArea?: number;
   floor?: number;
   parking?: string;
@@ -735,17 +730,13 @@ export class HouseValidator {
       attic: data.attic || undefined,
       basement: data.basement || undefined,
       flooringTypes: Array.isArray(data.flooringTypes) ? data.flooringTypes : [],
-      halfBathrooms: data.halfBathrooms ? parseInt(data.halfBathrooms.toString()) : undefined,
       stories: data.stories ? parseInt(data.stories.toString()) : undefined,
       totalArea: data.totalArea ? parseFloat(data.totalArea.toString()) : undefined,
       yearBuilt: data.yearBuilt ? parseInt(data.yearBuilt.toString()) : undefined,
       bedrooms: data.bedrooms ? parseInt(data.bedrooms.toString()) : undefined,
-      bathrooms: data.bathrooms ? parseFloat(data.bathrooms.toString()) : undefined,
-      totalRooms: data.totalRooms ? parseInt(data.totalRooms.toString()) : undefined,
       accessibility: data.accessibility || undefined,
       appliances: data.appliances || undefined,
       basementFeatures: data.basementFeatures || undefined,
-      bathroomFeatures: data.bathroomFeatures || undefined,
       communityFeatures: data.communityFeatures || undefined,
       energyFeatures: data.energyFeatures || undefined,
       exteriorFeatures: data.exteriorFeatures || undefined,
@@ -759,9 +750,6 @@ export class HouseValidator {
       errors.push("Bedrooms must be between 0 and 20");
     }
 
-    if (mappedData.bathrooms !== undefined && (mappedData.bathrooms < 0 || mappedData.bathrooms > 10)) {
-      errors.push("Bathrooms must be between 0 and 10");
-    }
 
     if (mappedData.yearBuilt !== undefined && (mappedData.yearBuilt < 1800 || mappedData.yearBuilt > new Date().getFullYear() + 5)) {
       errors.push(`Year built must be between 1800 and ${new Date().getFullYear() + 5}`);
@@ -824,23 +812,17 @@ export class ApartmentValidator {
       totalArea: data.totalArea ? parseFloat(data.totalArea.toString()) : undefined,
       yearBuilt: data.yearBuilt ? parseInt(data.yearBuilt.toString()) : undefined,
       bedrooms: data.bedrooms ? parseInt(data.bedrooms.toString()) : undefined,
-      bathrooms: data.bathrooms ? parseFloat(data.bathrooms.toString()) : undefined,
-      totalRooms: data.totalRooms ? parseInt(data.totalRooms.toString()) : undefined,
       livingArea: data.livingArea ? parseFloat(data.livingArea.toString()) : undefined,
       hoaFeatures: data.hoaFeatures || undefined,
       communityFeatures: data.communityFeatures || undefined,
       appliances: data.appliances || undefined,
       kitchenFeatures: data.kitchenFeatures || undefined,
-      bathroomFeatures: data.bathroomFeatures || undefined,
     };
 
     if (mappedData.bedrooms !== undefined && (mappedData.bedrooms < 0 || mappedData.bedrooms > 10)) {
       errors.push("Bedrooms must be between 0 and 10");
     }
 
-    if (mappedData.bathrooms !== undefined && (mappedData.bathrooms < 0 || mappedData.bathrooms > 5)) {
-      errors.push("Bathrooms must be between 0 and 5");
-    }
 
     if (mappedData.yearBuilt !== undefined && (mappedData.yearBuilt < 1800 || mappedData.yearBuilt > new Date().getFullYear() + 5)) {
       errors.push(`Year built must be between 1800 and ${new Date().getFullYear() + 5}`);

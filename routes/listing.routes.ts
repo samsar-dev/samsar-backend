@@ -536,7 +536,6 @@ export default async function (fastify: FastifyInstance) {
           const realEstateDetails = details?.realEstate || {};
 
           addIfNotEmpty(listingData, 'bedrooms', validatedData.bedrooms ? parseInt(validatedData.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
-          addIfNotEmpty(listingData, 'bathrooms', validatedData.bathrooms ? parseInt(validatedData.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
           addIfNotEmpty(listingData, 'totalArea', validatedData.totalArea ? parseFloat(validatedData.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
           addIfNotEmpty(listingData, 'yearBuilt', validatedData.yearBuilt ? parseInt(validatedData.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
           addIfNotEmpty(listingData, 'furnishing', validatedData.furnishing || realEstateDetails.furnishing);
@@ -557,7 +556,7 @@ export default async function (fastify: FastifyInstance) {
           vehicleFields.forEach(field => {
           });
         } else if (mainCategory.toLowerCase() === 'real_estate' || mainCategory.toLowerCase() === 'realestate') {
-          const realEstateFields = ['bedrooms', 'bathrooms', 'totalArea', 'yearBuilt', 'furnishing', 'sellerType', 'condition'];
+          const realEstateFields = ['bedrooms', 'totalArea', 'yearBuilt', 'furnishing', 'sellerType', 'condition'];
           realEstateFields.forEach(field => {
           });
         }
@@ -1175,9 +1174,6 @@ export default async function (fastify: FastifyInstance) {
           // Real estate-specific fields - only update if provided
           if (validatedData.bedrooms) {
             addIfProvided(updateData, 'bedrooms', parseInt(validatedData.bedrooms));
-          }
-          if (validatedData.bathrooms) {
-            addIfProvided(updateData, 'bathrooms', parseInt(validatedData.bathrooms));
           }
           if (validatedData.totalArea) {
             addIfProvided(updateData, 'totalArea', parseFloat(validatedData.totalArea));

@@ -59,12 +59,8 @@ export interface HouseDetails {
   propertyType: PropertyType.HOUSE;
   totalArea: number;
   bedrooms: number;
-  bathrooms: number;
-  totalRooms?: number;
   yearBuilt: number;
   livingArea: number;
-  halfBathrooms: number;
-  stories: number;
   hasGarden?: boolean;
   hasGarage?: boolean;
   floors?: number;
@@ -80,8 +76,6 @@ export interface ApartmentDetails {
   propertyType: PropertyType.APARTMENT;
   totalArea: number;
   bedrooms: number;
-  bathrooms: number;
-  totalRooms?: number;
   floorLevel: number;
   yearBuilt: number;
   totalFloors?: number;
@@ -93,7 +87,6 @@ export interface CondoDetails {
   propertyType: PropertyType.CONDO;
   totalArea: number;
   bedrooms: number;
-  bathrooms: number;
   floorLevel: number;
   yearBuilt: number;
   totalFloors?: number;
@@ -815,7 +808,6 @@ export interface RealEstateDetails {
   topography: string[];
   waterFeatures?: string;
   bedrooms?: number;
-  bathrooms?: number;
   size: number;
   yearBuilt: number;
   usageType?: string;

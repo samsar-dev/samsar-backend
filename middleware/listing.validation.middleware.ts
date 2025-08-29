@@ -35,7 +35,6 @@ export interface ListingCreateRequest extends FastifyRequest {
     registrationExpiry?: string;
     // Real estate fields
     bedrooms?: string | number;
-    bathrooms?: string | number;
     totalArea?: string | number;
     yearBuilt?: string | number;
     furnishing?: string;
@@ -81,7 +80,6 @@ export interface ListingUpdateRequest extends FastifyRequest {
     registrationExpiry?: string;
     // Real estate fields
     bedrooms?: string | number;
-    bathrooms?: string | number;
     totalArea?: string | number;
     yearBuilt?: string | number;
     furnishing?: string;
@@ -128,7 +126,7 @@ export async function validateListingCreate(
     ];
     
     const realEstateFields = [
-      'bedrooms', 'bathrooms', 'totalArea', 'yearBuilt', 'furnishing', 
+      'bedrooms', 'totalArea', 'yearBuilt', 'furnishing', 
       'sellerType', 'condition'
     ];
     

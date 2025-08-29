@@ -58,7 +58,6 @@ interface ListingResponse {
   horsepower?: number;
   // Real estate fields
   bedrooms?: number;
-  bathrooms?: number;
   totalArea?: number;
   yearBuilt?: number;
   furnishing?: string;
@@ -174,7 +173,6 @@ const formatListingResponse = (
     horsepower: listing.horsepower || undefined,
     // Real estate fields
     bedrooms: listing.bedrooms || undefined,
-    bathrooms: listing.bathrooms || undefined,
     totalArea: listing.totalArea || undefined,
     yearBuilt: listing.yearBuilt || undefined,
     furnishing: listing.furnishing || undefined,
@@ -426,7 +424,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       } else if (mainCategory.toLowerCase() === 'real_estate') {
         // Real estate-specific fields only
         addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
-        addIfNotEmpty(listingData, 'bathrooms', requestBody.bathrooms ? parseInt(requestBody.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
         addIfNotEmpty(listingData, 'totalArea', requestBody.totalArea ? parseFloat(requestBody.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
         addIfNotEmpty(listingData, 'yearBuilt', requestBody.yearBuilt ? parseInt(requestBody.yearBuilt) : (realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null));
         addIfNotEmpty(listingData, 'furnishing', requestBody.furnishing || realEstateDetails.furnishing);
@@ -923,7 +920,6 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
         ...(mainCategory.toLowerCase() === 'real_estate' ? {
           // Real estate fields only for real estate listings
           bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
-          bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
           totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
           yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
           furnishing: realEstateDetails.furnishing || null,
