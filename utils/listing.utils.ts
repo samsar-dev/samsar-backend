@@ -55,7 +55,6 @@ export const filterListingDetails = (
       return details;
     } else return listingDetails;
   } catch (error) {
-    console.log(error);
     return listingDetails;
   }
 };

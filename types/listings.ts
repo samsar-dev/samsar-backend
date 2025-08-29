@@ -181,7 +181,6 @@ export interface VehicleFeatures {
   trafficSignRecognition?: boolean;
   burglarAlarmSystem?: boolean;
 
-
   // Camera Features
   rearCamera?: boolean;
   camera360?: boolean;

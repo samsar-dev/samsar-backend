@@ -14,7 +14,6 @@ const errorHandler: ErrorRequestHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  console.error("💥 Error Handler:", err.stack);
 
   const error: APIError = {
     code: err.code || "INTERNAL_ERROR",

@@ -100,7 +100,6 @@ export const createConversation = async (
       data: conversation,
     });
   } catch (error) {
-    console.error("Error creating conversation:", error);
     return reply.code(500).send({
       success: false,
       error: { message: "Failed to create conversation" },
@@ -165,7 +164,6 @@ export const getConversations = async (
       },
     });
   } catch (error) {
-    console.error("Error fetching conversations:", error);
     return reply.code(500).send({
       success: false,
       error: { message: "Failed to fetch conversations" },
@@ -372,7 +370,6 @@ export const sendMessage = async (
       },
     });
   } catch (error: any) {
-    console.error("Message error:", error);
 
     // Handle Prisma errors
     if (error.code === "P2025") {
@@ -458,7 +455,6 @@ export const getMessages = async (
       limit: Number(limit),
     });
   } catch (error) {
-    console.error("Get messages error:", error);
     return reply.code(500).send({
       success: false,
       error: "Failed to get messages",
@@ -500,7 +496,6 @@ export const deleteMessage = async (
       message: "Message deleted successfully",
     });
   } catch (error) {
-    console.error("Delete message error:", error);
     return reply.code(500).send({
       success: false,
       error: "Failed to delete message",
@@ -554,7 +549,6 @@ export const deleteConversation = async (
       message: "Conversation deleted successfully",
     });
   } catch (error) {
-    console.error("Delete conversation error:", error);
     reply.code(500).send({
       success: false,
       error: "Failed to delete conversation",

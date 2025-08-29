@@ -22,7 +22,6 @@ interface VerifyEmailParams {
   token: string;
 }
 
-
 interface VerifyEmailWithCodeParams {
   code: string;
   email: string;
@@ -63,7 +62,6 @@ export default async function (fastify: FastifyInstance) {
           message: "Email verified successfully",
         });
       } catch (error) {
-        console.error("Error verifying email:", error);
         return reply.code(500).send({
           success: false,
           error: {
@@ -133,7 +131,6 @@ export default async function (fastify: FastifyInstance) {
           message: "Email verified successfully",
         });
       } catch (error) {
-        console.error("Error verifying email with code:", error);
         return reply.code(500).send({
           success: false,
           error: {
@@ -217,7 +214,6 @@ export default async function (fastify: FastifyInstance) {
             "If your email exists in our system, a verification email has been sent",
         });
       } catch (error) {
-        console.error("Error resending verification email:", error);
         return reply.code(500).send({
           success: false,
           error: {

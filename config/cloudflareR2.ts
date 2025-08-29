@@ -50,7 +50,6 @@ export const uploadToR2 = async (
   options: UploadOptions = {},
 ): Promise<UploadResult> => {
   if (!isR2Configured || !s3) {
-    console.warn("⚠️ Cloudflare R2 is not configured. Upload skipped.");
     return { success: false, message: "Cloudflare R2 not configured" };
   }
 
@@ -91,8 +90,6 @@ export const uploadToR2 = async (
         fileName = `uploads/users/${options.userId}/${category}/${timestamp}-${random}.${ext}`;
     }
 
-    console.log(`Uploading file to: ${fileName}`);
-
     // Set cache control headers (1 year for images, 1 hour for other files)
     const isImage = (file as any).mimetype?.startsWith("image/");
     const cacheControl = isImage
@@ -110,8 +107,6 @@ export const uploadToR2 = async (
       }),
     );
 
-
-
     return {
       success: true,
       message: "File uploaded successfully",
@@ -119,7 +114,6 @@ export const uploadToR2 = async (
       key: fileName,
     };
   } catch (err) {
-    console.error("❌ R2 Upload Failed:", err);
     throw new Error("Failed to upload to R2");
   }
 };
@@ -155,7 +149,6 @@ export const moveObjectInR2 = async (
       url: `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${newKey}`,
     };
   } catch (err) {
-    console.error("Failed to move object in R2", err);
     return { success: false, message: "Failed to move object" };
   }
 };
@@ -206,7 +199,6 @@ export const moveListingImagesFromTemp = async (
       movedImages,
     };
   } catch (error) {
-    console.error("Failed to move listing images from temp:", error);
     return {
       success: false,
       message: "Failed to move images from temp folder",
@@ -221,9 +213,6 @@ export const deleteFromR2 = async (
     | { userId: string; type: "avatar" | "listing"; listingId?: string },
 ): Promise<{ success: boolean; message: string }> => {
   if (!isR2Configured || !s3) {
-    console.warn(
-      "⚠️ Cloudflare R2 is not configured. Delete operation skipped.",
-    );
     return { success: false, message: "Cloudflare R2 not configured" };
   }
 
@@ -257,15 +246,10 @@ export const deleteFromR2 = async (
       }
     }
 
-    console.log(`Deleting file from R2: ${key}`);
-
     // If the key ends with a directory, we need to list and delete all files in that directory
     if (key.endsWith("/") || !key.includes(".")) {
       // This is a directory, list all files and delete them
       // Note: You'll need to implement listObjectsV2 and deleteObjects if you want to delete directories
-      console.warn(
-        "⚠️ Directory deletion not fully implemented. Need to list and delete all files in the directory.",
-      );
       // For now, we'll just try to delete the directory itself (which may work if it's empty)
     }
 
@@ -278,7 +262,6 @@ export const deleteFromR2 = async (
 
     return { success: true, message: "File deleted successfully" };
   } catch (error) {
-    console.error("❌ Failed to delete file from R2:", error);
     return {
       success: false,
       message:

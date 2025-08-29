@@ -174,7 +174,6 @@ export async function validateListingCreate(
     req.validatedData = normalizedData;
     
   } catch (error) {
-    console.error("Validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);
   }
 }
@@ -295,7 +294,6 @@ export async function validateListingUpdate(
     req.validatedData = normalizedData;
 
   } catch (error) {
-    console.error("Update validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);
   }
 }
@@ -385,7 +383,6 @@ export async function validateListingQuery(
     }
 
   } catch (error) {
-    console.error("Query validation middleware error:", error);
     return ErrorHandler.sendError(reply, error as Error, request.url);
   }
 }

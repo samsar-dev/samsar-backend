@@ -13,11 +13,7 @@ const skipDbCheck = args.includes('--skip-db-check') || args.includes('-s');
 const hoursArg = args.find(arg => arg.startsWith('--hours='));
 const hours = hoursArg ? hoursArg.split('=')[1] : '24';
 
-console.log('🧹 Cloudflare R2 Orphaned Image Cleanup');
-console.log('=====================================');
-
 if (isDryRun) {
-  console.log('⚠️  DRY RUN MODE - No images will be deleted');
 }
 
 // Build command arguments
@@ -34,14 +30,11 @@ const child = spawn('node', cmdArgs, {
 
 child.on('close', (code) => {
   if (code === 0) {
-    console.log('\n✅ Cleanup completed successfully!');
   } else {
-    console.error(`\n❌ Cleanup failed with exit code ${code}`);
     process.exit(code);
   }
 });
 
 child.on('error', (error) => {
-  console.error('❌ Failed to start cleanup process:', error.message);
   process.exit(1);
 });

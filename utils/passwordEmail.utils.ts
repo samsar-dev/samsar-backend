@@ -10,7 +10,6 @@ const isBrevoReady = () => {
   if (process.env.BREVO_API_KEY) {
     return true;
   } else {
-    console.error('❌ BREVO_API_KEY not found in environment variables');
     return false;
   }
 };
@@ -30,7 +29,6 @@ export const sendPasswordChangeEmail = async (
   }
 
   try {
-    console.log("Password change verification code:", code);
 
     // Create HTML email content with verification code
     const htmlContent = `
@@ -50,11 +48,8 @@ export const sendPasswordChangeEmail = async (
 
     // Validate email format
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      console.error("Invalid email address format:", email);
       return false;
     }
-
-    console.log(`📧 Sending password change email to ${email} using Brevo`);
 
     const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.subject = "Password Change Verification";
@@ -65,10 +60,8 @@ export const sendPasswordChangeEmail = async (
 
     await apiInstance.sendTransacEmail(sendSmtpEmail);
 
-    console.log("✅ Password change email sent successfully to:", email);
     return true;
   } catch (error) {
-    console.error("❌ Error sending password change email:", error);
     return false;
   }
 };

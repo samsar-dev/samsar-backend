@@ -213,7 +213,6 @@ const handleAuthRoute = (
       const authReq = request as unknown as MultipartAuthRequest;
       return await handler(authReq, reply);
     } catch (error) {
-      console.error("Auth route error:", error);
       return reply.code(500).send({
         success: false,
         error:
@@ -355,7 +354,6 @@ export default async function (fastify: FastifyInstance) {
         hasMore: (filteredListings.length || 0) > end,
       });
     } catch (error) {
-      console.error("Error fetching listings:", error);
               return ErrorHandler.sendError(reply, error as Error, req.url);
     }
   });
@@ -369,7 +367,6 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        console.log("🎯 ROUTE HANDLER STARTED");
         const req = request as ListingCreateRequest;
         const user = req.user;
         
@@ -379,11 +376,9 @@ export default async function (fastify: FastifyInstance) {
         
         // Use validated and normalized data
         const validatedData = req.validatedData;
-        console.log("🎯 ROUTE HANDLER - validatedData exists:", !!validatedData);
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
-
 
         const {
           title,
@@ -403,21 +398,6 @@ export default async function (fastify: FastifyInstance) {
 
         // Extract vehicle fields from validated data (includes both form fields and details)
         const vehicleDetails = details?.vehicles || {};
-        
-        console.log('🚗 EXTRACTING VEHICLE FIELDS FROM REQUEST:');
-        console.log('  Direct fields from Flutter:', {
-          make: validatedData.make,
-          model: validatedData.model,
-          year: validatedData.year,
-          fuelType: validatedData.fuelType,
-          transmission: validatedData.transmission,
-          bodyType: validatedData.bodyType,
-          engineSize: validatedData.engineSize,
-          mileage: validatedData.mileage,
-          color: validatedData.color || validatedData.exteriorColor,
-          sellerType: validatedData.sellerType,
-        });
-        console.log('  Nested details.vehicles:', vehicleDetails);
 
         // Helper function to add non-empty values - only for flat database fields
         const addIfNotEmpty = (obj: any, key: string, value: any) => {
@@ -460,8 +440,6 @@ export default async function (fastify: FastifyInstance) {
             throw new Error("Failed to generate unique listing ID after multiple attempts");
           }
         } while (attempts < maxAttempts);
-        
-        console.log(`🔧 Generated unique listing ID: ${listingId} (attempts: ${attempts})`);
 
         // Prepare data for database insertion - only include basic fields
         const listingData: any = {
@@ -556,21 +534,7 @@ export default async function (fastify: FastifyInstance) {
         } else if (mainCategory.toLowerCase() === 'real_estate' || mainCategory.toLowerCase() === 'realestate') {
           // Real estate-specific fields only
           const realEstateDetails = details?.realEstate || {};
-          
-          console.log('🏠 EXTRACTING REAL ESTATE FIELDS FROM REQUEST:');
-          console.log('  mainCategory:', mainCategory);
-          console.log('  Direct fields from Flutter:', {
-            bedrooms: validatedData.bedrooms,
-            bathrooms: validatedData.bathrooms,
-            area: validatedData.area,
-            totalArea: validatedData.totalArea,
-            yearBuilt: validatedData.yearBuilt,
-            furnishing: validatedData.furnishing,
-            sellerType: validatedData.sellerType,
-            condition: validatedData.condition,
-          });
-          console.log('  Nested details.realEstate:', realEstateDetails);
-          
+
           addIfNotEmpty(listingData, 'bedrooms', validatedData.bedrooms ? parseInt(validatedData.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
           addIfNotEmpty(listingData, 'bathrooms', validatedData.bathrooms ? parseInt(validatedData.bathrooms) : (realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null));
           addIfNotEmpty(listingData, 'totalArea', validatedData.totalArea ? parseFloat(validatedData.totalArea) : (realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null));
@@ -589,34 +553,16 @@ export default async function (fastify: FastifyInstance) {
 
         // Log final fields for debugging
         if (mainCategory.toLowerCase() === 'vehicles') {
-          console.log("\n📊 FINAL VEHICLE LISTING DATA BEFORE DB INSERT:");
-          console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
           const vehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission', 'bodyType', 'exteriorColor', 'sellerType', 'condition', 'accidental', 'horsepower'];
           vehicleFields.forEach(field => {
-            console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
           });
         } else if (mainCategory.toLowerCase() === 'real_estate' || mainCategory.toLowerCase() === 'realestate') {
-          console.log("\n📊 FINAL REAL ESTATE LISTING DATA BEFORE DB INSERT:");
-          console.log("Complete listingData object:", JSON.stringify(listingData, null, 2));
           const realEstateFields = ['bedrooms', 'bathrooms', 'totalArea', 'yearBuilt', 'furnishing', 'sellerType', 'condition'];
           realEstateFields.forEach(field => {
-            console.log(`${field}: ${listingData[field]} (${typeof listingData[field]})`);
           });
         }
 
         // Create the listing in database
-        console.log("\n🗄️ ATTEMPTING DATABASE INSERT:");
-        console.log("listingData keys:", Object.keys(listingData));
-        console.log("listingData vehicle fields:", {
-          make: listingData.make,
-          model: listingData.model,
-          year: listingData.year,
-          fuelType: listingData.fuelType,
-          transmission: listingData.transmission,
-          bodyType: listingData.bodyType,
-          mileage: listingData.mileage,
-          exteriorColor: listingData.exteriorColor,
-        });
 
         try {
           const createdListing = await prisma.listing.create({
@@ -633,24 +579,11 @@ export default async function (fastify: FastifyInstance) {
             },
           });
 
-          console.log("\n✅ DATABASE INSERT SUCCESSFUL");
-          console.log("Created listing vehicle fields:", {
-            make: createdListing.make,
-            model: createdListing.model,
-            year: createdListing.year,
-            fuelType: createdListing.fuelType,
-            transmission: createdListing.transmission,
-            bodyType: createdListing.bodyType,
-            mileage: createdListing.mileage,
-            exteriorColor: createdListing.exteriorColor,
-          });
-
           // Move images from temp folder to proper listing folder
           const { moveListingImagesFromTemp } = await import("../config/cloudflareR2.js");
           const moveResult = await moveListingImagesFromTemp(user.id!, createdListing.id);
           
           if (moveResult.success && moveResult.movedImages.length > 0) {
-            console.log(`✅ Moved ${moveResult.movedImages.length} images to listing ${createdListing.id}`);
             
             // Update listing with proper image URLs
             await prisma.listing.update({
@@ -669,10 +602,8 @@ export default async function (fastify: FastifyInstance) {
             });
           }
 
-          console.log(`\n✅ Created listing ${createdListing.id}`);
           if (mainCategory === 'vehicles') {
             const savedVehicleFields = ['make', 'model', 'year', 'mileage', 'fuelType', 'transmission'].filter(field => (createdListing as any)[field]);
-            console.log(`  Saved vehicle fields: [${savedVehicleFields.join(', ')}]`);
           }
 
           const formattedListing = formatListingResponse(createdListing);
@@ -683,12 +614,9 @@ export default async function (fastify: FastifyInstance) {
             timestamp: new Date().toISOString(),
           });
         } catch (dbError) {
-          console.error("❌ DATABASE INSERT FAILED:", dbError);
-          console.error("Failed listingData:", JSON.stringify(listingData, null, 2));
           throw dbError;
         }
       } catch (error) {
-        console.error("Error creating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
       }
     }
@@ -868,7 +796,6 @@ export default async function (fastify: FastifyInstance) {
             status: 200,
           });
         } catch (error) {
-          console.error("Error adding to favorites:", error);
           return reply.code(500).send({
             success: false,
             error:
@@ -925,7 +852,6 @@ export default async function (fastify: FastifyInstance) {
             status: 200,
           });
         } catch (error) {
-          console.error("Error removing from favorites:", error);
           return reply.code(500).send({
             success: false,
             error:
@@ -973,7 +899,6 @@ export default async function (fastify: FastifyInstance) {
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error("Error fetching listing:", error);
         return ErrorHandler.sendError(reply, error as Error, req.url);
       }
     }
@@ -1120,7 +1045,6 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        console.log("🔧 PATCH LISTING ROUTE STARTED");
         const req = request as ListingUpdateRequest;
         const user = req.user;
         const listingId = (req.params as { id: string }).id;
@@ -1152,8 +1076,6 @@ export default async function (fastify: FastifyInstance) {
         if (!validatedData) {
           return ResponseHelpers.badRequest(reply, "Validation data missing");
         }
-
-        console.log("🔧 PATCH - Fields to update:", Object.keys(validatedData));
 
         // Helper function to add only changed/provided values
         const addIfProvided = (obj: any, key: string, value: any) => {
@@ -1277,7 +1199,6 @@ export default async function (fastify: FastifyInstance) {
         // Handle image updates if new images were uploaded
         const imageUrls = req.processedImages?.map((img) => img.url) || [];
         if (imageUrls.length > 0) {
-          console.log(`🖼️ Updating ${imageUrls.length} images for listing ${listingId}`);
           
           updateData.images = {
             deleteMany: {}, // Remove existing images
@@ -1296,8 +1217,6 @@ export default async function (fastify: FastifyInstance) {
             })
           };
         }
-
-        console.log("🔧 PATCH - Final update data keys:", Object.keys(updateData));
 
         // Perform the partial update
         const updatedListing = await prisma.listing.update({
@@ -1318,15 +1237,12 @@ export default async function (fastify: FastifyInstance) {
           },
         });
 
-        console.log("✅ PATCH - Listing updated successfully");
-
         // Move images from temp folder if new images were uploaded
         if (imageUrls.length > 0) {
           const { moveListingImagesFromTemp } = await import("../config/cloudflareR2.js");
           const moveResult = await moveListingImagesFromTemp(user.id!, updatedListing.id);
           
           if (moveResult.success && moveResult.movedImages.length > 0) {
-            console.log(`✅ Moved ${moveResult.movedImages.length} images for updated listing ${updatedListing.id}`);
             
             // Update listing with proper image URLs
             await prisma.listing.update({
@@ -1356,7 +1272,6 @@ export default async function (fastify: FastifyInstance) {
         });
 
       } catch (error) {
-        console.error("Error updating listing:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
       }
     }
@@ -1404,7 +1319,6 @@ export default async function (fastify: FastifyInstance) {
             status: 200,
           });
         } catch (error) {
-          console.error("Error deleting listing:", error);
           return reply.code(500).send({
             success: false,
             error:

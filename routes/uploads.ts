@@ -19,7 +19,6 @@ export default async function (fastify: FastifyInstance) {
             error: "Request body is empty",
           });
         }
-        console.log("🔍 Initial request body:", request.body);
 
         const file = (request as any).file; // This will need proper Fastify multipart handling
 

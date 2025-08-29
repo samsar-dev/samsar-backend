@@ -84,10 +84,8 @@ class FirebaseNotificationService {
       };
 
       const response = await this.messaging.send(message);
-      console.log('✅ Push notification sent successfully:', response);
       return true;
     } catch (error) {
-      console.error('❌ Error sending push notification:', error);
       return false;
     }
   }
@@ -121,14 +119,12 @@ class FirebaseNotificationService {
       };
 
       const response = await this.messaging.sendEachForMulticast(message);
-      console.log(`✅ Push notifications sent: ${response.successCount} success, ${response.failureCount} failures`);
       
       return {
         successCount: response.successCount,
         failureCount: response.failureCount,
       };
     } catch (error) {
-      console.error('❌ Error sending batch push notifications:', error);
       return { successCount: 0, failureCount: fcmTokens.length };
     }
   }
@@ -198,7 +194,6 @@ class FirebaseNotificationService {
           error.code === 'messaging/invalid-registration-token') {
         return false;
       }
-      console.error('Error validating FCM token:', error);
       return false;
     }
   }
@@ -209,10 +204,8 @@ class FirebaseNotificationService {
   async subscribeToTopic(fcmToken: string, topic: string): Promise<boolean> {
     try {
       await this.messaging.subscribeToTopic([fcmToken], topic);
-      console.log(`✅ Token subscribed to topic: ${topic}`);
       return true;
     } catch (error) {
-      console.error(`❌ Error subscribing to topic ${topic}:`, error);
       return false;
     }
   }
@@ -240,10 +233,8 @@ class FirebaseNotificationService {
       };
 
       const response = await this.messaging.send(message);
-      console.log('✅ Topic notification sent successfully:', response);
       return true;
     } catch (error) {
-      console.error('❌ Error sending topic notification:', error);
       return false;
     }
   }

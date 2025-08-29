@@ -50,8 +50,6 @@ export const updateFCMToken = async (
       },
     });
 
-    console.log(`✅ FCM token updated for user ${userId}`);
-
     return reply.send({
       success: true,
       data: {
@@ -60,7 +58,6 @@ export const updateFCMToken = async (
       },
     });
   } catch (error) {
-    console.error("Error updating FCM token:", error);
     return reply.code(500).send({
       success: false,
       error: { message: "Failed to update FCM token" },
@@ -83,14 +80,11 @@ export const removeFCMToken = async (
       },
     });
 
-    console.log(`✅ FCM token removed for user ${userId}`);
-
     return reply.send({
       success: true,
       data: { message: "FCM token removed successfully" },
     });
   } catch (error) {
-    console.error("Error removing FCM token:", error);
     return reply.code(500).send({
       success: false,
       error: { message: "Failed to remove FCM token" },
@@ -144,7 +138,6 @@ export const sendTestNotification = async (
       });
     }
   } catch (error) {
-    console.error("Error sending test notification:", error);
     return reply.code(500).send({
       success: false,
       error: { message: "Failed to send test notification" },
@@ -183,7 +176,6 @@ export const getFCMTokenStatus = async (
       },
     });
   } catch (error) {
-    console.error("Error getting FCM token status:", error);
     return reply.code(500).send({
       success: false,
       error: { message: "Failed to get FCM token status" },

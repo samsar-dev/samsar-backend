@@ -10,7 +10,6 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import fs from "fs";
 import { handleListingPriceUpdate } from "../src/services/notification.service.js";
 import { generateListingId } from "../utils/idGenerator.utils.js";
- 
 
 // Extend Fastify request with custom properties
 declare module "fastify" {
@@ -331,32 +330,19 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           throw new Error("Failed to generate unique listing ID after multiple attempts");
         }
       } while (attempts < maxAttempts);
-      
-      console.log(`🔧 Generated unique listing ID: ${listingId} (attempts: ${attempts})`);
-      
+
       // Extract individual fields from request body (Flutter sends them as separate fields)
       const requestBody = req.body as any;
       const vehicleDetails = parsedDetails?.vehicles || {};
       const realEstateDetails = parsedDetails?.realEstate || {};
       
       // Debug logging for real estate fields
-      console.log("🔍 [DEBUG] Request body keys:", Object.keys(requestBody));
-      console.log("🔍 [DEBUG] Parsed details:", JSON.stringify(parsedDetails, null, 2));
-      console.log("🔍 [DEBUG] Real estate details:", JSON.stringify(realEstateDetails, null, 2));
-      console.log("🔍 [DEBUG] Root level real estate fields:");
-      console.log("  - totalArea:", requestBody.totalArea);
-      console.log("  - yearBuilt:", requestBody.yearBuilt);
-      console.log("  - furnishing:", requestBody.furnishing);
-      console.log("  - floor:", requestBody.floor);
-      console.log("  - totalFloors:", requestBody.totalFloors);
       
       // Helper function to only include non-empty values
       const addIfNotEmpty = (obj: any, key: string, value: any) => {
         if (value !== null && value !== undefined && value !== "" && value !== 0) {
-          console.log(`🔧 [DEBUG] Adding ${key}: ${value} to listing data`);
           obj[key] = value;
         } else {
-          console.log(`🚫 [DEBUG] Skipping ${key}: ${value} (empty/null/undefined/0)`);
         }
       };
       
@@ -437,7 +423,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
           addIfNotEmpty(listingData, 'accidental', isAccidentFree ? 'NO' : 'YES');
         }
         
-        console.log("🔧 Vehicle fields extracted for vehicles category");
       } else if (mainCategory.toLowerCase() === 'real_estate') {
         // Real estate-specific fields only
         addIfNotEmpty(listingData, 'bedrooms', requestBody.bedrooms ? parseInt(requestBody.bedrooms) : (realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null));
@@ -449,7 +434,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
         addIfNotEmpty(listingData, 'totalFloors', requestBody.totalFloors ? parseInt(requestBody.totalFloors) : (realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null));
         // parking moved to JSON details only
         
-        console.log("🔧 Real estate fields extracted for real_estate category");
       }
 
       // Create listing
@@ -494,7 +478,6 @@ export const createListing = async (req: FastifyRequest, res: FastifyReply) => {
       status: 201,
     });
   } catch (error) {
-    console.error("Error creating listing:", error);
     res.code(500).send({
       success: false,
       error:
@@ -514,7 +497,6 @@ const CACHE_TTL = 60 * 1000; // 60 seconds cache TTL
 
 export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    console.log("Request query:", req.query);
 
     // Create a cache key from the request query parameters
     const cacheKey = JSON.stringify(req.query);
@@ -528,20 +510,17 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
       // If the client sent an ETag that matches our cached ETag and the cache isn't expired
       if (ifNoneMatch === cachedResponse.etag && !isExpired) {
         // Return 304 Not Modified to tell the client to use its cached version
-        console.log("Cache hit with matching ETag, returning 304");
         return res.code(304).send();
       }
 
       // If cache is still valid but client didn't send matching ETag
       if (!isExpired) {
-        console.log("Cache hit, returning cached data");
         res.header("ETag", cachedResponse.etag);
         res.header("Cache-Control", "private, max-age=60"); // Tell client to cache for 60 seconds
         return res.send(cachedResponse.data);
       }
 
       // Cache expired, will fetch new data
-      console.log("Cache expired, fetching new data");
     }
 
     const query = req.query as {
@@ -561,8 +540,6 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
     const maxPrice = parseFloat(
       query.maxPrice || String(Number.MAX_SAFE_INTEGER),
     );
-
-
 
     const where: Prisma.ListingWhereInput = {
       OR: search
@@ -602,12 +579,9 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
       prisma.listing.count({ where }),
     ]);
 
-    console.log("Found listings:", listings.length);
     const formattedListings = listings.map((listing) =>
       formatListingResponse(listing as ListingWithRelations),
     );
-
-    console.log("Formatted listings:", formattedListings.length);
 
     // Prepare response data
     const responseData = {
@@ -637,12 +611,6 @@ export const getListings = async (req: FastifyRequest, res: FastifyReply) => {
     // Send response with ETag
     res.headers({ ETag: etag }).send(responseData);
   } catch (error) {
-    console.error(
-      "Error getting listings:",
-      error instanceof Error ? error.message : "Unknown error",
-      "Error stack:",
-      error instanceof Error ? error.stack : "No stack trace",
-    );
     res.code(500).send({
       success: false,
       message: "Error getting listings",
@@ -755,7 +723,6 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
       data: formatListingResponse(updatedListing as ListingWithRelations),
     });
   } catch (error) {
-    console.error("Error getting listing:", error);
     res.code(500).send({
       success: false,
       message: "Error getting listing",
@@ -765,12 +732,6 @@ export const getListing = async (req: FastifyRequest, res: FastifyReply) => {
 
 export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
   try {
-    console.log("🔍 [updateListing] Request body:", req.body);
-    console.log(
-      "🔍 [updateListing] Request files:",
-      (req as any).processedImages,
-    );
-    console.log("🔍 [updateListing] Request params:", req.params);
 
     const { id } = req.params as ListingParams;
     const {
@@ -823,13 +784,8 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     // Process images - combine existing and new images
     let imagesToCreate: Array<{ url: string; order: number }> = [];
 
-    console.log("🔍 [updateListing] Processing images:");
-    console.log("- Processed images:", req.processedImages);
-    console.log("- Existing images:", existingImages);
-
     // Add processed new images
     if (req.processedImages && req.processedImages.length > 0) {
-      console.log("- Adding new processed images");
       imagesToCreate = [...req.processedImages];
     }
 
@@ -850,37 +806,25 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
 
     // Add existing images if provided
     if (existingImages) {
-      console.log("🔍 [DEBUG] existingImages type:", typeof existingImages);
-      console.log("🔍 [DEBUG] existingImages value:", existingImages);
-      console.log("🔍 [DEBUG] Is Array?", Array.isArray(existingImages));
 
       try {
         let existingImagesArray: string[] = [];
 
         if (Array.isArray(existingImages)) {
-          console.log("🔍 [DEBUG] Processing as array");
           existingImagesArray = existingImages;
         } else if (typeof existingImages === "string") {
-          console.log("🔍 [DEBUG] Processing as string");
           if (existingImages.startsWith("[")) {
-            console.log("🔍 [DEBUG] Parsing JSON array string");
             existingImagesArray = JSON.parse(existingImages);
           } else {
-            console.log("🔍 [DEBUG] Using as single string");
             existingImagesArray = [existingImages];
           }
         } else {
-          console.log("🔍 [DEBUG] Unknown format:", existingImages);
           throw new Error(
             `Invalid existingImages format: ${typeof existingImages}`,
           );
         }
 
-        console.log("🔍 [DEBUG] Processed array:", existingImagesArray);
-        console.log("🔍 [DEBUG] Array length:", existingImagesArray.length);
-
         existingImagesArray.forEach((url: string, index: number) => {
-          console.log(`🔍 [DEBUG] Processing URL ${index}:`, url);
           if (
             url &&
             typeof url === "string" &&
@@ -890,15 +834,10 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
               url,
               order: imagesToCreate.length + index,
             });
-            console.log("🔍 [DEBUG] Added URL to imagesToCreate");
           } else {
-            console.log("🔍 [DEBUG] Skipped invalid or deleted URL:", url);
           }
         });
       } catch (error) {
-        console.error("Error processing existing images:", error);
-        console.error("existingImages type:", typeof existingImages);
-        console.error("existingImages value:", existingImages);
         throw new Error("Invalid existingImages format");
       }
     }
@@ -914,8 +853,6 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     // Re-index order to be sequential starting from 0
     imagesToCreate = imagesToCreate.map((img, idx) => ({ ...img, order: idx }));
 
-    console.log("- Final imagesToCreate (deduped & reindexed):", imagesToCreate);
-
     // Clean up existing images from R2 storage if we're replacing them
     if (imagesToCreate.length > 0) {
       const existingImages = await prisma.image.findMany({
@@ -926,7 +863,6 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       for (const image of existingImages) {
         try {
           if (image.storageKey) {
-            console.log(`🗑️ Deleting existing image with key: ${image.storageKey}`);
             await deleteFromR2(image.storageKey);
           } else if (image.url) {
             // Extract key from URL if no storage key is available
@@ -934,12 +870,10 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
             const keyStartIndex = urlParts.findIndex(part => part === 'uploads');
             if (keyStartIndex !== -1) {
               const key = urlParts.slice(keyStartIndex).join('/');
-              console.log(`🗑️ Deleting existing image with extracted key: ${key}`);
               await deleteFromR2(key);
             }
           }
         } catch (error) {
-          console.error(`❌ Failed to delete existing image from R2:`, error);
           // Continue with other deletions even if one fails
         }
       }
@@ -1063,7 +997,6 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Error updating listing:", error);
     res.code(500).send({
       success: false,
       error: error instanceof Error ? error.message : "Error updating listing",
@@ -1099,7 +1032,6 @@ export const deleteListing = async (req: FastifyRequest, res: FastifyReply) => {
     for (const image of listing.images) {
       if (image.storageKey) {
         // Use the storage key if available
-        console.log(`🗑️ Deleting image with key: ${image.storageKey}`);
         await deleteFromR2(image.storageKey);
       } else if (image.url) {
         // Extract key from URL if no storage key is available
@@ -1107,10 +1039,8 @@ export const deleteListing = async (req: FastifyRequest, res: FastifyReply) => {
         const keyStartIndex = urlParts.findIndex(part => part === 'uploads');
         if (keyStartIndex !== -1) {
           const key = urlParts.slice(keyStartIndex).join('/');
-          console.log(`🗑️ Deleting image with extracted key: ${key}`);
           await deleteFromR2(key);
         } else {
-          console.warn(`⚠️ Could not extract storage key from URL: ${image.url}`);
         }
       }
     }
@@ -1122,7 +1052,6 @@ export const deleteListing = async (req: FastifyRequest, res: FastifyReply) => {
       message: "Listing deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting listing:", error);
     res.code(500).send({
       success: false,
       message: "Error deleting listing",
@@ -1230,7 +1159,6 @@ export const toggleSaveListing = async (
       data: formatListingResponse(updatedListing as ListingWithRelations),
     });
   } catch (error) {
-    console.error("Error toggling save listing:", error);
     res.code(500).send({
       success: false,
       message: "Error toggling save listing",
@@ -1269,7 +1197,6 @@ export const addListingImages = async (req: FastifyRequest, res: FastifyReply): 
     return image;
   }
   catch (error) {
-    console.error("Error adding listing images:", error);
     res.code(500).send({
       success: false,
       message: "Error adding listing images",

@@ -63,7 +63,6 @@ export const handleListingPriceUpdate = async (
       await Promise.all(notificationPromises);
     }
   } catch (error) {
-    console.error("Error handling listing price update:", error);
   }
 };
 
@@ -89,7 +88,6 @@ export const handleNewListingMatch = async (
     });
 
     if (!listing) {
-      console.error(`Listing with ID ${listingId} not found`);
       return;
     }
 
@@ -107,7 +105,6 @@ export const handleNewListingMatch = async (
 
     await Promise.all(notificationPromises);
   } catch (error) {
-    console.error("Error sending new listing match notifications:", error);
   }
 };
 
@@ -129,7 +126,6 @@ export const sendAccountWarning = async (
       },
     });
   } catch (error) {
-    console.error("Error sending account warning notification:", error);
   }
 };
 
@@ -173,6 +169,5 @@ export const sendSystemAnnouncement = async (
 
     await Promise.all(notificationPromises);
   } catch (error) {
-    console.error("Error sending system announcement:", error);
   }
 };

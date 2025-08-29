@@ -65,7 +65,6 @@ export const createNotification = async (
 
     return notification;
   } catch (error) {
-    console.error("Error creating notification:", error);
     throw error;
   }
 };
@@ -92,9 +91,6 @@ export const getNotifications = async (
     const skip = (page - 1) * limit;
 
     // Log request information for debugging
-    console.log(
-      `Fetching notifications for user ${req.user.id}, page ${page}, limit ${limit}`,
-    );
 
     try {
       // Fetch notifications from database
@@ -129,10 +125,6 @@ export const getNotifications = async (
           userId: req.user.id,
         },
       });
-
-      console.log(
-        `Found ${notifications.length} notifications out of ${total} total`,
-      );
 
       // Transform notifications to match frontend types
       const transformedNotifications = notifications.map((notification) => {
@@ -213,7 +205,6 @@ export const getNotifications = async (
       });
     } catch (dbError) {
       // Handle database-specific errors
-      console.error("Database error fetching notifications:", dbError);
       return reply.code(500).send({
         success: false,
         error: "Database error while fetching notifications",
@@ -221,7 +212,6 @@ export const getNotifications = async (
     }
   } catch (error) {
     // Handle any other unexpected errors
-    console.error("Unexpected error in getNotifications:", error);
     return reply.code(500).send({
       success: false,
       error: "Failed to get notifications",
@@ -261,7 +251,6 @@ export const markAsRead = async (req: FastifyRequest, reply: FastifyReply) => {
       message: "Notification marked as read",
     });
   } catch (error) {
-    console.error("Mark as read error:", error);
     reply.code(500).send({
       success: false,
       error: "Failed to mark notification as read",
@@ -293,7 +282,6 @@ export const markAllAsRead = async (
       message: "All notifications marked as read",
     });
   } catch (error) {
-    console.error("Mark all as read error:", error);
     reply.code(500).send({
       success: false,
       error: "Failed to mark all notifications as read",
@@ -327,7 +315,6 @@ export const deleteNotification = async (
       message: "Notification deleted",
     });
   } catch (error) {
-    console.error("Delete notification error:", error);
     reply.code(500).send({
       success: false,
       error: "Failed to delete notification",
@@ -354,7 +341,6 @@ export const clearAllNotifications = async (
       deletedCount: result.count,
     });
   } catch (error) {
-    console.error("Clear all notifications error:", error);
     reply.code(500).send({
       success: false,
       error: "Failed to clear all notifications",
@@ -450,7 +436,6 @@ export const sendSystemAnnouncement = async (
       },
     });
   } catch (error) {
-    console.error("Send system announcement error:", error);
     reply.code(500).send({
       success: false,
       error: "Failed to send system announcement",

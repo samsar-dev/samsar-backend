@@ -80,7 +80,6 @@ export const sendNewsletter = async (
         await sendNewsletterEmail(subscriber.email, subject, content, isHtml);
         sentCount++;
       } catch (error) {
-        console.error(`Failed to send email to ${subscriber.email}:`, error);
         failedCount++;
         if (subscriber.email) {
           failedEmails.push(subscriber.email);
@@ -89,15 +88,6 @@ export const sendNewsletter = async (
     }
 
     // Log the newsletter send
-    console.log("Newsletter sent:", {
-      subject,
-      sentCount,
-      failedCount,
-      failedEmails,
-      sentBy: adminId,
-      isHtml,
-      timestamp: new Date().toISOString(),
-    });
 
     return reply.status(200).send({
       success: true,
@@ -110,7 +100,6 @@ export const sendNewsletter = async (
       },
     });
   } catch (error) {
-    console.error("Error sending newsletter:", error);
     return reply.status(500).send({
       success: false,
       message: "Failed to send newsletter",
@@ -148,7 +137,6 @@ export const getNewsletterStats = async (
       },
     });
   } catch (error) {
-    console.error("Error getting newsletter stats:", error);
     return reply.status(500).send({
       success: false,
       message: "Failed to get newsletter stats",

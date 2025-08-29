@@ -47,20 +47,12 @@ export const authenticate = async (
   reply: FastifyReply,
 ) => {
   try {
-    console.log("🔍 Auth Middleware - Request Headers:", {
-      authorization: request.headers.authorization,
-      cookie: request.headers.cookie,
-      origin: request.headers.origin,
-      userAgent: request.headers["user-agent"],
-    });
-    console.log("🍪 Auth Middleware - Cookies:", request.cookies);
 
     // First check Authorization header
     let token: string | undefined;
     const authHeader = request.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      console.log("✅ Auth Middleware - Token found in Authorization header");
     }
 
     // If no token in header, check cookies as fallback
@@ -68,15 +60,10 @@ export const authenticate = async (
       // Check both jwt and session_token cookies
       token = request.cookies.jwt || request.cookies.session_token;
       if (token) {
-        console.log("✅ Auth Middleware - Token found in cookies:", {
-          jwt: !!request.cookies.jwt,
-          session_token: !!request.cookies.session_token,
-        });
       }
     }
 
     if (!token) {
-      console.log("❌ Auth Middleware - No token found in headers or cookies");
       return reply.code(401).send({
         success: false,
         error: {
@@ -87,7 +74,6 @@ export const authenticate = async (
     }
 
     if (!process.env.JWT_SECRET) {
-      console.error("JWT_SECRET is not configured");
       return reply.code(500).send({
         success: false,
         error: {
@@ -163,7 +149,6 @@ export const authenticate = async (
         });
       }
     } catch (error) {
-      console.error("Error updating last_active_at:", error);
       // Don't fail the request if this update fails
     }
 
@@ -181,7 +166,6 @@ export const authenticate = async (
       iss: 'samsar-api',
     };
   } catch (error) {
-    console.error("Authentication error:", error);
     return reply.code(401).send({
       success: false,
       error: {
@@ -277,7 +261,6 @@ export const isListingOwner = async (
       });
     }
   } catch (error) {
-    console.error("isListingOwner middleware error:", error);
     return reply.status(500).send({
       success: false,
       error: {

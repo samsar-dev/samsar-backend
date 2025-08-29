@@ -213,13 +213,6 @@ export class ErrorHandler {
     const errorResponse = this.createErrorResponse(error, path);
     
     // Log error for debugging (but don't expose sensitive info)
-    console.error(`Error ${errorResponse.error.code}:`, {
-      message: error.message,
-      path,
-      timestamp: errorResponse.error.timestamp,
-      ...(error instanceof AppError && error.details && { details: error.details }),
-      ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
-    });
 
     reply.code(errorResponse.status).send(errorResponse);
   }

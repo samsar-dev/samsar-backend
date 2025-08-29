@@ -49,7 +49,6 @@ export const getListingPermission = async (
       listingRestriction: "NONE", // Temporarily removing all restrictions
     };
   } catch (error) {
-    console.error("Error getting listing permission:", error);
     return reply.status(500).send({ error: "Internal server error" });
   }
 };

@@ -60,7 +60,6 @@ export const checkListingPermission = async (
 
     return true;
   } catch (error) {
-    console.error("Error checking listing permission:", error);
     reply.status(500).send({ error: "Internal server error" });
     return false;
   }

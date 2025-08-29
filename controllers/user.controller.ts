@@ -10,7 +10,6 @@ import {
   UserPreferences,
   InputJsonValue,
 } from "../types/index.js";
- 
 
 interface UpdateData {
   email?: string;
@@ -74,7 +73,6 @@ export const getUserProfile = async (
       status: 200,
     });
   } catch (error) {
-    console.error("Error fetching user profile:", error);
     reply.status(500).send({
       success: false,
       error: "Error fetching user profile",
@@ -106,7 +104,6 @@ export const getUserPublicDetails = async (
     });
 
     if (!user) {
-      console.log("User not found");
       return reply.status(404).send({
         success: false,
         error: "User not found",
@@ -114,7 +111,6 @@ export const getUserPublicDetails = async (
         data: null,
       });
     }
-    console.log("User found:", user);
 
     return reply.status(200).send({
       success: true,
@@ -122,7 +118,6 @@ export const getUserPublicDetails = async (
       status: 200,
     });
   } catch (error) {
-    console.error("Error fetching user profile:", error);
     reply.status(500).send({
       success: false,
       error: "Error fetching user profile",
@@ -287,17 +282,9 @@ export const updateProfile = async (
       updates.profilePicture = (request.body as any).profilePicture;
     }
 
-    console.log('🔍 Updates to apply:', updates);
-    
     const updatedUser = await prisma.user.update({
       where: { id: (request.user as any).id },
       data: updates,
-    });
-
-    console.log('✅ User updated successfully:', {
-      id: updatedUser.id,
-      profilePicture: updatedUser.profilePicture,
-      phone: updatedUser.phone
     });
 
     const responseData = {
@@ -305,12 +292,9 @@ export const updateProfile = async (
       data: updatedUser,
       status: 200,
     };
-    
-    console.log('📤 Sending response:', JSON.stringify(responseData, null, 2));
-    
+
     reply.status(200).send(responseData);
   } catch (error) {
-    console.error("Update error:", error);
     reply.status(500).send({
       success: false,
       error: "Error updating profile",
@@ -329,7 +313,6 @@ export const getUserListings = async (
 ) => {
   try {
     const userId = (request.user as any).id;
-    console.log("🔍 Fetching listings for user:", userId);
 
     const listings = await prisma.listing.findMany({
       where: { userId },
@@ -349,8 +332,6 @@ export const getUserListings = async (
       },
     });
 
-    console.log("✅ Found listings:", listings.length);
-
     reply.status(200).send({
       success: true,
       data: { 
@@ -363,7 +344,6 @@ export const getUserListings = async (
       status: 200,
     });
   } catch (error) {
-    console.error("❌ Listings fetch error:", error);
     reply.status(500).send({
       success: false,
       error: "Error fetching user listings",
@@ -385,11 +365,8 @@ export const deleteUser = async (
   reply: FastifyReply,
 ) => {
   try {
-    console.log("Delete user request received");
-    console.log("Request user:", request.user);
 
     const body = (await request.body) as DeleteUserRequest;
-    console.log("Request body received:", { ...body, password: "[REDACTED]" });
     const { password } = body;
 
     if (!password) {
@@ -428,7 +405,6 @@ export const deleteUser = async (
       });
 
       const listingIds = userListings.map((listing) => listing.id);
-      console.log(`Found ${listingIds.length} listings to delete`);
 
       // Step 2: Get all user's messages
       const userMessages = await prisma.message.findMany({
@@ -450,7 +426,6 @@ export const deleteUser = async (
           ],
         },
       });
-      console.log("Deleted all notifications");
 
       // Step 4: Delete messages
       await prisma.message.deleteMany({
@@ -458,7 +433,6 @@ export const deleteUser = async (
           OR: [{ senderId: user.id }, { recipientId: user.id }],
         },
       });
-      console.log("Deleted all user messages");
 
       // Step 5: Delete favorites
       await prisma.favorite.deleteMany({
@@ -466,7 +440,6 @@ export const deleteUser = async (
           OR: [{ userId: user.id }, { listingId: { in: listingIds } }],
         },
       });
-      console.log("Deleted all favorites");
 
       // Step 6: Delete listing-related data
       if (listingIds.length > 0) {
@@ -480,7 +453,6 @@ export const deleteUser = async (
         for (const image of imagesToDelete) {
           try {
             if (image.storageKey) {
-              console.log(`🗑️ Deleting image with key: ${image.storageKey}`);
               await deleteFromR2(image.storageKey);
             } else if (image.url) {
               // Extract key from URL if no storage key is available
@@ -488,14 +460,11 @@ export const deleteUser = async (
               const keyStartIndex = urlParts.findIndex(part => part === 'uploads');
               if (keyStartIndex !== -1) {
                 const key = urlParts.slice(keyStartIndex).join('/');
-                console.log(`🗑️ Deleting image with extracted key: ${key}`);
                 await deleteFromR2(key);
               } else {
-                console.warn(`⚠️ Could not extract storage key from URL: ${image.url}`);
               }
             }
           } catch (error) {
-            console.error(`❌ Failed to delete image from R2:`, error);
             // Continue with other deletions even if one fails
           }
         }
@@ -512,7 +481,6 @@ export const deleteUser = async (
         await prisma.feature.deleteMany({
           where: { listingId: { in: listingIds } },
         });
-        console.log("Deleted all listing-related data");
       }
 
       // Step 7: Handle conversations
@@ -536,7 +504,6 @@ export const deleteUser = async (
         await prisma.conversation.deleteMany({
           where: { id: { in: singleParticipantConvIds } },
         });
-        console.log("Deleted orphaned conversations");
       }
 
       // For multi-participant conversations, disconnect the user
@@ -556,24 +523,17 @@ export const deleteUser = async (
             },
           });
         } catch (err) {
-          console.error(
-            `Failed to disconnect user from conversation ${conv.id}:`,
-            err,
-          );
           // Continue with other operations even if this fails
         }
       }
-      console.log("Updated conversations");
 
       // Step 8: Delete listings
       await prisma.listing.deleteMany({
         where: { userId: user.id },
       });
-      console.log("Deleted all listings");
 
       // Step 9: Finally delete the user
       await prisma.user.delete({ where: { id: user.id } });
-      console.log("Deleted user account");
 
       reply.status(200).send({
         success: true,
@@ -581,11 +541,9 @@ export const deleteUser = async (
         status: 200,
       });
     } catch (deleteError) {
-      console.error("Error during deletion process:", deleteError);
       throw deleteError;
     }
   } catch (error) {
-    console.error("Delete error:", error);
     reply.status(500).send({
       success: false,
       error: error instanceof Error ? error.message : "Error deleting user",
@@ -662,7 +620,6 @@ export const getUserSettings = async (
     //   status: 200,
     // });
   } catch (error) {
-    console.error("Error fetching user settings:", error);
     reply.status(500).send({
       success: false,
       error: "Error fetching user settings",
@@ -680,7 +637,6 @@ export const updateUserSettings = async (
   reply: FastifyReply,
 ) => {
   try {
-    console.log("Request body:", request.body);
     const { notifications, privacy } = request.body as any;
 
     // Validate required fields
@@ -735,7 +691,6 @@ export const updateUserSettings = async (
       status: 200,
     });
   } catch (error) {
-    console.error("Settings update error:", error);
     return reply.status(500).send({
       success: false,
       error: "Error updating user settings",
@@ -786,16 +741,9 @@ export const getAllUsersAdmin = async (
     const now = new Date();
     const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
 
-    console.log("Current time:", now.toISOString());
-    console.log("15 minutes ago:", fifteenMinutesAgo.toISOString());
-
     const formatted = users.map((u) => {
       const lastActive = u.lastActiveAt ? new Date(u.lastActiveAt) : null;
       const isOnline = lastActive ? lastActive > fifteenMinutesAgo : false;
-
-      console.log(`User ${u.email}:`);
-      console.log("  Last active:", lastActive?.toISOString() || "Never");
-      console.log("  Is online:", isOnline);
 
       return {
         ...u,
@@ -806,7 +754,6 @@ export const getAllUsersAdmin = async (
 
     return reply.send({ success: true, data: formatted });
   } catch (error) {
-    console.error("Error fetching users list:", error);
     return reply.code(500).send({
       success: false,
       error: "Failed to fetch users list",
@@ -838,7 +785,6 @@ export const updateUserRoleAdmin = async (
     await prisma.user.update({ where: { id }, data: { role: role as any } });
     return reply.send({ success: true });
   } catch (error) {
-    console.error("Error updating user role:", error);
     return reply.code(500).send({ success: false, error: "Update failed" });
   }
 };

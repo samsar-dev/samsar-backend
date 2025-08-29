@@ -44,8 +44,6 @@ class OptimizedCityService {
   private initializeData(): void {
     if (this.isInitialized) return;
 
-    console.log('🚀 Initializing Syrian location data...');
-    
     // Load all locations
     this.allLocations = syrianCitiesArabic as LocationData[];
     
@@ -56,7 +54,6 @@ class OptimizedCityService {
     this.buildOptimizedMaps();
     
     this.isInitialized = true;
-    console.log(`✅ Loaded ${this.allLocations.length} locations with optimized indexing`);
   }
 
   private buildOptimizedMaps(): void {

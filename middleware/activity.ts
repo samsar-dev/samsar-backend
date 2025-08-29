@@ -5,8 +5,6 @@ import type {
 } from "fastify";
 import { PrismaClient } from "@prisma/client";
 
- 
-
 // Fastify types are extended in types/fastify.d.ts
 // This ensures consistent typing across the application
 
@@ -23,13 +21,11 @@ export const updateLastActive = async (
     // Only process if user is authenticated
     const userId = req.user?.id;
     if (!userId) {
-      console.log("No user ID found in request");
       return;
     }
 
     const now = new Date();
     const timestamp = now.toISOString();
-    console.log(`[${timestamp}] Updating last_active_at for user ${userId}`);
 
     try {
       // Update the timestamp using raw SQL
@@ -40,8 +36,6 @@ export const updateLastActive = async (
         RETURNING id, email, "last_active_at"
       `;
 
-      console.log(`[${timestamp}] Update result for user ${userId}:`, result);
-
       // Verify the update
       const updatedUser = await prisma.$queryRaw`
         SELECT id, email, "last_active_at" 
@@ -49,23 +43,11 @@ export const updateLastActive = async (
         WHERE id = ${userId}
       `;
 
-      console.log(
-        `[${timestamp}] Verified update for user ${userId}:`,
-        updatedUser,
-      );
     } catch (error) {
-      console.error(
-        `[${timestamp}] Error updating timestamp for user ${userId}:`,
-        error,
-      );
       // Don't rethrow the error to avoid breaking the request
     }
 
-    console.log(
-      `[${timestamp}] Successfully updated last_active_at for user ${userId}`,
-    );
   } catch (error) {
-    console.error("Unexpected error in updateLastActive:", error);
     // Don't throw to avoid breaking the request
   }
 };

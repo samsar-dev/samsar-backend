@@ -21,7 +21,6 @@ export default async function vehicleStatsRoutes(fastify: FastifyInstance) {
           }
         });
       } catch (error) {
-        console.error("Error fetching vehicle stats:", error);
         return ResponseHelpers.internal(reply, new Error("Failed to fetch vehicle statistics"));
       }
     }
@@ -45,7 +44,6 @@ export default async function vehicleStatsRoutes(fastify: FastifyInstance) {
           }
         });
       } catch (error) {
-        console.error("Error fetching subcategories:", error);
         return ResponseHelpers.internal(reply, new Error("Failed to fetch subcategories"));
       }
     }

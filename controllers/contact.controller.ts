@@ -38,7 +38,6 @@ const verifyAdminToken = (
     (request as any).user = decoded;
     return true;
   } catch (error) {
-    console.error("Token verification error:", error);
     if (error instanceof jwt.JsonWebTokenError) {
       reply.code(401).send({ error: "Invalid token" });
     } else if (error instanceof jwt.TokenExpiredError) {
@@ -89,7 +88,6 @@ export const submitContactForm = async (
 
     return { success: true, data: contact };
   } catch (error) {
-    console.error("Error submitting contact form:", error);
     return reply.status(500).send({ error: "Failed to submit contact form" });
   }
 };
@@ -112,7 +110,6 @@ export const getContactSubmissions = async (
 
     return { success: true, data: submissions };
   } catch (error) {
-    console.error("Error fetching contact submissions:", error);
     return reply
       .status(500)
       .send({ error: "Failed to fetch contact submissions" });
@@ -138,7 +135,6 @@ export const markAsRead = async (
 
     return { success: true, data: updatedSubmission };
   } catch (error) {
-    console.error("Error marking submission as read:", error);
     return reply
       .status(500)
       .send({ error: "Failed to mark submission as read" });

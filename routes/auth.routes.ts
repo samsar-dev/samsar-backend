@@ -366,7 +366,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
           },
         });
       } catch (error) {
-        console.error("Error verifying email with token:", error);
         return reply.status(500).send({
           success: false,
           error: {

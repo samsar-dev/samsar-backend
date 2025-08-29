@@ -78,7 +78,6 @@ export default async function (fastify: FastifyInstance) {
           },
         };
       } catch (error) {
-        console.error("Error finding nearby cities:", error);
         return reply.code(500).send({
           success: false,
           error: {
@@ -125,9 +124,7 @@ export default async function (fastify: FastifyInstance) {
         };
       });
 
-      console.log(`🏙️ Returning ${citiesWithNeighborhoods.length} major cities with neighborhoods`);
       citiesWithNeighborhoods.forEach(city => {
-        console.log(`   ${city.name}: ${city.neighbors.length} neighborhoods`);
       });
 
       return {
@@ -135,7 +132,6 @@ export default async function (fastify: FastifyInstance) {
         data: citiesWithNeighborhoods,
       };
     } catch (error) {
-      console.error("Error getting cities:", error);
       return reply.code(500).send({
         success: false,
         error: {
@@ -145,8 +141,6 @@ export default async function (fastify: FastifyInstance) {
       });
     }
   });
-
-
 
   /**
    * Search for locations using comprehensive Syrian cities database (Arabic only)
@@ -247,7 +241,6 @@ export default async function (fastify: FastifyInstance) {
               source: "mapbox_api",
             });
           } catch (mapboxError) {
-            console.warn("Mapbox API failed, returning empty results:", mapboxError);
           }
         }
 
@@ -260,7 +253,6 @@ export default async function (fastify: FastifyInstance) {
         });
 
       } catch (error) {
-        console.error("Error searching locations:", error);
         reply.code(500).send({
           success: false,
           error: {
@@ -344,7 +336,6 @@ export default async function (fastify: FastifyInstance) {
           },
         });
       } catch (error) {
-        console.error("Error reverse geocoding:", error);
         reply.code(500).send({
           success: false,
           error: {

@@ -126,7 +126,6 @@ export const sendEmailChangeVerification = async (
       message: "Verification code sent to new email address",
     });
   } catch (error) {
-    console.error("Error sending email change verification:", error);
     return reply.status(500).send({
       success: false,
       error: {
@@ -252,7 +251,6 @@ export const changeEmailWithVerification = async (
       newEmail: newEmail,
     });
   } catch (error) {
-    console.error("Error changing email with verification:", error);
     return reply.status(500).send({
       success: false,
       error: {

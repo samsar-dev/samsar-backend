@@ -26,24 +26,17 @@ export default async function vehicleRoutes(fastify: FastifyInstance) {
     "/makes",
     async (request: FastifyRequest<{ Querystring: VehicleMakeQuery }>, reply: FastifyReply) => {
       try {
-        console.log("🚗 Vehicle makes endpoint called");
         const { subcategory } = request.query;
-        console.log("📊 Subcategory received:", subcategory);
         
         if (!subcategory) {
-          console.log("❌ No subcategory provided");
           return ResponseHelpers.badRequest(reply, "Subcategory is required");
         }
 
-        console.log("🔍 Checking if subcategory is valid:", subcategory);
         if (!isValidSubcategory(subcategory)) {
-          console.log("❌ Invalid subcategory:", subcategory);
           return ResponseHelpers.badRequest(reply, `Invalid subcategory: ${subcategory}`);
         }
 
-        console.log("✅ Subcategory is valid, fetching makes...");
         const makes = getVehicleMakes(subcategory);
-        console.log("📋 Makes found:", makes.length);
         
         const responseData = {
           subcategory: subcategory.toUpperCase(),
@@ -51,10 +44,8 @@ export default async function vehicleRoutes(fastify: FastifyInstance) {
           total: makes.length
         };
         
-        console.log("📤 Sending response:", responseData);
         return ResponseHelpers.ok(reply, responseData);
       } catch (error) {
-        console.error("❌ Error fetching vehicle makes:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
       }
     }
@@ -87,7 +78,6 @@ export default async function vehicleRoutes(fastify: FastifyInstance) {
           total: models.length
         });
       } catch (error) {
-        console.error("Error fetching vehicle models:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
       }
     }
@@ -121,7 +111,6 @@ export default async function vehicleRoutes(fastify: FastifyInstance) {
           totalModels: Object.values(vehicleData.models).flat().length
         });
       } catch (error) {
-        console.error("Error fetching vehicle data:", error);
         return ErrorHandler.sendError(reply, error as Error, request.url);
       }
     }

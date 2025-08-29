@@ -60,7 +60,6 @@ async function findOrphanedImages(olderThanHours: number = 24): Promise<Orphaned
     
     return orphanedImages;
   } catch (error) {
-    console.error("Error finding orphaned images:", error);
     throw error;
   }
 }
@@ -102,7 +101,6 @@ async function isImageReferenced(imageKey: string): Promise<boolean> {
     
     return false;
   } catch (error) {
-    console.error(`Error checking if image ${imageKey} is referenced:`, error);
     return true; // Err on the side of caution - don't delete if we can't verify
   }
 }
@@ -112,7 +110,6 @@ async function isImageReferenced(imageKey: string): Promise<boolean> {
  */
 async function deleteOrphanedImages(imagesToDelete: OrphanedImage[]): Promise<void> {
   if (imagesToDelete.length === 0) {
-    console.log("No orphaned images to delete.");
     return;
   }
   
@@ -134,20 +131,15 @@ async function deleteOrphanedImages(imagesToDelete: OrphanedImage[]): Promise<vo
       const response = await s3Client.send(deleteCommand);
       
       if (response.Deleted) {
-        console.log(`✅ Successfully deleted ${response.Deleted.length} images in batch ${Math.floor(i / batchSize) + 1}`);
         response.Deleted.forEach(deleted => {
-          console.log(`   - ${deleted.Key}`);
         });
       }
       
       if (response.Errors && response.Errors.length > 0) {
-        console.error(`❌ Errors in batch ${Math.floor(i / batchSize) + 1}:`);
         response.Errors.forEach(error => {
-          console.error(`   - ${error.Key}: ${error.Message}`);
         });
       }
     } catch (error) {
-      console.error(`Error deleting batch ${Math.floor(i / batchSize) + 1}:`, error);
     }
   }
 }
@@ -161,31 +153,22 @@ export async function cleanupOrphanedImages(options: {
   skipDatabaseCheck?: boolean;
 } = {}): Promise<void> {
   const { olderThanHours = 24, dryRun = false, skipDatabaseCheck = false } = options;
-  
-  console.log(`🧹 Starting orphaned image cleanup...`);
-  console.log(`   - Looking for images older than ${olderThanHours} hours`);
-  console.log(`   - Dry run: ${dryRun ? 'YES' : 'NO'}`);
-  console.log(`   - Skip database check: ${skipDatabaseCheck ? 'YES' : 'NO'}`);
-  
+
   try {
     // Find all potentially orphaned images
     const orphanedImages = await findOrphanedImages(olderThanHours);
-    console.log(`📊 Found ${orphanedImages.length} potentially orphaned images`);
     
     if (orphanedImages.length === 0) {
-      console.log("✨ No orphaned images found!");
       return;
     }
     
     // Calculate total size
     const totalSize = orphanedImages.reduce((sum, img) => sum + img.size, 0);
-    console.log(`💾 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
     
     let imagesToDelete = orphanedImages;
     
     // Check database references if not skipped
     if (!skipDatabaseCheck) {
-      console.log("🔍 Checking database references...");
       imagesToDelete = [];
       
       for (const image of orphanedImages) {
@@ -193,27 +176,20 @@ export async function cleanupOrphanedImages(options: {
         if (!isReferenced) {
           imagesToDelete.push(image);
         } else {
-          console.log(`🔗 Keeping referenced image: ${image.key}`);
         }
       }
       
-      console.log(`📊 After database check: ${imagesToDelete.length} images to delete`);
     }
     
     if (dryRun) {
-      console.log("🔍 DRY RUN - Images that would be deleted:");
       imagesToDelete.forEach(img => {
-        console.log(`   - ${img.key} (${(img.size / 1024).toFixed(1)} KB, ${img.lastModified.toISOString()})`);
       });
-      console.log(`💾 Total size to be freed: ${(imagesToDelete.reduce((sum, img) => sum + img.size, 0) / 1024 / 1024).toFixed(2)} MB`);
     } else {
       // Actually delete the images
       await deleteOrphanedImages(imagesToDelete);
-      console.log("✨ Cleanup completed!");
     }
     
   } catch (error) {
-    console.error("❌ Error during cleanup:", error);
     throw error;
   } finally {
     await prisma.$disconnect();

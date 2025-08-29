@@ -265,9 +265,7 @@ export const register = async (
           await prisma.user.delete({
             where: { id: existingUser.id },
           });
-          console.log(`Deleted pending user with email: ${existingUser.email} for fresh re-registration`);
         } catch (deleteError) {
-          console.error("Failed to delete pending user:", deleteError);
           return reply.code(500).send({
             success: false,
             error: {
@@ -342,8 +340,6 @@ export const register = async (
         });
       }
 
-      console.log(`Verification email sent to ${user.email}`);
-
       // Respond success without generating tokens until email is verified
       return reply.code(201).send({
         success: true,
@@ -356,7 +352,6 @@ export const register = async (
         where: { id: user.id },
       });
 
-      console.error("Failed to send verification email:", emailError);
       return reply.code(500).send({
         success: false,
         error: {
@@ -412,7 +407,6 @@ export const register = async (
     //   },
     // });
   } catch (error) {
-    console.error("Registration error:", error);
     return reply.code(500).send({
       success: false,
       error: {
@@ -643,9 +637,6 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       const failedAttempts = (userWithSecurity?.failedLoginAttempts || 0) + 1;
 
       // Just log the attempt for now
-      console.log(
-        `Failed login attempt for user ${user.email}. Count: ${failedAttempts}`,
-      );
 
       // We'll implement account locking after migration
 
@@ -738,23 +729,11 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
     currentAttempts.loginCount = 0;
 
     // Log successful login for audit purposes
-    console.log(
-      `User ${fullUser.id} (${fullUser.email}) logged in successfully from IP ${clientIp}`,
-    );
 
     // Set session cookies using our middleware
-    console.log("🍪 Setting session cookies for user:", fullUser.id);
-    console.log("🔑 Access token length:", tokens.accessToken.length);
-    console.log("🔄 Refresh token length:", tokens.refreshToken.length);
 
     setSessionCookie(reply, tokens.accessToken, 15 * 60); // 15 minutes
     setRefreshCookie(reply, tokens.refreshToken, 7 * 24 * 60 * 60); // 7 days
-
-    console.log("✅ Session cookies set successfully");
-    console.log(
-      "📋 Response headers after setting cookies:",
-      reply.raw.getHeaders(),
-    );
 
     if (fullUser.loginNotifications)
       sendUserLoginEmail({
@@ -798,7 +777,6 @@ export const login = async (request: FastifyRequest, reply: FastifyReply) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
     return reply.code(500).send({
       success: false,
       error: {
@@ -868,7 +846,6 @@ export const getMe = async (request: FastifyRequest, reply: FastifyReply) => {
       data: existingUser,
     });
   } catch (error) {
-    console.error("Get me error:", error);
     return reply.code(500).send({
       success: false,
       error: {
@@ -930,7 +907,6 @@ export const verifyToken = async (
       });
     }
   } catch (error) {
-    console.error("Token verification error:", error);
     return reply.code(500).send({
       success: false,
       error: {
@@ -1030,7 +1006,6 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
       },
     });
   } catch (error) {
-    console.error("Refresh error:", error);
     return reply.code(401).send({
       success: false,
       error: {
@@ -1044,14 +1019,6 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
 // Logout
 export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
-    console.log("🚪 Logout request received", {
-      hasUser: !!request.user,
-      cookies: request.cookies,
-      headers: {
-        authorization: request.headers.authorization,
-        cookie: request.headers.cookie,
-      },
-    });
 
     // If user is authenticated, clear their refresh token from database
     if (request.user) {
@@ -1062,9 +1029,7 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
               "refreshTokenExpiresAt" = null
           WHERE id = ${request.user.id}
         `;
-        console.log("✅ Cleared refresh token for user:", request.user.id);
       } catch (dbError) {
-        console.error("❌ Error clearing refresh token:", dbError);
         // Don't fail logout if database update fails
       }
     }
@@ -1072,7 +1037,6 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
     // Always clear session cookies, even if user is not authenticated
     // This handles cases where cookies exist but are invalid/expired
     clearSessionCookies(reply);
-    console.log("✅ Session cookies cleared");
 
     return reply.send({
       success: true,
@@ -1081,16 +1045,11 @@ export const logout = async (request: FastifyRequest, reply: FastifyReply) => {
       },
     });
   } catch (error) {
-    console.error("Logout error:", error);
 
     // Even if there's an error, try to clear cookies
     try {
       clearSessionCookies(reply);
     } catch (cookieError) {
-      console.error(
-        "Error clearing cookies during error handling:",
-        cookieError,
-      );
     }
 
     return reply.code(500).send({
@@ -1203,7 +1162,6 @@ export const verifyEmailCode = async (
       message: "Email verified successfully",
     });
   } catch (error) {
-    console.error("Error verifying email code:", error);
     return reply.status(500).send({
       success: false,
       error: {
@@ -1292,7 +1250,6 @@ export const sendPasswordChangeVerification = async (
       message: "Verification code sent to your email",
     });
   } catch (error) {
-    console.error("Error sending password change verification:", error);
     return reply.status(500).send({
       success: false,
       error: {
@@ -1401,7 +1358,6 @@ export const changePasswordWithVerification = async (
       message: "Password changed successfully",
     });
   } catch (error) {
-    console.error("Error changing password with verification:", error);
     return reply.status(500).send({
       success: false,
       error: {

@@ -73,13 +73,6 @@ export const diagnosticController = {
     const realIp = request.headers['cf-connecting-ip'] || request.headers['x-forwarded-for'] || ip;
 
     // Log this request for analysis
-    console.log(`🇸🇾 Syria Test Request:`, {
-      timestamp: new Date().toISOString(),
-      ip: realIp,
-      country: country,
-      userAgent: request.headers['user-agent'],
-      ray: request.headers['cf-ray']
-    });
 
     return reply.send({
       message: 'If you can see this, the backend is accessible from Syria',

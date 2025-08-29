@@ -59,19 +59,16 @@ export const processImage = async (
   buffer: Buffer,
   originalMimetype: string,
 ): Promise<{ buffer: Buffer; format: string; metadata?: any }> => {
-  console.log(`🔧 Processing image: ${(buffer.length / 1024).toFixed(1)}KB, mimetype: ${originalMimetype}`);
   
   try {
     // Extract metadata to preserve orientation and other important data
     const metadata = await sharp(buffer).metadata();
-    console.log(`📊 Image metadata: ${metadata.width}x${metadata.height}, channels: ${metadata.channels}, hasAlpha: ${metadata.hasAlpha}`);
 
     // Determine if we should compress based on file size and type
     const fileSizeKB = buffer.length / 1024;
     const shouldCompress = fileSizeKB > IMAGE_CONFIG.COMPRESSION_THRESHOLD_KB;
     
     if (!shouldCompress) {
-      console.log("📁 File is small enough, skipping compression");
       let format = "jpg";
       if (originalMimetype === "image/png") format = "png";
       else if (originalMimetype === "image/webp") format = "webp";
@@ -99,7 +96,6 @@ export const processImage = async (
         })
         .toBuffer();
       
-      console.log(`✅ PNG processed: ${(buffer.length / 1024).toFixed(1)}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB`);
       return { buffer: processedBuffer, format: "png", metadata };
       
     } else if (originalMimetype === "image/webp") {
@@ -115,7 +111,6 @@ export const processImage = async (
         })
         .toBuffer();
       
-      console.log(`✅ WebP processed: ${(buffer.length / 1024).toFixed(1)}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB`);
       return { buffer: processedBuffer, format: "webp", metadata };
       
     } else {
@@ -128,12 +123,10 @@ export const processImage = async (
         })
         .toBuffer();
       
-      console.log(`✅ JPEG processed: ${(buffer.length / 1024).toFixed(1)}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB`);
       return { buffer: processedBuffer, format: "jpg", metadata };
     }
     
   } catch (error) {
-    console.error("❌ Image processing failed, returning original:", error);
     // Fallback: return original image if processing fails
     let format = "jpg";
     if (originalMimetype === "image/png") format = "png";
@@ -154,7 +147,6 @@ export const processImagesMiddleware = async (
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
   try {
     if (!request.isMultipart()) {
-      console.log("Request is not multipart");
       return;
     }
 
@@ -163,35 +155,17 @@ export const processImagesMiddleware = async (
     const formData: Record<string, any> = {};
     let index = 0;
 
-    console.log("🔍 Request headers:", request.headers);
-    console.log("🔍 Request method:", request.method);
-    console.log("🔍 Initial request body:", request.body);
-
     // Process all parts (files and fields)
     const parts = await request.parts();
-    console.log("🔍 Found multipart parts");
 
     for await (const part of parts) {
-      console.log("🔍 Processing part:", {
-        type: part.type,
-        fieldname: part.fieldname,
-        filename: part.type === "file" ? part.filename : undefined,
-        mimetype: part.type === "file" ? part.mimetype : undefined,
-      });
       if (part.type === "file" && isImage(part.mimetype)) {
         // Process image file
-        console.log(
-          `Processing image file: ${part.filename}, field: ${part.fieldname}, size: ${(part.file.bytesRead / 1024).toFixed(1)}KB`,
-        );
         const fileBuffer = await part.toBuffer();
         const originalSizeKB = (fileBuffer.length / 1024).toFixed(1);
         const { buffer: processedBuffer, format, metadata } = await processImage(
           fileBuffer,
           part.mimetype,
-        );
-
-        console.log(
-          `📸 Image processed: ${originalSizeKB}KB → ${(processedBuffer.length / 1024).toFixed(1)}KB (${format})`,
         );
 
         const fileForUpload: ExpressMulterFile = {
@@ -237,9 +211,6 @@ export const processImagesMiddleware = async (
           originalName: fileForUpload.originalname,
           ...(listingId && { listingId }),
         };
-        console.log("fileForUpload:", fileForUpload);
-        console.log("uploadType:", uploadType);
-        console.log("uploadOptions:", uploadOptions);
 
         const uploadResult = await uploadToR2(
           fileForUpload,
@@ -256,31 +227,21 @@ export const processImagesMiddleware = async (
         // Process form field
         const fieldValue = await part.value;
         if (typeof fieldValue !== "string") {
-          console.error("🔍 Field value is not a string:", part.fieldname);
           continue;
         }
-
-        console.log("🔍 Processing field:", part.fieldname, fieldValue);
 
         try {
           // Try to parse as JSON if it looks like JSON
           if (fieldValue.startsWith("[") || fieldValue.startsWith("{")) {
             try {
               formData[part.fieldname] = JSON.parse(fieldValue);
-              console.log("🔍 Successfully parsed JSON for", part.fieldname);
             } catch (error) {
-              console.error(
-                "🔍 Failed to parse JSON for",
-                part.fieldname,
-                error,
-              );
               formData[part.fieldname] = fieldValue;
             }
           } else {
             formData[part.fieldname] = fieldValue;
           }
         } catch (error) {
-          console.error("🔍 Error processing field", part.fieldname, error);
           formData[part.fieldname] = fieldValue;
         }
       }
@@ -289,24 +250,15 @@ export const processImagesMiddleware = async (
     request.processedImages = processedImages;
     request.uploadedFiles = uploadedFiles;
 
-    console.log("🔍 Form data collected:", formData);
-
     // Merge formData with existing body instead of replacing it
     const mergedBody = {
       ...(typeof request.body === "object" ? request.body : {}),
       ...formData,
     } as Record<string, any>;
 
-    console.log("🔍 Final merged body:", mergedBody);
     request.body = mergedBody;
 
-    console.log(
-      "Processed request body:",
-      JSON.stringify(request.body, null, 2),
-    );
-    console.log("Processed images:", processedImages);
   } catch (error) {
-    console.error("❌ Error in processImagesMiddleware:", error);
     reply.status(500).send({ error: "Image processing failed" });
   }
 };
@@ -396,10 +348,6 @@ export const uploadMiddleware = async (
         uploadOptions.listingId = listingId;
       }
 
-      console.log(
-        `Uploading ${uploadType} file for user ${userId}${listingId ? `, listing ${listingId}` : ""}`,
-      );
-
       // Upload the file to R2
       const uploadResult = await uploadToR2(
         fileForUpload,
@@ -417,7 +365,6 @@ export const uploadMiddleware = async (
 
     request.uploadedFiles = uploadedFiles;
   } catch (error) {
-    console.error("❌ Error in uploadMiddleware:", error);
     reply.status(500).send({ error: "Upload failed" });
   }
 };

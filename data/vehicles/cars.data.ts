@@ -342,8 +342,7 @@ export const CARS_DATA = {
     "Tank": [
       "300", "400", "500", "600", "700", "800"
     ],
-    
-    
+
     "UAZ": [
       "Hunter", "Patriot", "Pickup", "452", "3909", "3962"
     ],

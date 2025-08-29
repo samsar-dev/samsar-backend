@@ -25,14 +25,6 @@ const envSchema = z.object({
 const envParse = envSchema.safeParse(process.env);
 
 if (!envParse.success) {
-  console.error(
-    "❌ Invalid environment variables:",
-    Object.entries(envParse.error.format())
-      .filter(([key]) => key !== "_errors")
-      .map(([key, value]) => `\n  ${key}: ${(value as any)._errors.join(", ")}`)
-      .join(""),
-  );
-  console.warn("⚠️ Using default values for missing environment variables");
 }
 
 // Use process.env directly with fallbacks

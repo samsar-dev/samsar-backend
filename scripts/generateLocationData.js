@@ -92,11 +92,9 @@ class LocationDataGenerator {
   }
 
   async generateLocationData() {
-    console.log('🚀 Generating comprehensive Syrian location data...');
     
     try {
       // Try to download official HDX data
-      console.log('📡 Attempting to download official UN HDX data...');
       const hdxData = await this.downloadHDXData();
       
       // Use HDX data if available, otherwise use fallback
@@ -104,13 +102,8 @@ class LocationDataGenerator {
       
       // Generate optimized data files
       await this.generateDataFiles(locationData);
-      
-      console.log('✅ Location data generation completed successfully!');
-      console.log(`📊 Generated ${locationData.cities.length} cities with ${locationData.neighborhoods.length} neighborhoods`);
-      
+
     } catch (error) {
-      console.error('❌ Error generating location data:', error);
-      console.log('🔄 Using fallback data generation...');
       
       const fallbackData = this.generateFromFallback();
       await this.generateDataFiles(fallbackData);
@@ -123,13 +116,11 @@ class LocationDataGenerator {
       // For now, we'll use the comprehensive fallback data
       return null;
     } catch (error) {
-      console.log('⚠️  HDX data not available, using comprehensive fallback');
       return null;
     }
   }
 
   generateFromFallback() {
-    console.log('📝 Generating from comprehensive fallback data...');
     
     // Load your existing comprehensive data
     const existingDataPath = path.join(__dirname, '..', 'src', 'data', 'syrianCities.js');
@@ -143,7 +134,6 @@ class LocationDataGenerator {
           existingData = JSON.parse(dataMatch[1]);
         }
       } catch (e) {
-        console.log('⚠️  Could not parse existing data, using minimal fallback');
       }
     }
 
@@ -219,7 +209,6 @@ class LocationDataGenerator {
   }
 
   async generateDataFiles(data) {
-    console.log('📁 Generating optimized data files...');
 
     // 1. Generate main cities data (your current format)
     const citiesData = `const syrianCitiesArabic = ${JSON.stringify(data.allLocations, null, 2)};
@@ -245,7 +234,6 @@ export default syrianGovernorates;
     fs.writeFileSync(path.join(this.outputDir, 'locationSearchIndex.js'), searchIndexData);
     fs.writeFileSync(path.join(this.outputDir, 'syrianGovernorates.js'), governoratesData);
 
-    console.log('💾 Data files generated successfully!');
   }
 
   generateSearchIndex(locations) {

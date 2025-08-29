@@ -20,14 +20,6 @@ export const handlePriceChange = async ({
   percentReduction,
   userId,
 }: PriceChangeData) => {
-  console.log("Price change data:", {
-    listingId,
-    title,
-    oldPrice,
-    newPrice,
-    percentReduction,
-    userId,
-  });
 
   try {
     // Find users who have saved this listing
@@ -39,8 +31,6 @@ export const handlePriceChange = async ({
         user: true,
       },
     });
-
-    console.log(`Found ${favorites.length} users who saved this listing`);
 
     // Create notifications for each user who saved the listing
     for (const favorite of favorites) {
@@ -68,11 +58,6 @@ export const handlePriceChange = async ({
         },
       });
 
-      console.log(
-        `Created notification for user ${favorite.userId}:`,
-        notification,
-      );
-
       // Send real-time notification to the user if they are online
       const recipientSocketId = usersSocketId.get(favorite.userId);
       if (recipientSocketId) {
@@ -80,13 +65,11 @@ export const handlePriceChange = async ({
           ...notification,
           title,
         });
-        console.log(`Sent real-time notification to user ${favorite.userId}`);
       }
     }
 
     return { success: true, message: "Price change notifications sent" };
   } catch (error) {
-    console.error("Error handling price change:", error);
     return {
       success: false,
       error: "Failed to process price change notifications",

@@ -25,17 +25,11 @@ export const VEHICLE_DATA: VehicleDataMap = {
 
 // Helper functions for vehicle data access
 export const getVehicleMakes = (subcategory: string): string[] => {
-  console.log("🔍 getVehicleMakes called with:", subcategory);
   const normalizedSubcategory = subcategory.toUpperCase();
-  console.log("🔄 Normalized subcategory:", normalizedSubcategory);
-  console.log("📊 Available vehicle data keys:", Object.keys(VEHICLE_DATA));
   
   const data = VEHICLE_DATA[normalizedSubcategory];
-  console.log("📋 Data found for subcategory:", !!data);
   
   if (data) {
-    console.log("✅ Makes count:", data.makes?.length || 0);
-    console.log("🚗 First few makes:", data.makes?.slice(0, 5));
   }
   
   return data?.makes || [];

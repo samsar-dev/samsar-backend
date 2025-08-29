@@ -38,7 +38,6 @@ const __dirname = getDirname(import.meta.url);
 // Load environment variables
 dotenv.config();
 
-
 // -----------------
 // Create HTTP server manually
 // -----------------
@@ -118,16 +117,8 @@ io.use((socket, next) => {
     }
 
     if (!token) {
-      console.log("❌ No token found in any source:", {
-        hasAuthHeader: !!socket.handshake.headers.authorization,
-        hasAuthToken: !!socket.handshake.auth.token,
-        hasQueryToken: !!socket.handshake.query.token,
-        hasCookie: !!socket.handshake.headers.cookie,
-      });
       return next(new Error("Token missing"));
     }
-
-
 
     // Verify and decode JWT token
     const decoded = jwt.verify(token, config.jwtSecret) as UserPayload;
@@ -279,7 +270,6 @@ await fastify.register(cors, {
       return;
     }
 
-
     callback(new Error('Not allowed by CORS'), false);
   },
   credentials: true,
@@ -428,7 +418,6 @@ async function startServer() {
   try {
     await prisma.$connect();
 
-
     // Register contact routes
     const { default: contactRoutes } = await import(
       "./routes/contact.routes.js"
@@ -441,20 +430,13 @@ async function startServer() {
     );
     await fastify.register(listingPermissionRoutes, { prefix: "/api" });
 
-
     const port = Number(process.env.PORT || 5000);
     await fastify.listen({ port, host: "0.0.0.0" });
-
-
-
 
     // Socket.io handlers
     io.on("connection", (socket: AuthSocket) => {
       const user = socket.user;
       usersSocketId.set(user.sub, socket.id);
-
-
-
 
       socket.on(NEW_MESSAGE, (data: NewMessageData) => {
 

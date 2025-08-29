@@ -33,7 +33,6 @@ export const verifyCaptcha = async (
     // Verify CAPTCHA token with Google reCAPTCHA
     const captchaSecret = process.env.RECAPTCHA_SECRET_KEY;
     if (!captchaSecret) {
-      console.error("RECAPTCHA_SECRET_KEY is not set in environment variables");
       return reply.code(500).send({
         success: false,
         error: {
@@ -61,7 +60,6 @@ export const verifyCaptcha = async (
     // CAPTCHA verification successful
     return done();
   } catch (error) {
-    console.error("CAPTCHA verification error:", error);
     return reply.code(500).send({
       success: false,
       error: {

@@ -3,15 +3,9 @@ import { env } from "./env.js";
 const jwtSecret = env.JWT_SECRET;
 
 if (!jwtSecret) {
-  console.warn("⚠️ JWT_SECRET is missing from environment variables.");
 }
 
 // Debug log environment variables
-console.log("Environment variables loaded:", {
-  NODE_ENV: process.env.NODE_ENV,
-  EMAIL_FROM: process.env.EMAIL_FROM,
-  HAS_BREVO_API_KEY: !!process.env.BREVO_API_KEY,
-});
 
 export const config = {
   jwtSecret: jwtSecret || "fallback-secret", // local fallback only

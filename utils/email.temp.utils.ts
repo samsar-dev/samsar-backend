@@ -9,11 +9,8 @@ apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_AP
 // Initialize Brevo on module load
 const initializeBrevo = () => {
   if (process.env.BREVO_API_KEY) {
-    console.log('✅ Brevo initialized successfully');
     return true;
   } else {
-    console.error('❌ BREVO_API_KEY not found in environment variables');
-    console.log('📝 Please set BREVO_API_KEY in your Railway environment variables');
     return false;
   }
 };
@@ -50,13 +47,6 @@ export const createVerificationToken = async (
     },
   });
 
-  console.log("Created verification token and code:", {
-    userId,
-    token,
-    code,
-    expires,
-  });
-
   return { token, code };
 };
 
@@ -72,7 +62,6 @@ const sendEmailWithBrevo = async (emailData: {
   }
 
   try {
-    console.log(`📧 Sending email via Brevo to: ${emailData.to}`);
 
     const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.subject = emailData.subject;
@@ -82,13 +71,9 @@ const sendEmailWithBrevo = async (emailData: {
     sendSmtpEmail.to = [{ email: emailData.to, name: "User" }];
 
     const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    
-    console.log(`✅ Email sent successfully via Brevo`);
-    console.log(`📨 Message ID: ${result.body?.messageId || 'N/A'}`);
-    
+
     return result;
   } catch (error: any) {
-    console.error(`❌ Brevo failed:`, error.message);
     throw error;
   }
 };
@@ -98,8 +83,6 @@ export const sendVerificationEmail = async (
   tokenInfo: { token: string; code: string },
 ): Promise<boolean> => {
   try {
-    console.log(`📧 Sending verification email to: ${email}`);
-    console.log(`🔑 Verification code: ${tokenInfo.code}`);
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px; background-color: #ffffff;">
@@ -147,12 +130,9 @@ export const sendVerificationEmail = async (
       text: textContent,
     });
     
-    console.log(`✅ Verification email sent successfully to: ${email}`);
     return true;
     
   } catch (error: any) {
-    console.error(`❌ Brevo failed for ${email}:`, error.message);
-    console.error(`🔍 Error details:`, error);
     return false;
   }
 };
@@ -186,7 +166,6 @@ export const sendUserLoginEmail = async (userDetails: {
 
     return true;
   } catch (error) {
-    console.log(`Error in sending login email: ${error}`);
     return false;
   }
 };
@@ -248,7 +227,6 @@ export const verifyEmail = async (
 
     return true;
   } catch (error) {
-    console.error("Error verifying email:", error);
     return false;
   }
 };
@@ -305,7 +283,6 @@ export const sendNewMessageNotificationEmail = async (
 
     return true;
   } catch (error) {
-    console.log(`Error sending new message email: ${error}`);
     return false;
   }
 };

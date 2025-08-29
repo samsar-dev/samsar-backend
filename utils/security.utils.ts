@@ -25,7 +25,6 @@ export const sanitizeHtml = (input: string): string => {
       FORBID_ATTR: ["style", "onerror", "onload", "onclick"],
     });
   } catch (error) {
-    console.error("Error sanitizing HTML:", error);
     return ""; // Return empty string on error
   }
 };
@@ -48,7 +47,6 @@ export function sanitizeInput<T>(input: T): T {
         });
         return xssFilter.process(sanitized) as unknown as T;
       } catch (error) {
-        console.error("Error sanitizing input:", error);
         return "" as unknown as T;
       }
     }

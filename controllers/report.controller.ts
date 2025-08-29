@@ -177,7 +177,6 @@ export async function createReport(
     };
     return response;
   } catch (error: any) {
-    console.error("Error creating report:", error);
 
     let statusCode = 500;
     let errorMessage = "Failed to create report";
@@ -300,7 +299,6 @@ export async function getReports(
       status: 200,
     };
   } catch (error) {
-    console.error("Error fetching reports:", error);
     reply.code(500);
     return {
       success: false,
@@ -389,7 +387,6 @@ export async function updateReportStatus(
     };
     return response;
   } catch (error) {
-    console.error("Error updating report status:", error);
     const errorResponse: APIResponse<ReportWithRelations> = {
       success: false,
       error:
@@ -477,7 +474,6 @@ export async function getReportStats(
     };
     return response;
   } catch (error: any) {
-    console.error("Error getting report stats:", error);
     const errorMessage =
       error instanceof Error
         ? error.message

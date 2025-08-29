@@ -41,7 +41,6 @@ export const newMessages = async ({
         createdAt,
       });
   } catch (err) {
-    console.log(err);
   }
 };
 
@@ -52,13 +51,6 @@ export const newMessagesHeplerFun = async ({
   conversationId,
   createdAt,
 }: NewMessageData) => {
-  console.log("New message data:>>>>>>>>>>>>>>>>", {
-    content,
-    senderId,
-    recipientId,
-    conversationId,
-    createdAt,
-  });
   if (await isMessageAllow(recipientId)) return;
   let messagRresult: any = null;
   let notificationResult: NotificationWithSenderAndRecipient | null = null;
@@ -126,18 +118,12 @@ export const newMessagesHeplerFun = async ({
               messageId: messagRresult.id,
             }
           );
-          console.log(`✅ Push notification sent to ${messagRresult.recipient.username}`);
         } catch (error) {
-          console.error("❌ Failed to send push notification:", error);
         }
       } else {
-        console.log(`📱 No FCM token for user ${messagRresult.recipient.username}`);
       }
     }
-    console.log("Message created:", messagRresult);
-    console.log("Notification created:>>>>>>>>>>>>", notificationResult);
   } catch (error) {
-    console.log("Error creating message:", error);
   }
   const recipientSocketId = usersSocketId.get(recipientId);
   if (recipientSocketId && messagRresult && notificationResult) {

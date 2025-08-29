@@ -25,17 +25,14 @@ export default async function (fastify: FastifyInstance) {
       try {
         // Check if the controller is deleteUser to handle it specially
         if (controller.name === "deleteUser") {
-          console.log("Handling delete user request");
         }
 
         await controller(request, reply);
 
         // Don't log success for delete operations as they've already sent a response
         if (!reply.sent && controller.name !== "deleteUser") {
-          console.log("Operation completed successfully", controller.name);
         }
       } catch (error) {
-        console.error(`Error in ${controller.name || "controller"}:`, error);
 
         // Only send error response if reply hasn't been sent yet
         if (!reply.sent) {
@@ -101,7 +98,6 @@ export default async function (fastify: FastifyInstance) {
             });
 
             if (result && result.url) {
-              console.log('✅ Profile picture uploaded successfully:', result.url);
               // Store the new URL in the form data
               formData.profilePicture = result.url;
 
@@ -112,12 +108,7 @@ export default async function (fastify: FastifyInstance) {
                   const url = new URL(user.profilePicture);
                   const key = url.pathname.substring(1); // Remove leading slash
                   await deleteFromR2(key);
-                  console.log(`Deleted old profile picture: ${key}`);
                 } catch (deleteError) {
-                  console.error(
-                    "Error deleting old profile picture:",
-                    deleteError,
-                  );
                   // Don't fail the request if deletion fails
                 }
               }
@@ -148,10 +139,6 @@ export default async function (fastify: FastifyInstance) {
             }
           }
         } catch (error) {
-          console.error(
-            `Error processing part ${part?.fieldname || "unknown"}:`,
-            error,
-          );
           hasError = true;
           // Continue processing other parts but mark that there was an error
         }
@@ -161,11 +148,9 @@ export default async function (fastify: FastifyInstance) {
         throw new Error("Error processing one or more form fields");
       }
 
-      console.log('📦 Final form data to attach to request:', formData);
       // Attach the processed data to the request
       request.body = formData;
     } catch (error) {
-      console.error("Profile picture processing error:", error);
       reply.status(500).send({
         success: false,
         status: 500,

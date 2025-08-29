@@ -34,15 +34,12 @@ export const setSessionCookie = (
 
   // Debug environment variables for production detection
 
-
   // Determine if we're actually in production based on environment
   const isActualProduction =
     process.env.NODE_ENV === "production" &&
     (process.env.RAILWAY_ENVIRONMENT === "production" ||
       process.env.VERCEL_ENV === "production" ||
       process.env.PRODUCTION === "true");
-
-
 
   const options = {
     path: "/",
@@ -53,13 +50,10 @@ export const setSessionCookie = (
     "max-age": maxAge,
   } as const;
 
-
-
   const cookie = `${SESSION_COOKIE_NAME}=${token}; ${Object.entries(options)
     .filter(([, v]) => v !== false && v !== undefined && v !== null)
     .map(([k, v]) => (typeof v === "boolean" ? k : `${k}=${v}`))
     .join("; ")}`;
-
 
   appendSetCookie(reply, cookie);
 
@@ -79,8 +73,6 @@ export const setRefreshCookie = (
       process.env.VERCEL_ENV === "production" ||
       process.env.PRODUCTION === "true");
 
-
-
   const options = {
     path: "/auth/refresh",
     domain: isActualProduction ? undefined : "localhost", // Set domain for development
@@ -89,8 +81,6 @@ export const setRefreshCookie = (
     samesite: isActualProduction ? "None" : "Lax", // Use Lax for development
     "max-age": maxAge,
   } as const;
-
-
 
   const cookie = `${REFRESH_COOKIE_NAME}=${token}; ${Object.entries(options)
     .filter(([, v]) => v !== false && v !== undefined && v !== null)
@@ -101,7 +91,6 @@ export const setRefreshCookie = (
 };
 
 export const clearSessionCookies = (reply: FastifyReply) => {
-
 
   // Use same production detection logic
   const isActualProduction =
@@ -116,8 +105,6 @@ export const clearSessionCookies = (reply: FastifyReply) => {
     secure: isActualProduction,
     samesite: isActualProduction ? "None" : "Lax",
   };
-
-
 
   // Clear session cookie
   const sessionCookie = `${SESSION_COOKIE_NAME}=; Max-Age=0; ${Object.entries(
@@ -137,8 +124,6 @@ export const clearSessionCookies = (reply: FastifyReply) => {
     SameSite: "Lax",
     ...(isActualProduction && { Domain: ".samsardeals.com" }),
   };
-
-
 
   const refreshCookie = `${REFRESH_COOKIE_NAME}=; Max-Age=0; ${Object.entries(
     refreshOptions,
