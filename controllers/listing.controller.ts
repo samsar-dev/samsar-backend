@@ -788,14 +788,14 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       details,
       features,
     } = req.body as {
-      title?: string;
-      description?: string;
-      price?: number | string;
-      mainCategory?: string;
-      subCategory?: string;
-      location?: string;
-      latitude?: number | string;
-      longitude?: number | string;
+      title: string;
+      description: string;
+      price: number | string;
+      mainCategory: string;
+      subCategory: string;
+      location: string;
+      latitude: number | string;
+      longitude: number | string;
       condition?: string;
       existingImages?: string[] | string;
       attributes?: Array<{ name: string; value: string }>;
@@ -945,11 +945,11 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
       }
     }
 
-    // Ensure price is a number and handle potential string input (only if price is provided)
-    const newPrice = price !== undefined ? (typeof price === "string" ? parseFloat(price) : price) : oldListing.price;
+    // Ensure price is a number and handle potential string input
+    const newPrice = typeof price === "string" ? parseFloat(price) : price;
 
     // Check if price has changed and is a valid number
-    const isPriceChanged = price !== undefined && !isNaN(newPrice) && oldListing.price !== newPrice;
+    const isPriceChanged = !isNaN(newPrice) && oldListing.price !== newPrice;
 
     // Parse details and extract individual fields
     const parsedDetails = details ? (typeof details === "string" ? JSON.parse(details) : details) : {};
@@ -957,82 +957,75 @@ export const updateListing = async (req: FastifyRequest, res: FastifyReply) => {
     const vehicleDetails = parsedDetails?.vehicles || {};
     const realEstateDetails = parsedDetails?.realEstate || {};
 
-    // Build update data object with only provided fields
-    const updateData: any = {};
-    
-    if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (price !== undefined) updateData.price = newPrice;
-    if (mainCategory !== undefined) updateData.mainCategory = mainCategory;
-    if (subCategory !== undefined) updateData.subCategory = subCategory;
-    if (location !== undefined) updateData.location = location;
-    if (latitude !== undefined) updateData.latitude = typeof latitude === "string" ? parseFloat(latitude) : latitude;
-    if (longitude !== undefined) updateData.longitude = typeof longitude === "string" ? parseFloat(longitude) : longitude;
-    if (condition !== undefined) updateData.condition = condition;
-
-    // Category-specific fields based on mainCategory (only if mainCategory is provided or we need to get it from existing listing)
-    if (mainCategory !== undefined || details !== undefined) {
-      const categoryToCheck = mainCategory || (await prisma.listing.findUnique({ where: { id }, select: { mainCategory: true } }))?.mainCategory;
-      
-      if (categoryToCheck?.toLowerCase() === 'vehicles') {
-        // Vehicle fields only for vehicle listings
-        if (requestBody.make !== undefined) updateData.make = requestBody.make || vehicleDetails.make || null;
-        if (requestBody.model !== undefined) updateData.model = requestBody.model || vehicleDetails.model || null;
-        if (requestBody.year !== undefined) updateData.year = requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null);
-        if (requestBody.fuelType !== undefined) updateData.fuelType = requestBody.fuelType || vehicleDetails.fuelType || null;
-        if (requestBody.transmissionType !== undefined) updateData.transmission = requestBody.transmissionType || vehicleDetails.transmission || null;
-        if (requestBody.bodyType !== undefined) updateData.bodyType = requestBody.bodyType || vehicleDetails.bodyType || null;
-        if (requestBody.engineSize !== undefined) updateData.engineSize = requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null);
-        if (requestBody.mileage !== undefined) updateData.mileage = requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null);
-        if (requestBody.color !== undefined) updateData.exteriorColor = requestBody.color || vehicleDetails.exteriorColor || null;
-        if (requestBody.sellerType !== undefined) updateData.sellerType = requestBody.sellerType || null;
-        if (requestBody.accidental !== undefined) updateData.accidental = requestBody.accidental || vehicleDetails.accidental || null;
-      } else if (categoryToCheck?.toLowerCase() === 'real_estate') {
-        // Real estate fields only for real estate listings
-        if (realEstateDetails.bedrooms !== undefined) updateData.bedrooms = realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null;
-        if (realEstateDetails.bathrooms !== undefined) updateData.bathrooms = realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null;
-        if (realEstateDetails.totalArea !== undefined) updateData.totalArea = realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null;
-        if (realEstateDetails.yearBuilt !== undefined) updateData.yearBuilt = realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null;
-        if (realEstateDetails.furnishing !== undefined) updateData.furnishing = realEstateDetails.furnishing || null;
-        if (realEstateDetails.floor !== undefined) updateData.floor = realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null;
-        if (realEstateDetails.totalFloors !== undefined) updateData.totalFloors = realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null;
-      }
-    }
-
-    if (details !== undefined) updateData.details = parsedDetails; // Keep full details for backward compatibility
-    
-    if (attributes !== undefined) {
-      updateData.attributes = {
-        deleteMany: {},
-        create: attributes,
-      };
-    }
-    
-    if (features !== undefined) {
-      updateData.features = {
-        deleteMany: {},
-        create: features,
-      };
-    }
-    
-    if (imagesToCreate.length > 0) {
-      updateData.images = {
-        deleteMany: {},
-        create: imagesToCreate.map((img, index) => ({
-          storageProvider: 'CLOUDFLARE',
-          storageKey: `listings/${oldListing.userId}/${Date.now()}_${index}.jpg`,
-          url: img.url,
-          order: img.order,
-          isCover: index === 0,
-          status: 'VALID',
-          lastChecked: new Date(),
-        })),
-      };
-    }
-
     const listing = await prisma.listing.update({
       where: { id },
-      data: updateData,
+      data: {
+        title,
+        description,
+        price: newPrice,
+        mainCategory,
+        subCategory,
+        location,
+        latitude:
+          typeof latitude === "string" ? parseFloat(latitude) : latitude,
+        longitude:
+          typeof longitude === "string" ? parseFloat(longitude) : longitude,
+        condition,
+        // Category-specific fields based on mainCategory
+        ...(mainCategory.toLowerCase() === 'vehicles' ? {
+          // Vehicle fields only for vehicle listings
+          make: requestBody.make || vehicleDetails.make || null,
+          model: requestBody.model || vehicleDetails.model || null,
+          year: requestBody.year ? parseInt(requestBody.year) : (vehicleDetails.year ? parseInt(vehicleDetails.year) : null),
+          fuelType: requestBody.fuelType || vehicleDetails.fuelType || null,
+          transmission: requestBody.transmissionType || vehicleDetails.transmission || null,
+          bodyType: requestBody.bodyType || vehicleDetails.bodyType || null,
+          engineSize: requestBody.engineSize ? parseFloat(requestBody.engineSize) : (vehicleDetails.engineSize ? parseFloat(vehicleDetails.engineSize) : null),
+          mileage: requestBody.mileage ? parseInt(requestBody.mileage) : (vehicleDetails.mileage ? parseInt(vehicleDetails.mileage) : null),
+          exteriorColor: requestBody.color || vehicleDetails.exteriorColor || null,
+          sellerType: requestBody.sellerType || null,
+          accidental: requestBody.accidental || vehicleDetails.accidental || null,
+        } : {}),
+        ...(mainCategory.toLowerCase() === 'real_estate' ? {
+          // Real estate fields only for real estate listings
+          bedrooms: realEstateDetails.bedrooms ? parseInt(realEstateDetails.bedrooms) : null,
+          bathrooms: realEstateDetails.bathrooms ? parseInt(realEstateDetails.bathrooms) : null,
+          totalArea: realEstateDetails.totalArea ? parseFloat(realEstateDetails.totalArea) : null,
+          yearBuilt: realEstateDetails.yearBuilt ? parseInt(realEstateDetails.yearBuilt) : null,
+          furnishing: realEstateDetails.furnishing || null,
+          floor: realEstateDetails.floor ? parseInt(realEstateDetails.floor) : null,
+          totalFloors: realEstateDetails.totalFloors ? parseInt(realEstateDetails.totalFloors) : null,
+          // parking moved to JSON details only
+        } : {}),
+        details: parsedDetails, // Keep full details for backward compatibility
+        attributes: attributes
+          ? {
+              deleteMany: {},
+              create: attributes,
+            }
+          : undefined,
+        features: features
+          ? {
+              deleteMany: {},
+              create: features,
+            }
+          : undefined,
+        images:
+          imagesToCreate.length > 0
+            ? {
+                deleteMany: {},
+                create: imagesToCreate.map((img, index) => ({
+                  storageProvider: 'CLOUDFLARE',
+                  storageKey: `listings/${oldListing.userId}/${Date.now()}_${index}.jpg`,
+                  url: img.url,
+                  order: img.order,
+                  isCover: index === 0,
+                  status: 'VALID',
+                  lastChecked: new Date(),
+                })),
+              }
+            : undefined,
+      },
       include: {
         user: {
           select: {

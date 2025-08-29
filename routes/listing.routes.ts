@@ -22,7 +22,7 @@ import {
 import { calculateDistance } from "../utils/distance.js";
 import { PropertyType, VehicleType, ListingCategory } from "../types/enums.js";
 import { ErrorHandler, ValidationError, ResponseHelpers } from "../utils/error.handler.js";
-import { addListingImages, updateListing } from "../controllers/listing.controller.js";
+import { addListingImages } from "../controllers/listing.controller.js";
 import { generateListingId } from "../utils/idGenerator.utils.js";
 
 interface ListingQuery {
@@ -1109,24 +1109,6 @@ export default async function (fastify: FastifyInstance) {
         }
       }
     )
-  );
-
-  // Update listing (authenticated - only owner can update)
-  fastify.patch<{ Params: { id: string } }>(
-    "/:id",
-    {
-      preHandler: [authenticate, processImagesMiddleware],
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            id: { type: "string" }
-          },
-          required: ["id"]
-        }
-      }
-    },
-    updateListing
   );
 
   // Delete listing (authenticated - only owner can delete)
