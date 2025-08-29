@@ -135,7 +135,7 @@ export const clearSessionCookies = (reply: FastifyReply) => {
     HttpOnly: true,
     Secure: isActualProduction,
     SameSite: "Lax",
-    ...(isActualProduction && { Domain: ".samsar.app" }),
+    ...(isActualProduction && { Domain: ".samsardeals.com" }),
   };
 
 

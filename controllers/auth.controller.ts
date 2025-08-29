@@ -390,7 +390,7 @@ export const register = async (
     const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
       path: "/",
-      domain: isProduction ? ".samsar.app" : undefined,
+      domain: isProduction ? ".samsardeals.com" : undefined,
       secure: isProduction,
       httpOnly: true,
       sameSite: isProduction ? "strict" : "lax",
@@ -1011,7 +1011,7 @@ export const refresh = async (request: FastifyRequest, reply: FastifyReply) => {
     const isProduction = process.env.NODE_ENV === "production";
     const cookieOptions = {
       path: "/",
-      domain: isProduction ? ".samsar.app" : undefined,
+      domain: isProduction ? ".samsardeals.com" : undefined,
       secure: isProduction,
       httpOnly: true,
       sameSite: isProduction ? "strict" : "lax",

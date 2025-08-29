@@ -91,7 +91,7 @@ export const configureSecureCookies = (fastify: FastifyInstance) => {
       sameSite: "lax" as const, // Always use lax for cross-origin
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days
-      domain: isProduction ? ".samsar.app" : undefined,
+      domain: isProduction ? ".samsardeals.com" : undefined,
       // Remove partitioned flag for cross-origin compatibility
       // partitioned: true
     },
