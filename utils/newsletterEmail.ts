@@ -33,7 +33,7 @@ export const sendEmail = async (options: EmailOptions) => {
     sendSmtpEmail.subject = options.subject;
     sendSmtpEmail.htmlContent = options.html || '';
     sendSmtpEmail.textContent = options.text || options.html?.replace(/<[^>]*>/g, '') || '';
-    sendSmtpEmail.sender = { name: "Samsar App", email: "noreply@samsar.app" };
+    sendSmtpEmail.sender = { name: "Samsar App", email: process.env.EMAIL_FROM || "noreply@samsardeals.com" };
     sendSmtpEmail.to = [{ email: options.to, name: "User" }];
 
     const result = await apiInstance.sendTransacEmail(sendSmtpEmail);

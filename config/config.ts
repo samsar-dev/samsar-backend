@@ -30,6 +30,6 @@ export const config = {
   },
   email: {
     brevoApiKey: process.env.BREVO_API_KEY || env.BREVO_API_KEY,
-    from: process.env.EMAIL_FROM || env.EMAIL_FROM || "noreply@samsar.app",
+    from: process.env.EMAIL_FROM || env.EMAIL_FROM || "noreply@samsardeals.com",
   },
 };

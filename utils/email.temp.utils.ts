@@ -78,7 +78,7 @@ const sendEmailWithBrevo = async (emailData: {
     sendSmtpEmail.subject = emailData.subject;
     sendSmtpEmail.htmlContent = emailData.html;
     sendSmtpEmail.textContent = emailData.text || emailData.html.replace(/<[^>]*>/g, '');
-    sendSmtpEmail.sender = { name: "Samsar Team", email: "noreply@samsar.app" };
+    sendSmtpEmail.sender = { name: "Samsar Team", email: process.env.EMAIL_FROM || "noreply@samsardeals.com" };
     sendSmtpEmail.to = [{ email: emailData.to, name: "User" }];
 
     const result = await apiInstance.sendTransacEmail(sendSmtpEmail);

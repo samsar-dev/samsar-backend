@@ -60,7 +60,7 @@ export const sendPasswordChangeEmail = async (
     sendSmtpEmail.subject = "Password Change Verification";
     sendSmtpEmail.htmlContent = htmlContent;
     sendSmtpEmail.textContent = `Your password change verification code is: ${code}\n\nEnter this code on the password change page to verify your identity.\n\nThis code will expire in 24 hours.`;
-    sendSmtpEmail.sender = { name: "Samsar Team", email: "noreply@samsar.app" };
+    sendSmtpEmail.sender = { name: "Samsar Team", email: process.env.EMAIL_FROM || "noreply@samsardeals.com" };
     sendSmtpEmail.to = [{ email: email, name: "User" }];
 
     await apiInstance.sendTransacEmail(sendSmtpEmail);
