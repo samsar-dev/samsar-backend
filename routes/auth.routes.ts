@@ -378,7 +378,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
   );
 
-  // Resend verification email with rate limiting (MailerSend)
+  // Resend verification email with rate limiting 
   fastify.post(
     "/resend-verification",
     {
